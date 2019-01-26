@@ -174,7 +174,8 @@ def namePlates(argument, OS):
 
     return OS
 
-def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResult':''}, searchFor=''):
+def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResult':[]}, searchFor=''):
+    iTunesPaths['searchedSongResult'] = []
 
     if operatingSystem == 'darwin':
         pathToItunesAutoAdd = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes.localized')
@@ -188,10 +189,12 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
         # '*.*' means anyfilename, anyfiletype
         # /*/* gets through artist, then album or itunes folder structure
         # iTUNES LIBRARY SEARCH ALGORITHM -- returns lists of matches
-        pathToSong = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*', searchFor + '.*')
+        pathToSong = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*','*.*')
         path = glob.glob(pathToSong, recursive=True)
 
-        iTunesPaths['searchedSongResult'] = path
+        for songPath in path:
+            if searchFor in songPath:
+                iTunesPaths['searchedSongResult'].append(songPath)
 
     if operatingSystem == 'win32':
         pathToItunesAutoAdd = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes')
@@ -209,7 +212,9 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
         pathToSong = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*', searchFor + '.*')
         path = glob.glob(pathToSong, recursive=True)
 
-        iTunesPaths['searchedSongResult'] = path
+        for songPath in path:
+            if searchFor in songPath:
+                iTunesPaths['searchedSongResult'].append(songPath)
         # pathToItunesAutoAddWin =
 
     return iTunesPaths
@@ -227,10 +232,16 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
 
             # get the first item of the songs returned from the list of song paths matching
             # plays song immediatly, so return after this executes
-            songPath = iTunesPaths['searchedSongResult'][0]
-            print("Found that song in iTunes Library at the below path..")
-            print(songPath)
-            p = vlc.MediaPlayer(songPath)
+            print("Here are song(s) in your library matching your search: ")
+            i = 0
+            for songPath in iTunesPaths['searchedSongResult']:
+                songName = songPath.split(os.sep)
+                print('%d - %s' % (i, songName[len(songName)-1]))
+                i += 1
+
+            songSelection = int(input('Which one do you want to hear? '))
+
+            p = vlc.MediaPlayer(iTunesPaths['searchedSongResult'][songSelection])
             p.play()
             userInput = input("Hit Enter to stop playing... ")
             p.stop()
