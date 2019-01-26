@@ -274,8 +274,8 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
         if iTunesInstalled == True:
             userInput = input("Type 's' to save to itunes, anything else to save locally to 'dump' folder. ")
             if userInput == 's':
-
-                input("Your file is ready to be moved.. just hit enter to stop playing.")
+                # dont know if i want this extra input
+                # input("Your file is ready to be moved.. just hit enter to stop playing.")
                 p.stop()
                 shutil.move(songPath, iTunesPaths['autoAdd'])
                 print("Moved your file to iTunes.")
