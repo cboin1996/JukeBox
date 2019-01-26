@@ -192,9 +192,7 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
         pathToSong = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*','*.*')
         path = glob.glob(pathToSong, recursive=True)
 
-        for songPath in path:
-            if searchFor in songPath:
-                iTunesPaths['searchedSongResult'].append(songPath)
+        iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor)
 
     if operatingSystem == 'win32':
         pathToItunesAutoAdd = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes')
@@ -212,10 +210,15 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
         pathToSong = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*', '*.*')
         path = glob.glob(pathToSong, recursive=True)
 
-        for songPath in path:
-            if searchFor in songPath:
-                iTunesPaths['searchedSongResult'].append(songPath)
-        # pathToItunesAutoAddWin =
+        iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor)
+
+    return iTunesPaths
+
+def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
+    for songPath in songPaths:
+        songNameSplit = songPath.split(os.sep)
+        if searchParameters.lower() in songNameSplit[len(songNameSplit)-1].lower():
+            iTunesPaths['searchedSongResult'].append(songPath)
 
     return iTunesPaths
 
@@ -239,13 +242,18 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
                 print('%d - %s' % (i, songName[len(songName)-1]))
                 i += 1
 
-            songSelection = int(input('Which one do you want to hear? '))
+            songSelection = int(input("Which one do you want to hear? Type '404' to search youtube instead. "))
 
-            p = vlc.MediaPlayer(iTunesPaths['searchedSongResult'][songSelection])
-            p.play()
-            userInput = input("Hit Enter to stop playing... ")
-            p.stop()
-            return
+            # play the song only if they want, otherwise continute with program.
+            if songSelection != 404:
+                while songSelection not in range(0, len(iTunesPaths['searchedSongResult'])):
+                    songSelection = int(input('Invalid Input. Try Again'))
+
+                p = vlc.MediaPlayer(iTunesPaths['searchedSongResult'][songSelection])
+                p.play()
+                userInput = input("Hit Enter to stop playing... ")
+                p.stop()
+                return
 
     songPath = youtubeSongDownload(songName=searchFor, autoDownload=autoDownload, pathToDumpFolder=localDumpFolder)
 
