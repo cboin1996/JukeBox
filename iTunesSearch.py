@@ -20,7 +20,29 @@ def prettyPrinter(listOfDicts):
         i -=1
         print("------------------------")
 
+def artworkSearcher(artworkUrl):
+
+    artworkSizeList = ['100x100', '200x200', '300x300', '400x400', '500x500', '600x600']
+    i = len(artworkSizeList) - 1
+
+    response = requests.get(artworkUrl.replace('100x100', artworkSizeList[i]))
+    while response.status_code != 200 and i != 0:
+        print('- Size not found -- Trying size:', artworkSizeList[i])
+        response = requests.get(artworkUrl.replace('100x100', artworkSizeList[i]))
+        i -= 1
+
+    if i == 0:
+        print('Couldnt find album art. Your file wont have the art.')
+        return None
+
+    else:
+        print('Found art at size: ', artworkSizeList[i])
+
+    return response
+
+
 def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
+
     trackName = 'trackName'
     artistName = 'artistName'
     collectionName = 'collectionName'
@@ -32,8 +54,10 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
     print("Your file temperarily located at: ", mp3Path)
     # Have to call MP3File twice for it to work.
 
-    # Get the image to show for a song
-    response = requests.get(dictionaryOfTags[artworkUrl100])
+    # Get the image to show for a song .. but get high res
+    # get album artwork from the list of sizes
+
+    response = artworkSearcher(artworkUrl=dictionaryOfTags[artworkUrl100])
 
     # Set all the tags for the mp3
     audiofile = eyed3.load(mp3Path)
@@ -41,7 +65,9 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
     audiofile.tag.album = dictionaryOfTags[collectionName]
     audiofile.tag.title = dictionaryOfTags[trackName]
     audiofile.tag.genre = dictionaryOfTags[primaryGenreName]
-    audiofile.tag.images.set(type_=3, img_data=response.content, mime_type='image/png', description=u"Art", img_url=None)
+
+    if response.status_code == 200:
+        audiofile.tag.images.set(type_=3, img_data=response.content, mime_type='image/png', description=u"Art", img_url=None)
 
     print("Your tags have been set.")
 
