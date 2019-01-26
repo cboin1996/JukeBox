@@ -209,7 +209,7 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
         # '*.*' means anyfilename, anyfiletype
         # /*/* gets through artist, then album or itunes folder structure
         # iTUNES LIBRARY SEARCH ALGORITHM -- returns lists of matches
-        pathToSong = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*', searchFor + '.*')
+        pathToSong = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*', '*.*')
         path = glob.glob(pathToSong, recursive=True)
 
         for songPath in path:
