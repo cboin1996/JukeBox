@@ -239,7 +239,7 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
             i = 0
             for songPath in iTunesPaths['searchedSongResult']:
                 songName = songPath.split(os.sep)
-                print('%d - %s' % (i, songName[len(songName)-1]))
+                print('  %d \t- %s: %s' % (i, songName[len(songName)-3], songName[len(songName)-1]))
                 i += 1
 
             songSelection = int(input("Which one do you want to hear? Type '404' to search youtube instead. "))
