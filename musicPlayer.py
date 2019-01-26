@@ -131,9 +131,11 @@ def dumpAndDownload(filepath, getRequestResponse, local_filename):
     file_size = getRequestResponse.headers.get('Content-Length')
 
     with open(filepath, 'wb') as fp:
+
         if file_size == None:
             print("No file size.. so no progress bar.  Downloading.")
             fp.write(getRequestResponse.content)
+
         else:
             file_size = int(file_size)
             chunk = 1

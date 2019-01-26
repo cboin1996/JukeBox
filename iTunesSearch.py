@@ -22,7 +22,7 @@ def prettyPrinter(listOfDicts):
 
 def artworkSearcher(artworkUrl):
 
-    artworkSizeList = ['100x100', '200x200', '300x300', '400x400', '500x500', '600x600']
+    artworkSizeList = ['100x100', '500x500', '1000x1000', '1500x1500', '2000x2000', '2500x2500', '3000x3000']
     i = len(artworkSizeList) - 1
 
     response = requests.get(artworkUrl.replace('100x100', artworkSizeList[i]))
