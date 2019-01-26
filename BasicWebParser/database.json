@@ -1,0 +1,52 @@
+{
+    "headers" : {
+      "User-Agent" : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Safari/605.1.15"
+    },
+    "websites" : {
+      "facebook" : {
+        "usernameField"  : "email",
+        "passwordField"  : "pass",
+        "username"       : "",
+        "password"       : "",
+        "loginUrl"       : "https://www.facebook.com/login/device-based/regular/login/?login_attempt=1&lwv=110",
+        "service"        : "https://www.facebook.com/login/device-based/regular/login/?login_attempt=1&next=https%3A%2F%2Fwww.facebook.com%2F&lwv=120&lwc=1348028",
+        "homePage"       : "https://www.facebook.com"
+      },
+      "linkedin" : {
+        "usernameField"  : "session_key",
+        "passwordField"  : "session_password",
+        "username"       : "",
+        "password"       : "",
+        "loginUrl"       : "https://www.linkedin.com/checkpoint/lg/login",
+        "service"        : "https://www.linkedin.com/checkpoint/lg/login-submit",
+        "homePage"       : "https://www.linkedin.com/feed/"
+      },
+      "indeed" : {
+        "usernameField"  : "__email",
+        "passwordField"  : "__password",
+        "username"       : "",
+        "password"       : "",
+        "loginUrl"       : "https://secure.indeed.com/account/login",
+        "service"        : "https://secure.indeed.com/account/login",
+        "homePage"       : "https://ca.indeed.com/?r=us",
+        "searchURL"      : "https://ca.indeed.com/jobs"
+      },
+      "wikipedia" : {
+        "homePage"       : "https://en.wikipedia.org/wiki/Main_Page",
+        "serviceSearch"  : "https://en.wikipedia.org/wiki/Main_Page/w/index.php"
+      },
+      "Youtube"   : {
+        "homePage" : "https://www.youtube.com",
+        "serviceSearch" : "https://www.youtube.com/results"
+      }
+    },
+
+    "loginRequired" : {
+      "facebook"   : "Y",
+      "linkedin"   : "Y",
+      "courselink" : "Y",
+      "wikipedia"  : "N",
+      "indeed"     : "Y",
+      "Youtube"    : "N"
+    }
+}
