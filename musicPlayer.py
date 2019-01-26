@@ -280,6 +280,10 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
                 shutil.move(songPath, iTunesPaths['autoAdd'])
                 print("Moved your file to iTunes.")
 
+            else:
+                print("Saved your file locally.")
+                p.stop()
+
         else:
             input("Local File is ready. Hit enter to stop playing.")
             p.stop()
