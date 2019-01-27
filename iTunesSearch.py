@@ -105,7 +105,7 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
 
         # print(element)
         prettyPrinter(parsedResultsList)
-
+    print('Searched for: %s' % (searchVariable))
     print('Select the number for the properties you want.. [%d to %d]'% (0, len(parsedResultsList)-1))
 
     # autoDownload check

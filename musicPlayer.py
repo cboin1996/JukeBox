@@ -72,13 +72,11 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         print("Converting: %s" % (videoSelection))
 
     else:
-        integerVideoId = int(input("Select the song you want by entering the number beside it. [%d to %d].. '404' to search again " % (0, len(videoUrls)-1)))
+        integerVideoId = int(input("Select the song you want by entering the number beside it. [%d to %d].. '404' to search again: " % (0, len(videoUrls)-1)))
 
-        ## Recursive redo.. if user isnt happy with search.. return the functions return type.
+        ## Error handle for function.. check None type in Main
         if integerVideoId == 404:
-            newUserSearch = input('Please enter your more specific song: ')
-            newYoutubeResponseAsResultOfSearch = getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=newUserSearch)
-            return youtubeSongDownload(youtubePageResponse=newYoutubeResponseAsResultOfSearch, autoDownload=autoDownload, pathToDumpFolder=pathToDumpFolder)
+            return None
 
         # error handling for url selection
         while integerVideoId not in range(0, len(videoUrls)):
@@ -264,7 +262,7 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
                 print("Song name too similar to one or more of above! Skipping.")
                 return
 
-            songSelection = int(input("Which one do you want to hear? Type '404' to search youtube instead. "))
+            songSelection = int(input("Which one do you want to hear? Type '404' to search youtube instead: "))
 
             # play the song only if they want, otherwise continute with program.
             if songSelection != 404:
@@ -280,6 +278,11 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
 
     response = getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
     songPath = youtubeSongDownload(youtubePageResponse=response, autoDownload=autoDownload, pathToDumpFolder=localDumpFolder)
+
+    while songPath == None:
+        searchFor = input('Please enter your more specific song: ')
+        newYoutubeResponseAsResultOfSearch = getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
+        songPath = youtubeSongDownload(youtubePageResponse=newYoutubeResponseAsResultOfSearch, autoDownload=autoDownload, pathToDumpFolder=localDumpFolder)
 
     # None none type is good news.. continue as normal
     if songPath != None:
@@ -352,7 +355,7 @@ def main(argv, pathToItunesAutoAdd={}):
     while continuePlaying != 'no':
         searchFor = input("Enter song(s).. separated by a ';' : ")
 
-        searchList = searchFor.split(';')
+        searchList = searchFor.split('; ')
 
         # take a list of songs
         for searchForSong in searchList:
