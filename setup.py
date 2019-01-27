@@ -6,12 +6,10 @@ setup(name='youtubetomp3',
     install_requires=[
      'requests',
      'bs4',
-     'vlc',
      'selenium',
      'tqdm',
      'eyed3',
      'click',
      'python-magic-bin==0.4.14',
-     'python-vlc',
      ],
 )

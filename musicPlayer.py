@@ -13,10 +13,13 @@ import iTunesSearch
 
 # Change log
 
-# Cboin v 1.1 -- added iTunesSearch functionality and worked on excpetion handling w/ try catch / userinput
+# Cboin v 1.0.1 -- released to lakes computer for tests.
+# Added smart search to include artists, and multi song searches.
+# Also added autoDownload mode to be fully functional
 
-def youtubeSongDownload(songName, searchQuery={'search_query':''}, autoDownload=False, pathToDumpFolder=''):
-    videoUrls = []
+# Cboin v 1.0 -- added iTunesSearch functionality and worked on excpetion handling w/ try catch / userinput
+
+def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
     # get absolute path to file so the script csan be executed from anywhr
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
     pathToDatabase = os.path.join(pathToDirectory,'BasicWebParser', 'database.json')
@@ -29,7 +32,12 @@ def youtubeSongDownload(songName, searchQuery={'search_query':''}, autoDownload=
     youtubeSession = Logins.WebLoginandParse(websiteData, 'Youtube')
 
     # perform search of youtube...
-    response = youtubeSession.enterSearchForm(youtubeSession.urls['homePage'], youtubeSession.urls['serviceSearch'], searchQuery)
+    return youtubeSession.enterSearchForm(youtubeSession.urls['homePage'], youtubeSession.urls['serviceSearch'], searchQuery)
+
+
+def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolder=''):
+    videoUrls = []
+
 
     # open youtube response with selenium to ensure javascript loads
     options = webdriver.ChromeOptions()
@@ -38,7 +46,7 @@ def youtubeSongDownload(songName, searchQuery={'search_query':''}, autoDownload=
     options.add_argument('--disable-gpu')
     browser = webdriver.Chrome(options=options)
     # browser = webdriver.Safari()
-    browser.get(response.url)
+    browser.get(youtubePageResponse.url)
 
     pageText = BeautifulSoup(browser.page_source, 'html.parser')
 
@@ -51,7 +59,7 @@ def youtubeSongDownload(songName, searchQuery={'search_query':''}, autoDownload=
             title = videotitle.get('title')
             videoUrls.append((title, videoUrl))
             # prints the title of video pretilly
-            print('%d - %s: %s' %(i, title, videoUrl))
+            print(' %d - %s: %s' %(i, title, videoUrl))
             i += 1
 
     # append the watch url to the youtubetomp3 website and get with selenium so javascript loads
@@ -64,7 +72,13 @@ def youtubeSongDownload(songName, searchQuery={'search_query':''}, autoDownload=
         print("Converting: %s" % (videoSelection))
 
     else:
-        integerVideoId = int(input("Select the song you want by entering the number beside it. [%d to %d] " % (0, len(videoUrls)-1)))
+        integerVideoId = int(input("Select the song you want by entering the number beside it. [%d to %d].. '404' to search again " % (0, len(videoUrls)-1)))
+
+        ## Recursive redo.. if user isnt happy with search.. return the functions return type.
+        if integerVideoId == 404:
+            newUserSearch = input('Please enter your more specific song: ')
+            newYoutubeResponseAsResultOfSearch = getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=newUserSearch)
+            return youtubeSongDownload(youtubePageResponse=newYoutubeResponseAsResultOfSearch, autoDownload=autoDownload, pathToDumpFolder=pathToDumpFolder)
 
         # error handling for url selection
         while integerVideoId not in range(0, len(videoUrls)):
@@ -150,7 +164,7 @@ def dumpAndDownload(filepath, getRequestResponse, local_filename):
                                     , dynamic_ncols = True
                                     ):
                 fp.write(chunk)
-        
+
     return
 
 def namePlates(argument, OS):
@@ -171,7 +185,7 @@ def namePlates(argument, OS):
     if OS == 'win32':
         print("=---------For Windows----------=")
 
-    print("=------------V1.0--------------=")
+    print("=------------V1.0.1--------------=")
     print("================================")
 
     return OS
@@ -219,7 +233,8 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
 def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
     for songPath in songPaths:
         songNameSplit = songPath.split(os.sep)
-        if searchParameters.lower() in songNameSplit[len(songNameSplit)-1].lower():
+        # songNameSplit is list of itunes file path.. artist is -3 from length, song is -1
+        if searchParameters.lower() in songNameSplit[len(songNameSplit)-1].lower() + songNameSplit[len(songNameSplit)-3].lower():
             iTunesPaths['searchedSongResult'].append(songPath)
 
     return iTunesPaths
@@ -244,6 +259,11 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
                 print('  %d \t- %s: %s' % (i, songName[len(songName)-3], songName[len(songName)-1]))
                 i += 1
 
+            # autoDownload condition
+            if autoDownload == True:
+                print("Song name too similar to one or more of above! Skipping.")
+                return
+
             songSelection = int(input("Which one do you want to hear? Type '404' to search youtube instead. "))
 
             # play the song only if they want, otherwise continute with program.
@@ -257,14 +277,16 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
                 p.stop()
                 return
 
-    songPath = youtubeSongDownload(songName=searchFor, autoDownload=autoDownload, pathToDumpFolder=localDumpFolder)
+
+    response = getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
+    songPath = youtubeSongDownload(youtubePageResponse=response, autoDownload=autoDownload, pathToDumpFolder=localDumpFolder)
 
     # None none type is good news.. continue as normal
     if songPath != None:
         p = vlc.MediaPlayer(songPath)
         p.play()
 
-        trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchFor, limit=10, entity='song')
+        trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchFor, limit=10, entity='song', autoDownload=autoDownload)
 
         # parseItunesSearchApi() throws None return type if the user selects no properties
         if trackProperties != None:
@@ -274,7 +296,16 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
             print('Skipping tagging process (No itunes properties selected)')
 
         if iTunesInstalled == True:
-            userInput = input("Type 's' to save to itunes, anything else to save locally to 'dump' folder. ")
+
+            # autoDownload check
+            if autoDownload == False:
+                userInput = input("Type 's' to save to itunes, anything else to save locally to 'dump' folder. ")
+
+            else:
+                print("Saving to iTunes.. whether you like it or not.")
+                userInput = 's'
+
+
             if userInput == 's':
                 # dont know if i want this extra input
                 # input("Your file is ready to be moved.. just hit enter to stop playing.")
@@ -287,8 +318,13 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
                 p.stop()
 
         else:
-            input("Local File is ready. Hit enter to stop playing.")
-            p.stop()
+            # autoDownload check
+            if autoDownload == False:
+                input("Local File is ready. Hit enter to stop playing.")
+                p.stop()
+            else:
+                print("Saving locally. Whether you like it or not.")
+                p.stop()
 
 # 'auto' argv will get first video.  Manual will allow user to select video.. default behaviour
 # pass argv to youtubeSongDownload
@@ -314,20 +350,28 @@ def main(argv, pathToItunesAutoAdd={}):
     continuePlaying = ''
 
     while continuePlaying != 'no':
-        searchFor = input("Enter song: ")
-        iTunesPaths = setItunesPaths(operatingSystem, searchFor=searchFor)
-        # '*.*' means anyfilename, anyfiletype
-        # /*/* gets through artist, then album or itunes folder structure
-        if iTunesPaths == None:
-            runMainWithOrWithoutItunes(iTunesInstalled=False, searchFor=searchFor, autoDownload=autoDownload, localDumpFolder=localDumpFolder, iTunesPaths=iTunesPaths)
+        searchFor = input("Enter song(s).. separated by a ';' : ")
 
-        else:
-            runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor=searchFor, autoDownload=autoDownload, localDumpFolder=localDumpFolder, iTunesPaths=iTunesPaths)
+        searchList = searchFor.split(';')
+
+        # take a list of songs
+        for searchForSong in searchList:
+            print(" - Running program for: ", searchForSong)
+            iTunesPaths = setItunesPaths(operatingSystem, searchFor=searchForSong)
+            # '*.*' means anyfilename, anyfiletype
+            # /*/* gets through artist, then album or itunes folder structure
+            if iTunesPaths == None:
+                runMainWithOrWithoutItunes(iTunesInstalled=False, searchFor=searchForSong, autoDownload=autoDownload, localDumpFolder=localDumpFolder, iTunesPaths=iTunesPaths)
+
+            else:
+                runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor=searchForSong, autoDownload=autoDownload, localDumpFolder=localDumpFolder, iTunesPaths=iTunesPaths)
+
+            print('=----------Done Cycle--------=')
 
         continuePlaying = input('Want to go again (yes/no): ')
 
     print("================================")
-    print("=========Have a fine day========")
+    print("=--------Have a fine day-------=")
     print("================================")
 
 

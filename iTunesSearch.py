@@ -74,8 +74,9 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
     audiofile.tag.save()
 
     return dictionaryOfTags[trackName]
+
 # entity is usually song for searching songs
-def parseItunesSearchApi(searchVariable='', limit=20, entity=''):
+def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=False):
     parsedResultsList = []
     trackName = 'trackName'
     artistName = 'artistName'
@@ -106,7 +107,19 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity=''):
         prettyPrinter(parsedResultsList)
 
     print('Select the number for the properties you want.. [%d to %d]'% (0, len(parsedResultsList)-1))
-    trackPropertySelectionNumber = int(input('Nothing here? -- type 404. Save without properties -- Type 405: '))
+
+    # autoDownload check
+    if autoDownload == False:
+        trackPropertySelectionNumber = int(input('Nothing here? -- type 404. Save without properties -- Type 405: '))
+
+    # autodownload true, set no properties.. continue on
+    else:
+        if len(parsedResultsList) == 0:
+
+            trackPropertySelectionNumber = 405
+
+        else:
+            trackPropertySelectionNumber = 0
 
     # if nonetype, skip the call to mp3ID3Tagger() in your code
     if trackPropertySelectionNumber == 405:
@@ -124,9 +137,9 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity=''):
 
     trackProperties = parsedResultsList[trackPropertySelectionNumber]
 
-    print('You chose item: %d' % (trackPropertySelectionNumber))
+    print('Selecting item: %d' % (trackPropertySelectionNumber))
     for k,v in trackProperties.items():
-        print(k + ' : ' + v)
+        print(' - ' + k + ' : ' + v)
 
     return trackProperties
 
