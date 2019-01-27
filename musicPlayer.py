@@ -150,7 +150,7 @@ def dumpAndDownload(filepath, getRequestResponse, local_filename):
                                     , dynamic_ncols = True
                                     ):
                 fp.write(chunk)
-
+        
     return
 
 def namePlates(argument, OS):

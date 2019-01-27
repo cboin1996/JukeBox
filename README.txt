@@ -5,7 +5,7 @@ youtubeMP3 V 1.0 Official Release
 
 Once you have placed the package in your desired folder:
 
-WINDOWS: 
+WINDOWS:
 
 
 cd to the folder and type:         py -3 setup.py install
@@ -14,6 +14,7 @@ If libmagic does not install, try: py -3 -m pip install python-libmagic
 If above does not work — try:      py -3 -m pip install python-magic-bin==0.4.14
 For windows vlc to function:       py -3 -m pip install python-vlc
 Its possible you will need:	   py -3 -m pip install click
+Its possible and likely you will need: py -3 -m pip install cffi==1.7.0
 
 
 
@@ -26,6 +27,7 @@ If libmagic does not install, try: pip3 install python-libmagic
 If above does not work — try:      pip3 install python-magic-bin==0.4.14
 If above does not work — try:      pip3 install python-magic
 Its possible you will need:	   pip3 install click
+cffi gives a lot of trouble: try pip install cffi
 
 
 GENERAL Downloads:
@@ -39,4 +41,3 @@ GENERAL Downloads:
     Windows -- update PATH -- right click mycomputer, advanced settings, environment   	variables, etc.  Follow tutorial for detailed steps.  Restart cmd when done.
 
     You must install download VLC
-
