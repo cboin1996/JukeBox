@@ -13,7 +13,5 @@ setup(name='youtubetomp3',
      'click',
      'python-magic-bin==0.4.14',
      'python-vlc',
-     'python-libmagic',
-     'cffi==1.7.0'
      ],
 )

@@ -10,24 +10,15 @@ WINDOWS:
 
 cd to the folder and type:         py -3 setup.py install
 
-If libmagic does not install, try: py -3 -m pip install python-libmagic
+before anything: please try:       py -3 -m pip uninstall python-magic
 If above does not work — try:      py -3 -m pip install python-magic-bin==0.4.14
-For windows vlc to function:       py -3 -m pip install python-vlc
-Its possible you will need:	   py -3 -m pip install click
-Its possible and likely you will need: py -3 -m pip install cffi==1.7.0
-
-
-
 
 MACOS:
 
 cd to the folder and type:         python3 setup.py install
 
 If libmagic does not install, try: pip3 install python-libmagic
-If above does not work — try:      pip3 install python-magic-bin==0.4.14
-If above does not work — try:      pip3 install python-magic
-Its possible you will need:	   pip3 install click
-cffi gives a lot of trouble: try pip install cffi
+
 
 
 GENERAL Downloads:
