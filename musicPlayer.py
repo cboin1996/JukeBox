@@ -291,6 +291,15 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
 
         trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchFor, limit=10, entity='song', autoDownload=autoDownload)
 
+        # this checks to see if the user is happy with the song.
+
+        continueToSaveOrNot = input("Hit enter if this sounds right. To try another song -- enter (no): ")
+
+        if continueToSaveOrNot == 'no':
+            print('Returning to beginning.')
+            p.stop()
+            return runMainWithOrWithoutItunes(iTunesInstalled=iTunesInstalled, searchFor=searchFor, autoDownload=autoDownload, localDumpFolder=localDumpFolder, iTunesPaths=iTunesPaths)
+
         # parseItunesSearchApi() throws None return type if the user selects no properties
         if trackProperties != None:
             properSongName = iTunesSearch.mp3ID3Tagger(mp3Path=songPath, dictionaryOfTags=trackProperties)
