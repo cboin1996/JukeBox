@@ -140,6 +140,7 @@ def removeIllegalCharacters(fileName):
 
 def dumpAndDownload(filepath, getRequestResponse, local_filename):
     # check for content length.. reuired for progress bar
+
     file_size = getRequestResponse.headers.get('Content-Length')
 
     with open(filepath, 'wb') as fp:
@@ -228,7 +229,9 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
 
     return iTunesPaths
 
+
 def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
+
     for songPath in songPaths:
         songNameSplit = songPath.split(os.sep)
         # songNameSplit is list of itunes file path.. artist is -3 from length, song is -1
@@ -291,14 +294,14 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
 
         trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchFor, limit=10, entity='song', autoDownload=autoDownload)
 
-        # this checks to see if the user is happy with the song.
+        # this checks to see if the user is happy with the song, only if in select edition
+        if autoDownload == False:
+            continueToSaveOrNot = input("Hit enter if this sounds right. To try another song -- enter (no): ")
 
-        continueToSaveOrNot = input("Hit enter if this sounds right. To try another song -- enter (no): ")
-
-        if continueToSaveOrNot == 'no':
-            print('Returning to beginning.')
-            p.stop()
-            return runMainWithOrWithoutItunes(iTunesInstalled=iTunesInstalled, searchFor=searchFor, autoDownload=autoDownload, localDumpFolder=localDumpFolder, iTunesPaths=iTunesPaths)
+            if continueToSaveOrNot == 'no':
+                print('Returning to beginning.')
+                p.stop()
+                return runMainWithOrWithoutItunes(iTunesInstalled=iTunesInstalled, searchFor=searchFor, autoDownload=autoDownload, localDumpFolder=localDumpFolder, iTunesPaths=iTunesPaths)
 
         # parseItunesSearchApi() throws None return type if the user selects no properties
         if trackProperties != None:
