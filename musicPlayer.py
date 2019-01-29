@@ -12,169 +12,19 @@ import shutil, os, tqdm, sys
 import iTunesSearch
 import speech_recognition as sr
 import SpeechRecognitionToText
+import time
+from Youtube import Youtube
 
 # Change log
+
+# Cboin v 1.0.2 -- youtubetomp3 website tag changed to target=_blank,
+# made download smarter by retrying if taking too long
 
 # Cboin v 1.0.1 -- released to lakes computer for tests.
 # Added smart search to include artists, and multi song searches.
 # Also added autoDownload mode to be fully functional
 
 # Cboin v 1.0 -- added iTunesSearch functionality and worked on excpetion handling w/ try catch / userinput
-
-def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
-    # get absolute path to file so the script csan be executed from anywhr
-    pathToDirectory= os.path.dirname(os.path.realpath(__file__))
-    pathToDatabase = os.path.join(pathToDirectory,'BasicWebParser', 'database.json')
-
-    with open(pathToDatabase, "r") as read_file:
-        websiteData = json.load(read_file)
-
-    searchQuery['search_query'] = songName
-    #initialize the class to use Youtube as the website
-    youtubeSession = Logins.WebLoginandParse(websiteData, 'Youtube')
-
-    # perform search of youtube...
-    return youtubeSession.enterSearchForm(youtubeSession.urls['homePage'], youtubeSession.urls['serviceSearch'], searchQuery)
-
-
-def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolder=''):
-    videoUrls = []
-
-
-    # open youtube response with selenium to ensure javascript loads
-    options = webdriver.ChromeOptions()
-    # add options to make the output pretty, no browser show and no bs outputs
-    options.add_argument('headless')
-    options.add_argument('--disable-gpu')
-    browser = webdriver.Chrome(options=options)
-    # browser = webdriver.Safari()
-    browser.get(youtubePageResponse.url)
-
-    pageText = BeautifulSoup(browser.page_source, 'html.parser')
-
-    # grab the list of video titles from the searched page
-    print("Found these videos: ")
-    i = 0
-    for videotitle in pageText.find_all(id='video-title'):
-        if videotitle.get('href') != None:
-            videoUrl = 'https://www.youtube.com' + videotitle.get('href')
-            title = videotitle.get('title')
-            videoUrls.append((title, videoUrl))
-            # prints the title of video pretilly
-            print(' %d - %s: %s' %(i, title, videoUrl))
-            i += 1
-
-    # append the watch url to the youtubetomp3 website and get with selenium so javascript loads
-    # urls stored as list of tuples
-    # check for command line argv -- autoDownload
-    # if autoDownload is on, grab first URL. Else, user selects...
-    if autoDownload == True:
-        videoSelection = videoUrls[0][0]
-        browser.get('https://www.easy-youtube-mp3.com/convert.php?v='+videoUrls[0][1])
-        print("Converting: %s" % (videoSelection))
-
-    else:
-        integerVideoId = int(input("Select the song you want by entering the number beside it. [%d to %d].. '404' to search again: " % (0, len(videoUrls)-1)))
-
-        ## Error handle for function.. check None type in Main
-        if integerVideoId == 404:
-            return None
-
-        # error handling for url selection
-        while integerVideoId not in range(0, len(videoUrls)):
-            integerVideoId = int(input("Try Again.. [%d to %d] " % (0, len(videoUrls)-1)))
-
-        videoSelection = videoUrls[integerVideoId][0]
-        browser.get('https://www.easy-youtube-mp3.com/convert.php?v='+videoUrls[integerVideoId][1])
-        print("Converting: %s" % (videoSelection))
-
-    # ensure the javascript has time to run, when the id="Download" appears it is okay to close window.
-    wait = WebDriverWait(browser, 10)
-    # page fully loaded upon download id being present
-    element = wait.until(EC.presence_of_element_located((By.ID, 'Download')))
-
-    pageText = BeautifulSoup(browser.page_source, 'html.parser')
-
-    # tag a with attribute download='file.mp3' containt the downloadlink at href attr
-    downloadTag = pageText.find('a', target='_blank')
-
-    try:
-        downloadLink = downloadTag.get('href')
-
-    except:
-        error = pageText.find('div', class_="alert alert-warning")
-        print("Something went wrong on the youtubetomp3 website: ")
-
-        print(error.contents)
-
-        print("I swear this doesn't happen to me often.")
-        print("Returning to song search.")
-
-        return None
-
-
-    print("Downloading from: ", downloadLink)
-
-    browser.close()
-
-    downloadResponse = requests.get(downloadLink, stream=True)
-
-    # must strip the illegal characters from the videoTitle for saving to work smoothly
-    print('Removing any illegal characters in filename.')
-    videoSelection = removeIllegalCharacters(videoSelection)
-
-    if downloadResponse.status_code == 200:
-        localSaveFileToPath = os.path.join(pathToDumpFolder, videoSelection + '.mp3')
-        dumpAndDownload(filepath=localSaveFileToPath, getRequestResponse=downloadResponse, local_filename=videoSelection)
-
-    else:
-        print("I just couldnt do it... something went wrong -- Response Code: ", downloadResponse)
-        return None
-
-    print("Done. Playing.. " + videoSelection + ".mp3" + " Now. Enjoy")
-    print("Located currently at: ", os.path.join(localSaveFileToPath))
-
-    return os.path.join(localSaveFileToPath)
-
-def removeIllegalCharacters(fileName):
-
-    return fileName.replace('\\', '').replace('"', '').replace('/', '').replace('*', '').replace('?', '').replace('<', '').replace('>', '').replace('|', '').replace("'", '')
-
-
-def dumpAndDownload(filepath, getRequestResponse, local_filename):
-    # check for content length.. reuired for progress bar
-    chunk = 1
-    chunk_size=1024
-
-    file_size = getRequestResponse.headers.get('Content-Length')
-
-    with open(filepath, 'wb') as fp:
-
-        if file_size == None:
-            print("No file size.. so no progress bar.")
-            print('Downloading', end='')
-            for chunk in getRequestResponse.iter_content(chunk_size=chunk_size):
-                print('. ')
-                fp.write(chunk)
-
-        else:
-            file_size = int(file_size)
-            chunk = 1
-            chunk_size=1024
-            num_bars = int(file_size / chunk_size)
-            for chunk in tqdm.tqdm(
-                                    getRequestResponse.iter_content(chunk_size=chunk_size)
-                                    , total= num_bars
-                                    , unit = 'KB'
-                                    , desc = local_filename
-                                    , leave = True # progressbar stays
-                                    , dynamic_ncols = True
-                                    ):
-                fp.write(chunk)
-
-    return
-
-# def getDownloadSpeed(chunkSize=0, ):
 
 def namePlates(argument, argument2, OS):
     print("================================")
@@ -248,7 +98,7 @@ def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
     for songPath in songPaths:
         songNameSplit = songPath.split(os.sep)
         formattedName = songNameSplit[len(songNameSplit)-1].lower() + songNameSplit[len(songNameSplit)-3].lower()
-        formattedName = removeIllegalCharacters(formattedName)
+        formattedName = Youtube.removeIllegalCharacters(formattedName)
         # songNameSplit is list of itunes file path.. artist is -3 from length, song is -1
         if searchParameters.lower() in formattedName.lower():
             iTunesPaths['searchedSongResult'].append(songPath)
@@ -308,21 +158,25 @@ def runMainWithOrWithoutItunes(microPhone,
                 return
 
 
-    response = getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
-    songPath = youtubeSongDownload(youtubePageResponse=response, autoDownload=autoDownload, pathToDumpFolder=localDumpFolder)
+    response = Youtube.getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
+    youtubeResponseObject = Youtube.youtubeSongDownload(youtubePageResponse=response, autoDownload=autoDownload, pathToDumpFolder=localDumpFolder)
 
     # youtubeSongDownload returns none if there is no songPath or if user wants a more specific search
-    while songPath == None:
+    while youtubeResponseObject['error'] == '404':
         searchFor = input('Please enter your more specific song: ')
-        newYoutubeResponseAsResultOfSearch = getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
-        songPath = youtubeSongDownload(youtubePageResponse=newYoutubeResponseAsResultOfSearch, autoDownload=autoDownload, pathToDumpFolder=localDumpFolder)
+        newYoutubeResponseAsResultOfSearch = Youtube.getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
+        songPath = Youtube.youtubeSongDownload(youtubePageResponse=newYoutubeResponseAsResultOfSearch,
+                                                autoDownload=autoDownload,
+                                                pathToDumpFolder=localDumpFolder)
 
     # No none type is good news.. continue as normal
-    if songPath != None:
-        p = vlc.MediaPlayer(songPath)
+    if youtubeResponseObject['songPath'] != None:
+        p = vlc.MediaPlayer(youtubeResponseObject['songPath'])
         p.play()
 
-        trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchFor, limit=10, entity='song', autoDownload=autoDownload)
+        trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchFor,
+                                                            limit=10, entity='song',
+                                                            autoDownload=autoDownload)
 
         # this checks to see if the user is happy with the song, only if in select edition
         if autoDownload == False:
@@ -331,11 +185,16 @@ def runMainWithOrWithoutItunes(microPhone,
             if continueToSaveOrNot == 'no':
                 print('Returning to beginning.')
                 p.stop()
-                return runMainWithOrWithoutItunes(iTunesInstalled=iTunesInstalled, searchFor=searchFor, autoDownload=autoDownload, localDumpFolder=localDumpFolder, iTunesPaths=iTunesPaths)
+                return runMainWithOrWithoutItunes(iTunesInstalled=iTunesInstalled,
+                                                    searchFor=searchFor,
+                                                    autoDownload=autoDownload,
+                                                    localDumpFolder=localDumpFolder,
+                                                    iTunesPaths=iTunesPaths)
 
         # parseItunesSearchApi() throws None return type if the user selects no properties
         if trackProperties != None:
-            properSongName = iTunesSearch.mp3ID3Tagger(mp3Path=songPath, dictionaryOfTags=trackProperties)
+            properSongName = iTunesSearch.mp3ID3Tagger(mp3Path=youtubeResponseObject['songPath'],
+                                                        dictionaryOfTags=trackProperties)
 
         else:
             print('Skipping tagging process (No itunes properties selected)')
@@ -355,7 +214,7 @@ def runMainWithOrWithoutItunes(microPhone,
                 # dont know if i want this extra input
                 # input("Your file is ready to be moved.. just hit enter to stop playing.")
                 p.stop()
-                shutil.move(songPath, iTunesPaths['autoAdd'])
+                shutil.move(youtubeResponseObject['songPath'], iTunesPaths['autoAdd'])
                 print("Moved your file to iTunes.")
 
             else:
@@ -449,7 +308,7 @@ def main(argv, pathToItunesAutoAdd={}):
 
             print('=----------Done Cycle--------=')
 
-        if speechRecog == False:
+        if speechRecog == False and autoDownload == False:
             continuePlaying = input('Want to go again (yes/no): ')
 
         if speechRecog == True:
