@@ -10,6 +10,8 @@ from selenium.webdriver.support import expected_conditions as EC
 import glob
 import shutil, os, tqdm, sys
 import iTunesSearch
+import speech_recognition as sr
+import SpeechRecognitionToText
 
 # Change log
 
@@ -94,10 +96,11 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     pageText = BeautifulSoup(browser.page_source, 'html.parser')
 
     # tag a with attribute download='file.mp3' containt the downloadlink at href attr
-    downloadTag = pageText.find('a', download='file.mp3')
+    downloadTag = pageText.find('a', target='_blank')
 
     try:
         downloadLink = downloadTag.get('href')
+
     except:
         error = pageText.find('div', class_="alert alert-warning")
         print("Something went wrong on the youtubetomp3 website: ")
@@ -117,6 +120,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     downloadResponse = requests.get(downloadLink, stream=True)
 
     # must strip the illegal characters from the videoTitle for saving to work smoothly
+    print('Removing any illegal characters in filename.')
     videoSelection = removeIllegalCharacters(videoSelection)
 
     if downloadResponse.status_code == 200:
@@ -133,21 +137,25 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     return os.path.join(localSaveFileToPath)
 
 def removeIllegalCharacters(fileName):
-    print('Scanning and removing illegal characters from filename (if any)')
 
-    return fileName.replace('\\', '').replace('"', '').replace('/', '').replace('*', '').replace('?', '').replace('<', '').replace('>', '').replace('|', '')
+    return fileName.replace('\\', '').replace('"', '').replace('/', '').replace('*', '').replace('?', '').replace('<', '').replace('>', '').replace('|', '').replace("'", '')
 
 
 def dumpAndDownload(filepath, getRequestResponse, local_filename):
     # check for content length.. reuired for progress bar
+    chunk = 1
+    chunk_size=1024
 
     file_size = getRequestResponse.headers.get('Content-Length')
 
     with open(filepath, 'wb') as fp:
 
         if file_size == None:
-            print("No file size.. so no progress bar.  Downloading.")
-            fp.write(getRequestResponse.content)
+            print("No file size.. so no progress bar.")
+            print('Downloading', end='')
+            for chunk in getRequestResponse.iter_content(chunk_size=chunk_size):
+                print('. ')
+                fp.write(chunk)
 
         else:
             file_size = int(file_size)
@@ -166,7 +174,9 @@ def dumpAndDownload(filepath, getRequestResponse, local_filename):
 
     return
 
-def namePlates(argument, OS):
+# def getDownloadSpeed(chunkSize=0, ):
+
+def namePlates(argument, argument2, OS):
     print("================================")
     print("=-Welcome to the cBoin JukeBox-=")
 
@@ -178,13 +188,16 @@ def namePlates(argument, OS):
     if argument == False:
         print("=--------Select Edition--------=")
 
+    if argument2 == True:
+        print("=------Voice Edition Beta------=")
+
     if OS == 'darwin':
         print("=---------For MAC OS X---------=")
 
     if OS == 'win32':
         print("=---------For Windows----------=")
 
-    print("=------------V1.0.1--------------=")
+    print("=-----------V1.0.1-------------=")
     print("================================")
 
     return OS
@@ -234,15 +247,24 @@ def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
 
     for songPath in songPaths:
         songNameSplit = songPath.split(os.sep)
+        formattedName = songNameSplit[len(songNameSplit)-1].lower() + songNameSplit[len(songNameSplit)-3].lower()
+        formattedName = removeIllegalCharacters(formattedName)
         # songNameSplit is list of itunes file path.. artist is -3 from length, song is -1
-        if searchParameters.lower() in songNameSplit[len(songNameSplit)-1].lower() + songNameSplit[len(songNameSplit)-3].lower():
+        if searchParameters.lower() in formattedName.lower():
             iTunesPaths['searchedSongResult'].append(songPath)
 
     return iTunesPaths
 
 # this function allows the module to be ran with or without itunes installed.
 # if iTunes is not installed, the files are tagged and stored in dump folder.
-def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=False, localDumpFolder='', iTunesPaths={}):
+def runMainWithOrWithoutItunes(microPhone,
+                                recognizer,
+                                iTunesInstalled=True,
+                                searchFor='',
+                                autoDownload=False,
+                                localDumpFolder='',
+                                iTunesPaths={},
+                                speechRecogOn=False):
 
     if iTunesInstalled == True:
 
@@ -265,7 +287,12 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
                 print("Song name too similar to one or more of above! Skipping.")
                 return
 
-            songSelection = int(input("Which one do you want to hear? Type '404' to search youtube instead: "))
+            if speechRecogOn == False:
+                songSelection = int(input("Which one do you want to hear? Type '404' to search youtube instead: "))
+
+            if speechRecogOn == True:
+                songSelection = 0
+                print('Playing: %s: %s' % (songName[len(songName)-3], songName[len(songName)-1]))
 
             # play the song only if they want, otherwise continute with program.
             if songSelection != 404:
@@ -274,20 +301,23 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
 
                 p = vlc.MediaPlayer(iTunesPaths['searchedSongResult'][songSelection])
                 p.play()
+
                 userInput = input("Hit Enter to stop playing... ")
                 p.stop()
+
                 return
 
 
     response = getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
     songPath = youtubeSongDownload(youtubePageResponse=response, autoDownload=autoDownload, pathToDumpFolder=localDumpFolder)
 
+    # youtubeSongDownload returns none if there is no songPath or if user wants a more specific search
     while songPath == None:
         searchFor = input('Please enter your more specific song: ')
         newYoutubeResponseAsResultOfSearch = getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
         songPath = youtubeSongDownload(youtubePageResponse=newYoutubeResponseAsResultOfSearch, autoDownload=autoDownload, pathToDumpFolder=localDumpFolder)
 
-    # None none type is good news.. continue as normal
+    # No none type is good news.. continue as normal
     if songPath != None:
         p = vlc.MediaPlayer(songPath)
         p.play()
@@ -344,6 +374,11 @@ def runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor='', autoDownload=
 # 'auto' argv will get first video.  Manual will allow user to select video.. default behaviour
 # pass argv to youtubeSongDownload
 def main(argv, pathToItunesAutoAdd={}):
+    autoDownload = False
+    speechRecog = False
+    searchList = []
+    mic = sr.Microphone()
+    r = sr.Recognizer()
     # get the obsolute file path for the machine running the script
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
@@ -356,18 +391,35 @@ def main(argv, pathToItunesAutoAdd={}):
     if len(argv) > 1:
         if argv[1] == 'auto':
             autoDownload = True
-    else:
-        autoDownload = False
+        if argv[1] == 'voice':
+            speechRecog = True
+
 
     # determine which OS we are operating on.  Work with that OS to set
-    operatingSystem = namePlates(autoDownload, sys.platform)
+    operatingSystem = namePlates(autoDownload, speechRecog, sys.platform)
 
     continuePlaying = ''
 
     while continuePlaying != 'no':
-        searchFor = input("Enter song(s).. separated by a ';' : ")
+        if speechRecog == False:
+            searchFor = input("Enter song(s).. separated by a ';' : ")
 
-        searchList = searchFor.split('; ')
+            searchList = searchFor.split('; ')
+
+        # run the speechRecog edition -- BETA
+        else:
+            print('Say a songname you want to hear.')
+            response = SpeechRecognitionToText.recognize_speech_from_mic(r, mic)
+
+            while response['success'] == False:
+                print('Error. Try again')
+                response = SpeechRecognitionToText.recognize_speech_from_mic(r, mic)
+
+                if response['success'] == True:
+                    searchList.append(response["transcription"])
+
+            if response['success'] == True:
+                searchList.append(response["transcription"])
 
         # take a list of songs
         for searchForSong in searchList:
@@ -376,14 +428,37 @@ def main(argv, pathToItunesAutoAdd={}):
             # '*.*' means anyfilename, anyfiletype
             # /*/* gets through artist, then album or itunes folder structure
             if iTunesPaths == None:
-                runMainWithOrWithoutItunes(iTunesInstalled=False, searchFor=searchForSong, autoDownload=autoDownload, localDumpFolder=localDumpFolder, iTunesPaths=iTunesPaths)
+                runMainWithOrWithoutItunes(microPhone=mic,
+                                            recognizer=r,
+                                            iTunesInstalled=False,
+                                            searchFor=searchForSong,
+                                            autoDownload=autoDownload,
+                                            localDumpFolder=localDumpFolder,
+                                            iTunesPaths=iTunesPaths,
+                                            speechRecogOn=speechRecog)
 
             else:
-                runMainWithOrWithoutItunes(iTunesInstalled=True, searchFor=searchForSong, autoDownload=autoDownload, localDumpFolder=localDumpFolder, iTunesPaths=iTunesPaths)
+                runMainWithOrWithoutItunes(microPhone=mic,
+                                            recognizer=r,
+                                            iTunesInstalled=True,
+                                            searchFor=searchForSong,
+                                            autoDownload=autoDownload,
+                                            localDumpFolder=localDumpFolder,
+                                            iTunesPaths=iTunesPaths,
+                                            speechRecogOn=speechRecog)
 
             print('=----------Done Cycle--------=')
 
-        continuePlaying = input('Want to go again (yes/no): ')
+        if speechRecog == False:
+            continuePlaying = input('Want to go again (yes/no): ')
+
+        if speechRecog == True:
+            print('Want to go again (yes/no)? ', end='')
+            response = SpeechRecognitionToText.recognize_speech_from_mic(r, mic)
+            continuePlaying = response["transcription"]
+            print('You Said: ', continuePlaying)
+
+
 
     print("================================")
     print("=--------Have a fine day-------=")

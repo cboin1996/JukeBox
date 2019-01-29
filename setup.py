@@ -11,5 +11,7 @@ setup(name='youtubetomp3',
      'eyed3',
      'click',
      'python-magic-bin==0.4.14',
+     'SpeechRecognition',
+     'pyaudio',
      ],
 )

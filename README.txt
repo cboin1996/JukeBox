@@ -22,6 +22,8 @@ If libmagic fails, try:            pip3 uninstall python-magic
 If above does not work — try:      pip3 install python-magic-bin==0.4.14
 
 MUST INSTALL VLC YOURSELF:         pip3 install vlc
+MUST INSTALL pyAudio YOURSELF:     brew install portaudio
+    				                       pip3 install pyaudio
 
 
 
