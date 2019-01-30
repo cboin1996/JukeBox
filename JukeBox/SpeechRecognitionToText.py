@@ -26,7 +26,7 @@ def recognize_speech_from_mic(recognizer, microphone):
     # adjust the recognizer sensitivity to ambient noise and record audio
     # from the microphone
     with microphone as source:
-        recognizer.adjust_for_ambient_noise(source, duration=0.5)
+        recognizer.adjust_for_ambient_noise(source, duration=3)
         print('Speak now human. I am your servant.')
         audio = recognizer.listen(source)
 
@@ -41,7 +41,7 @@ def recognize_speech_from_mic(recognizer, microphone):
     # if a RequestError or UnknownValueError exception is caught,
     #     update the response object accordingly
     try:
-        response["transcription"] = recognizer.recognize_google(audio)
+        response["transcription"] = recognizer.recognize_sphinx(audio)
     except sr.RequestError:
         # API was unreachable or unresponsive
         response["success"] = False

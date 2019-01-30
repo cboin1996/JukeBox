@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='youtubetomp3',
       version='1.0',
@@ -13,6 +13,6 @@ setup(name='youtubetomp3',
      'python-magic-bin==0.4.14',
      'SpeechRecognition',
      'pyaudio',
-     'time',
      ],
+     packages=find_packages()
 )

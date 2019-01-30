@@ -141,7 +141,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         return responseObject
 
     if successOrFailureDownloading == 'failure':
-        print('I have failed downloading.. Too many tries.')
+        print('I have failed downloading.. It took too many tries.')
         responseObject['success'] = False
         responseObject['error'] = 'dlFail'
         return responseObject
@@ -178,7 +178,6 @@ def dumpAndDownload(filepath, downloadLink, local_filename, counter=0, waitTime=
                     print('Slow download.. trying again.. took >%d seconds' % (nextTime - firstTime))
 
                     if counter == 0:
-                        print('Tried a few times.. but the downloads are slow.')
                         return failure
 
                     else:

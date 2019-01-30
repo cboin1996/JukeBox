@@ -232,12 +232,9 @@ def runMainWithOrWithoutItunes(microPhone,
 
 # 'auto' argv will get first video.  Manual will allow user to select video.. default behaviour
 # pass argv to youtubeSongDownload
-def main(argv, pathToItunesAutoAdd={}):
+def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechInputList=[], speechRecog=False):
     autoDownload = False
-    speechRecog = False
     searchList = []
-    mic = sr.Microphone()
-    r = sr.Recognizer()
     # get the obsolute file path for the machine running the script
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
@@ -250,9 +247,6 @@ def main(argv, pathToItunesAutoAdd={}):
     if len(argv) > 1:
         if argv[1] == 'auto':
             autoDownload = True
-        if argv[1] == 'voice':
-            speechRecog = True
-
 
     # determine which OS we are operating on.  Work with that OS to set
     operatingSystem = namePlates(autoDownload, speechRecog, sys.platform)
@@ -267,18 +261,7 @@ def main(argv, pathToItunesAutoAdd={}):
 
         # run the speechRecog edition -- BETA
         else:
-            print('Say a songname you want to hear.')
-            response = SpeechRecognitionToText.recognize_speech_from_mic(r, mic)
-
-            while response['success'] == False:
-                print('Error. Try again')
-                response = SpeechRecognitionToText.recognize_speech_from_mic(r, mic)
-
-                if response['success'] == True:
-                    searchList.append(response["transcription"])
-
-            if response['success'] == True:
-                searchList.append(response["transcription"])
+            searchList = speechInputList
 
         # take a list of songs
         for searchForSong in searchList:
@@ -308,7 +291,7 @@ def main(argv, pathToItunesAutoAdd={}):
 
             print('=----------Done Cycle--------=')
 
-        if speechRecog == False and autoDownload == False:
+        if speechRecog == False:
             continuePlaying = input('Want to go again (yes/no): ')
 
         if speechRecog == True:
