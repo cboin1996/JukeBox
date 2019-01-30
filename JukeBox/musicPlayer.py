@@ -138,11 +138,15 @@ def runMainWithOrWithoutItunes(microPhone,
                 return
 
             if speechRecogOn == False:
-                songSelection = int(input("Which one do you want to hear? Type '404' to search youtube instead: "))
+                songSelection = int(input("Which one do you want to hear? Type '404' to search youtube instead. '405' to search again: "))
 
             if speechRecogOn == True:
                 songSelection = 0
                 print('Playing: %s: %s' % (songName[len(songName)-3], songName[len(songName)-1]))
+
+            if songSelection == 405:
+                print('Returning to beginning.')
+                return
 
             # play the song only if they want, otherwise continute with program.
             if songSelection != 404:
@@ -150,12 +154,14 @@ def runMainWithOrWithoutItunes(microPhone,
                     songSelection = int(input('Invalid Input. Try Again'))
 
                 p = vlc.MediaPlayer(iTunesPaths['searchedSongResult'][songSelection])
+                time.sleep(1.5) #startup time
                 p.play()
 
                 userInput = input("Hit Enter to stop playing... ")
                 p.stop()
 
                 return
+
 
 
     response = Youtube.getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
@@ -172,6 +178,7 @@ def runMainWithOrWithoutItunes(microPhone,
     # No none type is good news.. continue as normal
     if youtubeResponseObject['songPath'] != None:
         p = vlc.MediaPlayer(youtubeResponseObject['songPath'])
+        time.sleep(1.5) #startup time
         p.play()
 
         trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchFor,
@@ -185,7 +192,9 @@ def runMainWithOrWithoutItunes(microPhone,
             if continueToSaveOrNot == 'no':
                 print('Returning to beginning.')
                 p.stop()
-                return runMainWithOrWithoutItunes(iTunesInstalled=iTunesInstalled,
+                return runMainWithOrWithoutItunes(microPhone=microPhone,
+                                                    recognizer=recognizer,
+                                                    iTunesInstalled=iTunesInstalled,
                                                     searchFor=searchFor,
                                                     autoDownload=autoDownload,
                                                     localDumpFolder=localDumpFolder,
