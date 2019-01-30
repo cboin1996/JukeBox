@@ -11,7 +11,7 @@ import glob
 import shutil, os, tqdm, sys
 import iTunesSearch
 import speech_recognition as sr
-import SpeechRecognitionToText
+import SpeechAnalysis
 import time
 
 def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):

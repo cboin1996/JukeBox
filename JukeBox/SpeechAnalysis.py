@@ -1,8 +1,9 @@
-import random
-import time
+import iTunesSearch
+import musicPlayer
 
 import speech_recognition as sr
-
+import random
+import time
 
 def recognize_speech_from_mic(recognizer, microphone):
     """Transcribe speech from recorded from `microphone`.
@@ -52,9 +53,28 @@ def recognize_speech_from_mic(recognizer, microphone):
 
     return response
 
+
+def main(mic, r, searchList=[]):
+
+
+    print('Hold on, I am adjusting to the ambience of the room')
+    response = recognize_speech_from_mic(r, mic)
+
+    while response['success'] == False:
+        print('Error. Try again')
+        response = recognize_speech_from_mic(r, mic)
+
+        if response['success'] == True:
+            print('You said: ', response["transcription"])
+            searchList.append(response["transcription"])
+
+    if response['success'] == True:
+        print('You said: ', response['transcription'])
+        searchList.append(response["transcription"])
+
+    return searchList
+
 if __name__=="__main__":
     mic = sr.Microphone()
     r = sr.Recognizer()
-    text = recognize_speech_from_mic(r, mic)
-
-    print(text)
+    text = main(mic, r)

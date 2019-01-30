@@ -11,7 +11,7 @@ import glob
 import shutil, os, tqdm, sys
 import iTunesSearch
 import speech_recognition as sr
-import SpeechRecognitionToText
+import SpeechAnalysis
 import time
 from Youtube import Youtube
 
@@ -232,9 +232,14 @@ def runMainWithOrWithoutItunes(microPhone,
 
 # 'auto' argv will get first video.  Manual will allow user to select video.. default behaviour
 # pass argv to youtubeSongDownload
-def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechInputList=[], speechRecog=False):
+def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
     autoDownload = False
     searchList = []
+    # initialize for speechRecog
+
+    mic = sr.Microphone()
+    r = sr.Recognizer()
+
     # get the obsolute file path for the machine running the script
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
@@ -247,6 +252,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechInputList=[], 
     if len(argv) > 1:
         if argv[1] == 'auto':
             autoDownload = True
+        if argv[1] == 'voice':
+            speechRecog = True
 
     # determine which OS we are operating on.  Work with that OS to set
     operatingSystem = namePlates(autoDownload, speechRecog, sys.platform)
@@ -261,7 +268,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechInputList=[], 
 
         # run the speechRecog edition -- BETA
         else:
-            searchList = speechInputList
+            searchList = SpeechAnalysis.main(mic, r)
 
         # take a list of songs
         for searchForSong in searchList:
@@ -296,8 +303,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechInputList=[], 
 
         if speechRecog == True:
             print('Want to go again (yes/no)? ', end='')
-            response = SpeechRecognitionToText.recognize_speech_from_mic(r, mic)
-            continuePlaying = response["transcription"]
+            response = SpeechAnalysis.main(mic, r)
+            continuePlaying = response[0]
             print('You Said: ', continuePlaying)
 
 
