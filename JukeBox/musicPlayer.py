@@ -115,6 +115,8 @@ def runMainWithOrWithoutItunes(microPhone,
                                 localDumpFolder='',
                                 iTunesPaths={},
                                 speechRecogOn=False):
+    artists = [] # will hold list of artists
+    songNames = [] # will hold list of songNames
 
     if iTunesInstalled == True:
 
@@ -129,7 +131,9 @@ def runMainWithOrWithoutItunes(microPhone,
             i = 0
             for songPath in iTunesPaths['searchedSongResult']:
                 songName = songPath.split(os.sep)
-                print('  %d \t- %s: %s' % (i, songName[len(songName)-3], songName[len(songName)-1]))
+                artists.append(songName[len(songName)-3])
+                songNames.append(songName[len(songName)-1])
+                print('  %d \t- %s: %s' % (i, artists[i], songNames[i]))
                 i += 1
 
             # autoDownload condition
@@ -142,7 +146,6 @@ def runMainWithOrWithoutItunes(microPhone,
 
             if speechRecogOn == True:
                 songSelection = 0
-                print('Playing: %s: %s' % (songName[len(songName)-3], songName[len(songName)-1]))
 
             if songSelection == 405:
                 print('Returning to beginning.')
@@ -157,7 +160,7 @@ def runMainWithOrWithoutItunes(microPhone,
                 time.sleep(1.5) #startup time
                 p.play()
 
-                userInput = input("Hit Enter to stop playing... ")
+                userInput = input("Playing: %s - %s. Hit Enter to stop playing... " % (artists[songSelection], songNames[songSelection]))
                 p.stop()
 
                 return
