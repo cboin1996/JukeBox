@@ -248,7 +248,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
     autoDownload = False
     searchList = []
     # initialize for speechRecog
-    if speechRecog == False:
+    if speechRecog == True:
         mic = sr.Microphone()
         r = sr.Recognizer()
 
