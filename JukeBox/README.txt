@@ -4,8 +4,8 @@ youtubeMP3 V 1.0.1 Official Release
 
 Please use with python 3.6.. port audio only install properly with 3.6.
 
-Before anything.. upgrade pip and setuptools: pip3 install --upgrade setuptools
-                                              pip3 install --upgrade pip
+Before doing ANYTHING.. upgrade pip and setuptools: pip3 install --upgrade setuptools
+                                                    pip3 install --upgrade pip
 
 
 Once you have placed the package in your desired folder:
@@ -33,8 +33,7 @@ MUST INSTALL pyAudio YOURSELF:     brew install portaudio
 
 KNOWN ISSUES:
 
-pocketsphinx is a pain to install on Windows
-pyaudio often doesnt install on windows -- need c++ library.
+pyaudio often doesn't install on windows -- need c++ library.
     Maybe try this link? : http://go.microsoft.com/fwlink/?LinkId=691126&fixForIE=.exe
 
 GENERAL Downloads:
@@ -47,4 +46,4 @@ GENERAL Downloads:
 
     Windows -- update PATH -- right click mycomputer, advanced settings, environment   	variables, etc.  Follow tutorial for detailed steps.  Restart cmd when done.
 
-    You must install download VLC (MAKE SURE 64 BIT FOR WINDOWS)
+    You must install download VLC (MAKE SURE 64 BIT FOR WINDOWS).. https://www.videolan.org/vlc/download-windows.html
