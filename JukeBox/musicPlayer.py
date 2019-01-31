@@ -248,9 +248,9 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
     autoDownload = False
     searchList = []
     # initialize for speechRecog
-
-    mic = sr.Microphone()
-    r = sr.Recognizer()
+    if speechRecog == True:
+        mic = sr.Microphone()
+        r = sr.Recognizer()
 
     # get the obsolute file path for the machine running the script
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
