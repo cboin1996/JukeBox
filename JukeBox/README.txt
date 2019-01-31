@@ -26,6 +26,11 @@ MUST INSTALL pyAudio YOURSELF:     brew install portaudio
     				                       pip3 install pyaudio
 
 
+KNOWN ISSUES:
+
+pocketsphinx is a pain to install on Windows
+pyaudio often doesnt install on windows -- need c++ library.
+    Maybe try this link? : http://go.microsoft.com/fwlink/?LinkId=691126&fixForIE=.exe
 
 GENERAL Downloads:
 
@@ -37,4 +42,4 @@ GENERAL Downloads:
 
     Windows -- update PATH -- right click mycomputer, advanced settings, environment   	variables, etc.  Follow tutorial for detailed steps.  Restart cmd when done.
 
-    You must install download VLC
+    You must install download VLC (MAKE SURE 64 BIT FOR WINDOWS)
