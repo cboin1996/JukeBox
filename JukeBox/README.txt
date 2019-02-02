@@ -2,7 +2,7 @@
 
 youtubeMP3 V 1.0.1 Official Release
 
-Please use with python 3.6.. port audio only install properly with 3.6.
+Please use with python 3.6.. port audio only installs properly with 3.6 as of right now
 
 Before doing ANYTHING.. upgrade pip and setuptools: pip3 install --upgrade setuptools
                                                     pip3 install --upgrade pip
@@ -20,14 +20,13 @@ If above does not work — try:      py -3 -m pip install python-magic-bin==0.4.
 
 MACOS:
 
+FIRST: MUST INSTALL pyAudio:       brew install portaudio
+    				                       pip3 install pyaudio
+
 cd to the folder and type:         python3 setup.py install
 
 If libmagic fails, try:            pip3 uninstall python-magic
 If above does not work — try:      pip3 install python-magic-bin==0.4.14
-
-MUST INSTALL pyAudio YOURSELF:     brew install portaudio
-    				                       pip3 install pyaudio
-
 
 KNOWN ISSUES:
 
