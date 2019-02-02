@@ -14,6 +14,7 @@ setup(name='youtubetomp3',
      'speechrecognition',
      'pyaudio',
      'pocketsphinx',
+     'python-vlc',
      ],
      packages=find_packages()
 )
