@@ -247,10 +247,6 @@ def runMainWithOrWithoutItunes(microPhone,
 def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
     autoDownload = False
     searchList = []
-    # initialize for speechRecog
-    if speechRecog == True:
-        mic = sr.Microphone()
-        r = sr.Recognizer()
 
     # get the obsolute file path for the machine running the script
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
@@ -266,6 +262,11 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
             autoDownload = True
         if argv[1] == 'voice':
             speechRecog = True
+
+    # initialize for speechRecog
+    if speechRecog == True:
+        mic = sr.Microphone()
+        r = sr.Recognizer()
 
     # determine which OS we are operating on.  Work with that OS to set
     operatingSystem = namePlates(autoDownload, speechRecog, sys.platform)
