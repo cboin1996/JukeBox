@@ -174,7 +174,7 @@ def runMainWithOrWithoutItunes(microPhone,
     while youtubeResponseObject['error'] == '404':
         searchFor = input('Please enter your more specific song: ')
         newYoutubeResponseAsResultOfSearch = Youtube.getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
-        songPath = Youtube.youtubeSongDownload(youtubePageResponse=newYoutubeResponseAsResultOfSearch,
+        youtubeResponseObject = Youtube.youtubeSongDownload(youtubePageResponse=newYoutubeResponseAsResultOfSearch,
                                                 autoDownload=autoDownload,
                                                 pathToDumpFolder=localDumpFolder)
 
