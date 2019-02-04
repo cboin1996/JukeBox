@@ -9,7 +9,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import glob
 import shutil, os, tqdm, sys
-import iTunesSearch
+from iTunesManipulator import iTunesSearch
+from iTunesManipulator import Editor
 import speech_recognition as sr
 import SpeechAnalysis
 import time
@@ -271,9 +272,17 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
     # determine which OS we are operating on.  Work with that OS to set
     operatingSystem = namePlates(autoDownload, speechRecog, sys.platform)
 
-    continuePlaying = ''
-
-    while continuePlaying != 'no':
+    continueGettingSongs = ''
+    continueEditing = ''
+    editorOrSongDownload = ''
+    # editor functionality -- alpha test.. doesnt quite work. rest of code is in Editor.py
+    # while editorOrSongDownload != 'quit':
+    #
+    #    editorOrSongDownload = input("Type 0 to edit, 1 to download songs, 'quit' to quit: ")
+    # indent the below code and uncomment above to put editor functionality in,
+    # and paste 'and editorOrSongDownload == '1'' into while loop condition
+    
+    while continueGettingSongs != 'no' :
         if speechRecog == False:
             searchFor = input("Enter song(s).. separated by a ';' : ")
 
@@ -312,16 +321,15 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
             print('=----------Done Cycle--------=')
 
         if speechRecog == False:
-            continuePlaying = input('Want to go again (yes/no): ')
+            continueGettingSongs = input('Want to go again (yes/no): ')
 
         if speechRecog == True:
             print('Want to go again (yes/no)? ', end='')
             response = SpeechAnalysis.main(mic, r)
-            continuePlaying = response[0]
-            print('You Said: ', continuePlaying)
+            continueGettingSongs = response[0]
+            print('You Said: ', continueGettingSongs)
 
-
-
+    # editor functionality goes here (from iTunesManipulator.Editor)
     print("================================")
     print("=--------Have a fine day-------=")
     print("================================")
