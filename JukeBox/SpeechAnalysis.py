@@ -4,7 +4,7 @@ import speech_recognition as sr
 import random
 import time
 
-def recognize_speech_from_mic(recognizer, microphone):
+def recognize_speech_from_mic(recognizer, microphone, active=False):
     """Transcribe speech from recorded from `microphone`.
 
     Returns a dictionary with three keys:
@@ -26,8 +26,9 @@ def recognize_speech_from_mic(recognizer, microphone):
     # adjust the recognizer sensitivity to ambient noise and record audio
     # from the microphone
     with microphone as source:
-        recognizer.adjust_for_ambient_noise(source, duration=3)
-        print('Speak now human. I am your servant.')
+        # if active == False:
+        recognizer.adjust_for_ambient_noise(source)
+        # print('Speak now human. I am your servant.')
         audio = recognizer.listen(source)
 
     # set up the response object
@@ -41,7 +42,15 @@ def recognize_speech_from_mic(recognizer, microphone):
     # if a RequestError or UnknownValueError exception is caught,
     #     update the response object accordingly
     try:
-        response["transcription"] = recognizer.recognize_sphinx(audio)
+        # uncomment to use pocketsphinx
+        # response["transcription"] = recognizer.recognize_google(audio)
+
+        if active == False:
+            response["transcription"] = recognizer.recognize_google(audio)
+
+        if active == True:
+            response["transcription"] = recognizer.recognize_google(audio)
+
     except sr.RequestError:
         # API was unreachable or unresponsive
         response["success"] = False
@@ -65,11 +74,11 @@ def main(mic, r, searchList=[]):
 
         if response['success'] == True:
             print('You said: ', response["transcription"])
-            searchList.append(response["transcription"])
+            searchList = response["transcription"]
 
     if response['success'] == True:
         print('You said: ', response['transcription'])
-        searchList.append(response["transcription"])
+        searchList = response["transcription"].lower().split(' + ')
 
     return searchList
 

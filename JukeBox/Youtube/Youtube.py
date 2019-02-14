@@ -30,7 +30,7 @@ def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
     return youtubeSession.enterSearchForm(youtubeSession.urls['homePage'], youtubeSession.urls['serviceSearch'], searchQuery)
 
 
-def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolder=''):
+def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolder='', pathToSettings=''):
     videoUrls = []
 
     responseObject = {
@@ -38,6 +38,8 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         'success' : False,
         'songPath' : None
     }
+    with open(pathToSettings, "r") as read_file:
+        youTubeMP3_settings = json.load(read_file)
 
     # open youtube response with selenium to ensure javascript loads
     options = webdriver.ChromeOptions()
@@ -128,8 +130,8 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     successOrFailureDownloading = dumpAndDownload(filepath=localSaveFileToPath,
                                             downloadLink=downloadLink,
                                             local_filename=videoSelection,
-                                            counter=2,
-                                            waitTime=15)
+                                            counter=youTubeMP3_settings['downloads']['tryCount'],
+                                            waitTime=youTubeMP3_settings['downloads']['retryTime'])
 
     if successOrFailureDownloading == 'success':
         print("Done. Playing.. " + videoSelection + ".mp3" + " Now. Enjoy")
@@ -148,7 +150,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
 
 def removeIllegalCharacters(fileName):
 
-    return fileName.replace('\\', '').replace('"', '').replace('/', '').replace('*', '').replace('?', '').replace('<', '').replace('>', '').replace('|', '').replace("'", '')
+    return fileName.replace('\\', '').replace('"', '').replace('/', '').replace('*', '').replace('?', '').replace('<', '').replace('>', '').replace('|', '').replace("'", '').replace(':', '')
 
 
 def dumpAndDownload(filepath, downloadLink, local_filename, counter=0, waitTime=0):

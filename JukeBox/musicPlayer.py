@@ -15,6 +15,7 @@ import speech_recognition as sr
 import SpeechAnalysis
 import time
 from Youtube import Youtube
+import random
 
 # Change log
 
@@ -115,7 +116,8 @@ def runMainWithOrWithoutItunes(microPhone,
                                 autoDownload=False,
                                 localDumpFolder='',
                                 iTunesPaths={},
-                                speechRecogOn=False):
+                                speechRecogOn=False,
+                                pathToSettings=''):
     artists = [] # will hold list of artists
     songNames = [] # will hold list of songNames
 
@@ -143,17 +145,19 @@ def runMainWithOrWithoutItunes(microPhone,
                 return
 
             if speechRecogOn == False:
-                songSelection = int(input("Which one do you want to hear? Type '404' to search youtube instead. '405' to search again: "))
+                print('Which one do you want to hear?')
+                songSelection = input("Type 'you' to search youtube instead. 'ag' to search again. 'sh' to shuffle through the list: ")
 
             if speechRecogOn == True:
                 songSelection = 0
 
-            if songSelection == 405:
+            if songSelection == 'ag':
                 print('Returning to beginning.')
                 return
 
             # play the song only if they want, otherwise continute with program.
-            if songSelection != 404:
+            if songSelection != 'you' and songSelection != 'sh':
+                songSelection = int(songSelection)
                 while songSelection not in range(0, len(iTunesPaths['searchedSongResult'])):
                     songSelection = int(input('Invalid Input. Try Again'))
 
@@ -163,13 +167,29 @@ def runMainWithOrWithoutItunes(microPhone,
 
                 userInput = input("Playing: %s - %s. Hit Enter to stop playing... " % (artists[songSelection], songNames[songSelection]))
                 p.stop()
+                return
+
+            # shuffle algorithm TODO: move to a function
+            if songSelection == 'sh':
+                while len(iTunesPaths['searchedSongResult']) - 1 >= 0:
+                    songSelection = random.randint(0, len(iTunesPaths['searchedSongResult']) - 1)
+                    p = vlc.MediaPlayer(iTunesPaths['searchedSongResult'][songSelection])
+                    time.sleep(1.5) #startup time
+                    p.play()
+                    tempItunesSong = iTunesPaths['searchedSongResult'][songSelection].split(os.sep)
+                    userInput = input("Playing: %s - %s. Hit Enter to stop playing... " % (tempItunesSong[len(tempItunesSong)-3],tempItunesSong[len(tempItunesSong)-1]))
+                    p.stop()
+                    iTunesPaths['searchedSongResult'].remove(iTunesPaths['searchedSongResult'][songSelection])
 
                 return
 
 
 
     response = Youtube.getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
-    youtubeResponseObject = Youtube.youtubeSongDownload(youtubePageResponse=response, autoDownload=autoDownload, pathToDumpFolder=localDumpFolder)
+    youtubeResponseObject = Youtube.youtubeSongDownload(youtubePageResponse=response,
+                                                        autoDownload=autoDownload,
+                                                        pathToDumpFolder=localDumpFolder,
+                                                        pathToSettings=pathToSettings)
 
     # youtubeSongDownload returns none if there is no songPath or if user wants a more specific search
     while youtubeResponseObject['error'] == '404':
@@ -177,7 +197,8 @@ def runMainWithOrWithoutItunes(microPhone,
         newYoutubeResponseAsResultOfSearch = Youtube.getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
         youtubeResponseObject = Youtube.youtubeSongDownload(youtubePageResponse=newYoutubeResponseAsResultOfSearch,
                                                 autoDownload=autoDownload,
-                                                pathToDumpFolder=localDumpFolder)
+                                                pathToDumpFolder=localDumpFolder,
+                                                pathToSettings=pathToSettings)
 
     # No none type is good news.. continue as normal
     if youtubeResponseObject['songPath'] != None:
@@ -202,7 +223,8 @@ def runMainWithOrWithoutItunes(microPhone,
                                                     searchFor=searchFor,
                                                     autoDownload=autoDownload,
                                                     localDumpFolder=localDumpFolder,
-                                                    iTunesPaths=iTunesPaths)
+                                                    iTunesPaths=iTunesPaths,
+                                                    pathToSettings=pathToSettings)
 
         # parseItunesSearchApi() throws None return type if the user selects no properties
         if trackProperties != None:
@@ -243,6 +265,54 @@ def runMainWithOrWithoutItunes(microPhone,
                 print("Saving locally. Whether you like it or not.")
                 p.stop()
 
+def editSettings(pathToSettings='', settingSelections=''):
+    with open(pathToSettings, 'r') as settings_file:
+        settings_data = json.load(settings_file)
+
+
+    while settingSelections != 'quit':
+        i = 0
+        print("Here are your settings.")
+        for key, val in settings_data.items():
+            print("(Genre) - ", key)
+            for k, v in val.items():
+                print('\t' + k + '\t- ', v)
+
+        settingGenreChoice = input("Which setting genre do you want to edit? 'quit' to quit: ")
+
+        if settingGenreChoice == 'quit':
+            print('Quitting.')
+            settingSelections = settingGenreChoice
+        else:
+            while settingGenreChoice not in settings_data.keys():
+                settingGenreChoice = input('Not a valid setting genre Dammit! Try again: ')
+
+            print('Editing: ', settingGenreChoice)
+            for key, val in settings_data[settingGenreChoice].items():
+                print('\t' + key + '\t- ', val)
+
+            settingSelections = input('Enter your setting names: (settingOne, settingTwo, etc. ): ')
+            settingChangeList = settingSelections.split(', ')
+
+
+            for setting in settingChangeList:
+                # check for proper setting
+                while setting not in settings_data[settingGenreChoice].keys():
+                    setting = input("'%s' is not in the settings.  Enter a proper setting: " % (setting))
+
+                updateSetting = input("Enter your new value for '%s': " % (setting))
+
+                if setting == 'retryTime' or 'tryCount':
+                    updateSetting = int(updateSetting)
+
+                settings_data[settingGenreChoice].update({setting:updateSetting})
+
+                with open(pathToSettings, 'w') as write_to_settings:
+                    json.dump(settings_data, write_to_settings)
+                    print("Setting updated. ")
+            settingSelections = input("Type 'quit' to quit, anything to go again: ")
+            print("--Done Update--")
+
 # 'auto' argv will get first video.  Manual will allow user to select video.. default behaviour
 # pass argv to youtubeSongDownload
 def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
@@ -252,6 +322,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
     # get the obsolute file path for the machine running the script
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
+    pathToSettings = os.path.join(pathToDirectory, 'settings.json')
 
     #initialize dump directory
     if not os.path.exists(localDumpFolder):
@@ -281,53 +352,78 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
     #    editorOrSongDownload = input("Type 0 to edit, 1 to download songs, 'quit' to quit: ")
     # indent the below code and uncomment above to put editor functionality in,
     # and paste 'and editorOrSongDownload == '1'' into while loop condition
-    
-    while continueGettingSongs != 'no' :
-        if speechRecog == False:
-            searchFor = input("Enter song(s).. separated by a ';' : ")
 
-            searchList = searchFor.split('; ')
+    while continueGettingSongs != 'no' :
+        # initialize searchList to empty each iteration
+        searchList = []
+        if speechRecog == False:
+            searchFor = input("Enter song(s).. separated by a ';' OR 'set' to edit settings: ")
+
+            if searchFor == 'set':
+                editSettings(pathToSettings=pathToSettings)
+
+            else:
+                searchList = searchFor.split('; ')
 
         # run the speechRecog edition -- BETA
         else:
+            while True:
+                speechResponse = SpeechAnalysis.recognize_speech_from_mic(r, mic, True)
+                if speechResponse['transcription'] == None:
+                    speechResponse['transcription'] = 'None'
+                print(speechResponse['transcription'])
+                if 'hello' in speechResponse['transcription'].lower():
+
+                    p = vlc.MediaPlayer(os.path.join(pathToDirectory, 'speechPrompts', 'cbgoogle.mp3'))
+                    p.play()
+                    time.sleep(2)
+                    break
+
+            p = vlc.MediaPlayer(os.path.join(pathToDirectory, 'speechPrompts', 'SaySongs.mp3'))
+            p.play()
+            time.sleep(2)
             searchList = SpeechAnalysis.main(mic, r)
 
-        # take a list of songs
-        for searchForSong in searchList:
-            print(" - Running program for: ", searchForSong)
-            iTunesPaths = setItunesPaths(operatingSystem, searchFor=searchForSong)
-            # '*.*' means anyfilename, anyfiletype
-            # /*/* gets through artist, then album or itunes folder structure
-            if iTunesPaths == None:
-                runMainWithOrWithoutItunes(microPhone=mic,
-                                            recognizer=r,
-                                            iTunesInstalled=False,
-                                            searchFor=searchForSong,
-                                            autoDownload=autoDownload,
-                                            localDumpFolder=localDumpFolder,
-                                            iTunesPaths=iTunesPaths,
-                                            speechRecogOn=speechRecog)
+        if searchFor != 'set':
+            # take a list of songs
+            for searchForSong in searchList:
+                print(" - Running program for: ", searchForSong)
+                iTunesPaths = setItunesPaths(operatingSystem, searchFor=searchForSong)
+                # '*.*' means anyfilename, anyfiletype
+                # /*/* gets through artist, then album or itunes folder structure
+                if iTunesPaths == None:
+                    runMainWithOrWithoutItunes(microPhone=mic,
+                                                recognizer=r,
+                                                iTunesInstalled=False,
+                                                searchFor=searchForSong,
+                                                autoDownload=autoDownload,
+                                                localDumpFolder=localDumpFolder,
+                                                iTunesPaths=iTunesPaths,
+                                                speechRecogOn=speechRecog,
+                                                pathToSettings=pathToSettings)
 
-            else:
-                runMainWithOrWithoutItunes(microPhone=mic,
-                                            recognizer=r,
-                                            iTunesInstalled=True,
-                                            searchFor=searchForSong,
-                                            autoDownload=autoDownload,
-                                            localDumpFolder=localDumpFolder,
-                                            iTunesPaths=iTunesPaths,
-                                            speechRecogOn=speechRecog)
+                else:
+                    runMainWithOrWithoutItunes(microPhone=mic,
+                                                recognizer=r,
+                                                iTunesInstalled=True,
+                                                searchFor=searchForSong,
+                                                autoDownload=autoDownload,
+                                                localDumpFolder=localDumpFolder,
+                                                iTunesPaths=iTunesPaths,
+                                                speechRecogOn=speechRecog,
+                                                pathToSettings=pathToSettings)
 
-            print('=----------Done Cycle--------=')
+                print('=----------Done Cycle--------=')
 
-        if speechRecog == False:
-            continueGettingSongs = input('Want to go again (yes/no): ')
+            if speechRecog == False:
+                continueGettingSongs = input('Want to go again (yes/no): ')
 
-        if speechRecog == True:
-            print('Want to go again (yes/no)? ', end='')
-            response = SpeechAnalysis.main(mic, r)
-            continueGettingSongs = response[0]
-            print('You Said: ', continueGettingSongs)
+            if speechRecog == True:
+                p = vlc.MediaPlayer(os.path.join(pathToDirectory, 'speechPrompts', 'repeat.mp3'))
+                p.play()
+                time.sleep(1.5) #startup time
+                continuePlaying = SpeechAnalysis.main(mic, r)
+                continueGettingSongs = continuePlaying[0]
 
     # editor functionality goes here (from iTunesManipulator.Editor)
     print("================================")
