@@ -310,6 +310,13 @@ def editSettings(pathToSettings='', settingSelections=''):
                 with open(pathToSettings, 'w') as write_to_settings:
                     json.dump(settings_data, write_to_settings)
                     print("Setting updated. ")
+
+            print("Here are your updated settings.")
+            for key, val in settings_data.items():
+                print("(Genre) - ", key)
+                for k, v in val.items():
+                    print('\t' + k + '\t- ', v)
+
             settingSelections = input("Type 'quit' to quit, anything to go again: ")
             print("--Done Update--")
 
