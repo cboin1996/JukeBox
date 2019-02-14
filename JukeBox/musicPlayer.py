@@ -391,46 +391,46 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
             time.sleep(2)
             searchList = SpeechAnalysis.main(mic, r)
 
-        if searchFor != 'set':
-            # take a list of songs
-            for searchForSong in searchList:
-                print(" - Running program for: ", searchForSong)
-                iTunesPaths = setItunesPaths(operatingSystem, searchFor=searchForSong)
-                # '*.*' means anyfilename, anyfiletype
-                # /*/* gets through artist, then album or itunes folder structure
-                if iTunesPaths == None:
-                    runMainWithOrWithoutItunes(microPhone=mic,
-                                                recognizer=r,
-                                                iTunesInstalled=False,
-                                                searchFor=searchForSong,
-                                                autoDownload=autoDownload,
-                                                localDumpFolder=localDumpFolder,
-                                                iTunesPaths=iTunesPaths,
-                                                speechRecogOn=speechRecog,
-                                                pathToSettings=pathToSettings)
 
-                else:
-                    runMainWithOrWithoutItunes(microPhone=mic,
-                                                recognizer=r,
-                                                iTunesInstalled=True,
-                                                searchFor=searchForSong,
-                                                autoDownload=autoDownload,
-                                                localDumpFolder=localDumpFolder,
-                                                iTunesPaths=iTunesPaths,
-                                                speechRecogOn=speechRecog,
-                                                pathToSettings=pathToSettings)
+        # take a list of songs
+        for searchForSong in searchList:
+            print(" - Running program for: ", searchForSong)
+            iTunesPaths = setItunesPaths(operatingSystem, searchFor=searchForSong)
+            # '*.*' means anyfilename, anyfiletype
+            # /*/* gets through artist, then album or itunes folder structure
+            if iTunesPaths == None:
+                runMainWithOrWithoutItunes(microPhone=mic,
+                                            recognizer=r,
+                                            iTunesInstalled=False,
+                                            searchFor=searchForSong,
+                                            autoDownload=autoDownload,
+                                            localDumpFolder=localDumpFolder,
+                                            iTunesPaths=iTunesPaths,
+                                            speechRecogOn=speechRecog,
+                                            pathToSettings=pathToSettings)
 
-                print('=----------Done Cycle--------=')
+            else:
+                runMainWithOrWithoutItunes(microPhone=mic,
+                                            recognizer=r,
+                                            iTunesInstalled=True,
+                                            searchFor=searchForSong,
+                                            autoDownload=autoDownload,
+                                            localDumpFolder=localDumpFolder,
+                                            iTunesPaths=iTunesPaths,
+                                            speechRecogOn=speechRecog,
+                                            pathToSettings=pathToSettings)
 
-            if speechRecog == False:
-                continueGettingSongs = input('Want to go again (yes/no): ')
+            print('=----------Done Cycle--------=')
 
-            if speechRecog == True:
-                p = vlc.MediaPlayer(os.path.join(pathToDirectory, 'speechPrompts', 'repeat.mp3'))
-                p.play()
-                time.sleep(1.5) #startup time
-                continuePlaying = SpeechAnalysis.main(mic, r)
-                continueGettingSongs = continuePlaying[0]
+        if speechRecog == False:
+            continueGettingSongs = input('Want to go again (yes/no): ')
+
+        if speechRecog == True:
+            p = vlc.MediaPlayer(os.path.join(pathToDirectory, 'speechPrompts', 'repeat.mp3'))
+            p.play()
+            time.sleep(1.5) #startup time
+            continuePlaying = SpeechAnalysis.main(mic, r)
+            continueGettingSongs = continuePlaying[0]
 
     # editor functionality goes here (from iTunesManipulator.Editor)
     print("================================")
