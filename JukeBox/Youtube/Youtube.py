@@ -30,7 +30,8 @@ def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
     return youtubeSession.enterSearchForm(youtubeSession.urls['homePage'], youtubeSession.urls['serviceSearch'], searchQuery)
 
 
-def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolder='', pathToSettings=''):
+def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolder='', pathToSettings='', debugMode=False):
+    # array of tuples for storing (title, url)
     videoUrls = []
 
     responseObject = {
@@ -44,7 +45,8 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     # open youtube response with selenium to ensure javascript loads
     options = webdriver.ChromeOptions()
     # add options to make the output pretty, no browser show and no bs outputs
-    options.add_argument('headless')
+    if debugMode == False:
+        options.add_argument('headless')
     options.add_argument('--disable-gpu')
     browser = webdriver.Chrome(options=options)
     # browser = webdriver.Safari()
@@ -70,7 +72,10 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     # if autoDownload is on, grab first URL. Else, user selects...
     if autoDownload == True:
         videoSelection = videoUrls[0][0]
-        browser.get('https://www.easy-youtube-mp3.com/convert.php?v='+videoUrls[0][1])
+        browser.get('https://www.easy-youtube-mp3.com/')
+        formInput = browser.find_element_by_name('v')
+        formInput.send_keys(videoUrls[0][1])
+        formInput.submit()
         print("Converting: %s" % (videoSelection))
 
     else:
@@ -87,7 +92,10 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
             integerVideoId = int(input("Try Again.. [%d to %d] " % (0, len(videoUrls)-1)))
 
         videoSelection = videoUrls[integerVideoId][0]
-        browser.get('https://www.easy-youtube-mp3.com/convert.php?v='+videoUrls[integerVideoId][1])
+        browser.get('https://www.easy-youtube-mp3.com/')
+        formInput = browser.find_element_by_name('v')
+        formInput.send_keys(videoUrls[integerVideoId][1])
+        formInput.submit()
         print("Converting: %s" % (videoSelection))
 
     # ensure the javascript has time to run, when the id="Download" appears it is okay to close window.

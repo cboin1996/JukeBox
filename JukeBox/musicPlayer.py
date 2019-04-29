@@ -28,7 +28,7 @@ import random
 
 # Cboin v 1.0 -- added iTunesSearch functionality and worked on excpetion handling w/ try catch / userinput
 
-def namePlates(argument, argument2, OS):
+def namePlates(argument, argument2, debugMode, OS):
     print("================================")
     print("=-Welcome to the cBoin JukeBox-=")
 
@@ -42,6 +42,8 @@ def namePlates(argument, argument2, OS):
 
     if argument2 == True:
         print("=------Voice Edition Beta------=")
+    if debugMode == True:
+        print("=----------Debug Mode----------=")
 
     if OS == 'darwin':
         print("=---------For MAC OS X---------=")
@@ -117,7 +119,8 @@ def runMainWithOrWithoutItunes(microPhone,
                                 localDumpFolder='',
                                 iTunesPaths={},
                                 speechRecogOn=False,
-                                pathToSettings=''):
+                                pathToSettings='',
+                                debugMode=False):
     artists = [] # will hold list of artists
     songNames = [] # will hold list of songNames
 
@@ -189,7 +192,8 @@ def runMainWithOrWithoutItunes(microPhone,
     youtubeResponseObject = Youtube.youtubeSongDownload(youtubePageResponse=response,
                                                         autoDownload=autoDownload,
                                                         pathToDumpFolder=localDumpFolder,
-                                                        pathToSettings=pathToSettings)
+                                                        pathToSettings=pathToSettings,
+                                                        debugMode=debugMode)
 
     # youtubeSongDownload returns none if there is no songPath or if user wants a more specific search
     while youtubeResponseObject['error'] == '404':
@@ -198,7 +202,8 @@ def runMainWithOrWithoutItunes(microPhone,
         youtubeResponseObject = Youtube.youtubeSongDownload(youtubePageResponse=newYoutubeResponseAsResultOfSearch,
                                                 autoDownload=autoDownload,
                                                 pathToDumpFolder=localDumpFolder,
-                                                pathToSettings=pathToSettings)
+                                                pathToSettings=pathToSettings,
+                                                debugMode=debugMode)
 
     # No none type is good news.. continue as normal
     if youtubeResponseObject['songPath'] != None:
@@ -224,7 +229,8 @@ def runMainWithOrWithoutItunes(microPhone,
                                                     autoDownload=autoDownload,
                                                     localDumpFolder=localDumpFolder,
                                                     iTunesPaths=iTunesPaths,
-                                                    pathToSettings=pathToSettings)
+                                                    pathToSettings=pathToSettings,
+                                                    debugMode=debugMode)
 
         # parseItunesSearchApi() throws None return type if the user selects no properties
         if trackProperties != None:
@@ -322,7 +328,7 @@ def editSettings(pathToSettings='', settingSelections=''):
 
 # 'auto' argv will get first video.  Manual will allow user to select video.. default behaviour
 # pass argv to youtubeSongDownload
-def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
+def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, debugMode = False):
     autoDownload = False
     searchList = []
 
@@ -341,14 +347,22 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
             autoDownload = True
         if argv[1] == 'voice':
             speechRecog = True
+        if argv[1] == 'auto' and argv[2] == 'debug':
+            autoDownload = True
+            debugMode = True
+        if argv[1] == 'debug':
+            debugMode = True
 
     # initialize for speechRecog
     if speechRecog == True:
         mic = sr.Microphone()
         r = sr.Recognizer()
 
+
+
+
     # determine which OS we are operating on.  Work with that OS to set
-    operatingSystem = namePlates(autoDownload, speechRecog, sys.platform)
+    operatingSystem = namePlates(autoDownload, speechRecog, debugMode, sys.platform)
 
     continueGettingSongs = ''
     continueEditing = ''
@@ -407,7 +421,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
                                             localDumpFolder=localDumpFolder,
                                             iTunesPaths=iTunesPaths,
                                             speechRecogOn=speechRecog,
-                                            pathToSettings=pathToSettings)
+                                            pathToSettings=pathToSettings,
+                                            debugMode=debugMode)
 
             else:
                 runMainWithOrWithoutItunes(microPhone=mic,
@@ -418,7 +433,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False):
                                             localDumpFolder=localDumpFolder,
                                             iTunesPaths=iTunesPaths,
                                             speechRecogOn=speechRecog,
-                                            pathToSettings=pathToSettings)
+                                            pathToSettings=pathToSettings,
+                                            debugMode=debugMode)
 
             print('=----------Done Cycle--------=')
 
