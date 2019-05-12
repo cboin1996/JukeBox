@@ -72,8 +72,8 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     # if autoDownload is on, grab first URL. Else, user selects...
     if autoDownload == True:
         videoSelection = videoUrls[0][0]
-        browser.get('https://www.easy-youtube-mp3.com/')
-        formInput = browser.find_element_by_name('v')
+        browser.get('https://ytmp3.cc/')
+        formInput = browser.find_element_by_name('video')
         formInput.send_keys(videoUrls[0][1])
         formInput.submit()
         print("Converting: %s" % (videoSelection))
@@ -92,8 +92,8 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
             integerVideoId = int(input("Try Again.. [%d to %d] " % (0, len(videoUrls)-1)))
 
         videoSelection = videoUrls[integerVideoId][0]
-        browser.get('https://www.easy-youtube-mp3.com/')
-        formInput = browser.find_element_by_name('v')
+        browser.get('https://ytmp3.cc/')
+        formInput = browser.find_element_by_name('video')
         formInput.send_keys(videoUrls[integerVideoId][1])
         formInput.submit()
         print("Converting: %s" % (videoSelection))
@@ -101,12 +101,13 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     # ensure the javascript has time to run, when the id="Download" appears it is okay to close window.
     wait = WebDriverWait(browser, 10)
     # page fully loaded upon download id being present
-    element = wait.until(EC.presence_of_element_located((By.ID, 'Download')))
+    element = wait.until(EC.element_to_be_clickable((By.ID, 'download')))
 
     pageText = BeautifulSoup(browser.page_source, 'html.parser')
 
     # tag a with attribute download='file.mp3' containt the downloadlink at href attr
-    downloadTag = pageText.find('a', target='_blank')
+    downloadTag = pageText.find('a', id='download')
+    print(downloadTag)
 
     try:
         downloadLink = downloadTag.get('href')
