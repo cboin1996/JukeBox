@@ -347,7 +347,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
             autoDownload = True
         if argv[1] == 'voice':
             speechRecog = True
-        if argv[1] == 'auto' and argv[2] == 'debug':
+        if len(argv) > 2 and argv[1] == 'auto' and argv[2] == 'debug':
             autoDownload = True
             debugMode = True
         if argv[1] == 'debug':
