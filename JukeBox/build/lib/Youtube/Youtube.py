@@ -48,7 +48,6 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     if debugMode == False:
         options.add_argument('headless')
     options.add_argument('--disable-gpu')
-    options.add_argument("--log-level=3")
     browser = webdriver.Chrome(options=options)
     # browser = webdriver.Safari()
     browser.get(youtubePageResponse.url)
@@ -102,12 +101,12 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     # ensure the javascript has time to run, when the id="Download" appears it is okay to close window.
     wait = WebDriverWait(browser, 10)
     # page fully loaded upon download id being present
-    element = wait.until(EC.element_to_be_clickable((By.LINK_TEXT, 'Download')))
+    element = wait.until(EC.element_to_be_clickable((By.ID, 'download')))
 
     pageText = BeautifulSoup(browser.page_source, 'html.parser')
 
     # tag a with attribute download='file.mp3' containt the downloadlink at href attr
-    downloadTag = pageText.find('a', string="Download")
+    downloadTag = pageText.find('a', id='download')
     print(downloadTag)
 
     try:
