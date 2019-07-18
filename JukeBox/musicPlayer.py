@@ -94,6 +94,10 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
 
         iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor)
 
+    else:
+        print("Unrecognized OS. No Itunes recognizable.")
+        return None
+        
     return iTunesPaths
 
 
