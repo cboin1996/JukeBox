@@ -1,6 +1,6 @@
 #### README:
 
-youtubeMP3 V 1.0.1 Official Release
+youtubeMP3 V 1.0.2 Official Release
 
 Please use with python 3.6.. port audio only installs properly with 3.6 as of right now
 
