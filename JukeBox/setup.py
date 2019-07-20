@@ -10,7 +10,7 @@ setup(name='youtubetomp3',
      'tqdm',
      'eyed3',
      'click',
-     'python-magic-bin==0.4.14',
+     'python-magic-bin==0.4.14'
      'speechrecognition',
      'pyaudio',
      'pocketsphinx',

@@ -84,7 +84,7 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
     artworkUrl100 = 'artworkUrl100'
     primaryGenreName = 'primaryGenreName'
     resultDictionary = {}
-
+    requiredJsonKeys = [trackName, artistName, collectionName, artworkUrl100, primaryGenreName]
     searchParameters = {'term':searchVariable, 'entity':entity, 'limit':limit}
 
     itunesResponse = requests.get('https://itunes.apple.com/search', params=searchParameters)
@@ -95,15 +95,16 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
         for searchResult in itunesJSONDict['results']:
             #print(searchResult)
             resultDictionary = {}
-            resultDictionary.update({trackName:searchResult[trackName]})
-            resultDictionary.update({artistName:searchResult[artistName]})
-            resultDictionary.update({collectionName:searchResult[collectionName]})
-            resultDictionary.update({artworkUrl100:searchResult[artworkUrl100]})
-            resultDictionary.update({primaryGenreName:searchResult[primaryGenreName]})
-            parsedResultsList.append(resultDictionary)
+            if all(key in searchResult for key in requiredJsonKeys):
+                resultDictionary[trackName] = searchResult[trackName]
+                resultDictionary[artistName] = searchResult[artistName]
+                resultDictionary[collectionName] = searchResult[collectionName]
+                resultDictionary[artworkUrl100] = searchResult[artworkUrl100]
+                resultDictionary[primaryGenreName] = searchResult[primaryGenreName]
+                parsedResultsList.append(resultDictionary)
+            else:
+                print("Skipping song data as result lacked either a name, artist, album, artwork or genre in the API")
 
-
-        # print(element)
         prettyPrinter(parsedResultsList)
     print('Searched for: %s' % (searchVariable))
     print('Select the number for the properties you want.. [%d to %d]'% (0, len(parsedResultsList)-1))

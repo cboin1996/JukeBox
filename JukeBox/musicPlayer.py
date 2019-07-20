@@ -18,7 +18,7 @@ from Youtube import Youtube
 import random
 
 # Change log
-
+# Cboin v 1.0.2.1 -- patched itunes search api not returning track names.  Also patched to use latest ytmp3 html.
 # Cboin v 1.0.2 -- youtubetomp3 website tag changed to target=_blank,
 # made download smarter by retrying if taking too long
 
@@ -51,7 +51,7 @@ def namePlates(argument, argument2, debugMode, OS):
     if OS == 'win32':
         print("=---------For Windows----------=")
 
-    print("=-----------V1.0.1-------------=")
+    print("=-----------V1.0.2.1-------------=")
     print("================================")
 
     return OS
