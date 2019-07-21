@@ -113,6 +113,14 @@ def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
 
     return iTunesPaths
 
+def formatFileName(pathToFile, sliceKey, stringToAdd):
+    # very last thing to do is to add "_complt" to the mp3.  This indicated it has gone through the entire process
+    indexToInsertBefore = pathToFile.find(sliceKey)
+    formattedSongName = pathToFile[:indexToInsertBefore] + stringToAdd + pathToFile[indexToInsertBefore:]
+    os.rename(pathToFile, formattedSongName)
+    return formattedSongName
+
+
 # this function allows the module to be ran with or without itunes installed.
 # if iTunes is not installed, the files are tagged and stored in dump folder.
 def runMainWithOrWithoutItunes(microPhone,
@@ -259,31 +267,32 @@ def runMainWithOrWithoutItunes(microPhone,
                 # dont know if i want this extra input
                 # input("Your file is ready to be moved.. just hit enter to stop playing.")
                 p.stop()
-                shutil.move(youtubeResponseObject['songPath'], iTunesPaths['autoAdd'])
+                formattedSongName = formatFileName(pathToFile=youtubeResponseObject['songPath'], sliceKey=".mp3", stringToAdd="_complt")
+                shutil.move(formattedSongName, iTunesPaths['autoAdd'])
                 print("Moved your file to iTunes.")
-                return
+
 
             else:
                 print("Saved your file locally.")
                 p.stop()
-                return
+                formattedSongName = formatFileName(pathToFile=youtubeResponseObject['songPath'], sliceKey=".mp3", stringToAdd="_complt")
+
+            return
+
         else:
             # autoDownload check
             if autoDownload == False:
                 input("Local File is ready. Hit enter to stop playing.")
                 p.stop()
-                return
+
             else:
                 print("Saving locally. Whether you like it or not.")
                 p.stop()
-                return
+            formattedSongName = formatFileName(pathToFile=youtubeResponseObject['songPath'], sliceKey=".mp3", stringToAdd="_complt")
 
-        # very last thing to do is to add "_complt" to the mp3.  This indicated it has gone through the entire process
-        preFormattedName = youtubeResponseObject['songPath']
-        indexToInsertBefore = preFormattedName.find(".mp3")
-        formattedSongName = preFormattedName[:indexToInsertBefore] + "_complt" + preFormattedName[indexToInsertBefore:]
-        os.rename(youtubeResponseObject['songPath'], formattedSongName)
-        return
+            return
+
+
 
 def editSettings(pathToSettings='', settingSelections=''):
     with open(pathToSettings, 'r') as settings_file:
