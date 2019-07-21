@@ -261,25 +261,29 @@ def runMainWithOrWithoutItunes(microPhone,
                 p.stop()
                 shutil.move(youtubeResponseObject['songPath'], iTunesPaths['autoAdd'])
                 print("Moved your file to iTunes.")
+                return
 
             else:
                 print("Saved your file locally.")
                 p.stop()
-
+                return
         else:
             # autoDownload check
             if autoDownload == False:
                 input("Local File is ready. Hit enter to stop playing.")
                 p.stop()
+                return
             else:
                 print("Saving locally. Whether you like it or not.")
                 p.stop()
+                return
 
         # very last thing to do is to add "_complt" to the mp3.  This indicated it has gone through the entire process
         preFormattedName = youtubeResponseObject['songPath']
         indexToInsertBefore = preFormattedName.find(".mp3")
         formattedSongName = preFormattedName[:indexToInsertBefore] + "_complt" + preFormattedName[indexToInsertBefore:]
         os.rename(youtubeResponseObject['songPath'], formattedSongName)
+        return
 
 def editSettings(pathToSettings='', settingSelections=''):
     with open(pathToSettings, 'r') as settings_file:
