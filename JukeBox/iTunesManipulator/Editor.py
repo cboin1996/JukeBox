@@ -18,6 +18,21 @@ import glob
         #             print('Im sorry this is for machines with iTunes only')
         #
         #     continueEditing = input('Want to go again? (yes/no): ')
+def syncWithGDrive(gDriveFolderPath, iTunesAutoAddFolderPath):
+    print("--GDRIVE SECRET COMMAND--")
+    if os.path.isdir(gDriveFolderPath):
+        music_files = [file for file in os.listdir(gDriveFolderPath) if ".DS" not in file]
+        if len(music_files) == 0:
+            return print("No Files in folder.")
+        print("Files to move are: %s" % (music_files))
+        for file in music_files:
+            fileAbsPath = os.path.join(gDriveFolderPath, file)
+            fileDest = os.path.join(iTunesAutoAddFolderPath, file)
+            shutil.move(fileAbsPath, fileDest)
+            print("Moved to iTunes: %s" % (file))
+        return
+    else:
+        return print("No google drive installed! Check your settings.json file for correct path to gDrive folder.")
 
 def songPropertyEdit(iTunesPaths, searchForSong='', autoDownload=False):
     artists = [] # will hold list of artists

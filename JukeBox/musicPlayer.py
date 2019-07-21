@@ -97,7 +97,7 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
     else:
         print("Unrecognized OS. No Itunes recognizable.")
         return None
-        
+
     return iTunesPaths
 
 
@@ -346,7 +346,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
     pathToSettings = os.path.join(pathToDirectory, 'settings.json')
-
+    with open(pathToSettings, 'r') as in_file:
+        musicPlayerSettings = json.loads(in_file.read())
     #initialize dump directory
     if not os.path.exists(localDumpFolder):
         os.makedirs(localDumpFolder)
@@ -367,9 +368,6 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
     if speechRecog == True:
         mic = sr.Microphone()
         r = sr.Recognizer()
-
-
-
 
     # determine which OS we are operating on.  Work with that OS to set
     operatingSystem = namePlates(autoDownload, speechRecog, debugMode, sys.platform)
@@ -392,6 +390,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
 
             if searchFor == 'set':
                 editSettings(pathToSettings=pathToSettings)
+            # secret command for syncing with gDrive files.  Special feature!
 
             else:
                 searchList = searchFor.split('; ')
@@ -420,6 +419,10 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
         for searchForSong in searchList:
             print(" - Running program for: ", searchForSong)
             iTunesPaths = setItunesPaths(operatingSystem, searchFor=searchForSong)
+            if searchFor == '1=1':
+                Editor.syncWithGDrive(gDriveFolderPath=musicPlayerSettings["gDrive"]["gDriveFolderPath"],
+                                      iTunesAutoAddFolderPath=iTunesPaths['autoAdd'])
+                break
             # '*.*' means anyfilename, anyfiletype
             # /*/* gets through artist, then album or itunes folder structure
             if iTunesPaths == None:
