@@ -76,7 +76,7 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
 
         iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor)
 
-    if operatingSystem == 'win32':
+    elif operatingSystem == 'win32':
         pathToItunesAutoAdd = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes')
         addToItunesPath = glob.glob(pathToItunesAutoAdd, recursive=True)
 
@@ -274,6 +274,12 @@ def runMainWithOrWithoutItunes(microPhone,
             else:
                 print("Saving locally. Whether you like it or not.")
                 p.stop()
+
+        # very last thing to do is to add "_complt" to the mp3.  This indicated it has gone through the entire process
+        preFormattedName = youtubeResponseObject['songPath']
+        indexToInsertBefore = preFormattedName.find(".mp3")
+        formattedSongName = preFormattedName[:indexToInsertBefore] + "_complt" + preFormattedName[indexToInsertBefore:]
+        os.rename(youtubeResponseObject['songPath'], formattedSongName)
 
 def editSettings(pathToSettings='', settingSelections=''):
     with open(pathToSettings, 'r') as settings_file:
