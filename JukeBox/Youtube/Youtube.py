@@ -100,7 +100,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
 
     try:
         # ensure the javascript has time to run, when the id="Download" appears it is okay to close window.
-        wait = WebDriverWait(browser, 3)
+        wait = WebDriverWait(browser, 10)
         # page fully loaded upon download id being present
         element = wait.until(EC.element_to_be_clickable((By.LINK_TEXT, 'Download')))
 
