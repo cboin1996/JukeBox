@@ -218,7 +218,7 @@ def runMainWithOrWithoutItunes(microPhone,
                                                 debugMode=debugMode)
 
     # No none type is good news.. continue as normal
-    if youtubeResponseObject['songPath'] != None:
+    if youtubeResponseObject['songPath'] != None and youtubeResponseObject['error'] == None:
         p = vlc.MediaPlayer(youtubeResponseObject['songPath'])
         time.sleep(1.5) #startup time
         p.play()
@@ -289,8 +289,10 @@ def runMainWithOrWithoutItunes(microPhone,
                 print("Saving locally. Whether you like it or not.")
                 p.stop()
             formattedSongName = formatFileName(pathToFile=youtubeResponseObject['songPath'], sliceKey=".mp3", stringToAdd="_complt")
-
             return
+    if youtubeResponseObject['error'] == 'youMP3fail':
+        print("YoutubeMp3 failed too many times. quitting to last menu.")
+        return
 
 
 
