@@ -69,15 +69,16 @@ def chromeDriver(url):
     if len(response.html.links) != 0:
         urlList = response.html.links
         downloadLink = getUrlForOS(urlList, sys.platform)
-
         response = requests.get(downloadLink)
         if sys.platform == 'darwin':
+            driverPath = '/usr/local/bin/chromedriver'
+            os.remove(driverPath)
             downloadPath = '/usr/local/bin/'+'chromedriver.zip'
             download(response, 10, downloadPath, 'ChromeDriver - Mac')
             with zipfile.ZipFile(downloadPath, 'r') as zip_ref:
                 zip_ref.extractall(os.path.dirname(downloadPath))
                 os.remove(downloadPath)
-            os.chmod('/usr/local/bin/chromedriver', stat.S_IXUSR)
+            os.chmod(driverPath, stat.S_IXUSR)
         elif sys.platform == 'win32':
             downloadPath = os.path.join('c','webdrivers', 'chromedriver.zip')
             download(response, 10, downloadPath, 'ChromeDriver - Windows')
@@ -85,12 +86,13 @@ def chromeDriver(url):
                 zip_ref.extractall(os.path.dirname(downloadPath))
                 os.remove(downloadPath)
         else:
+            driverPath = '/usr/bin/chromedriver'
             downloadPath = '/usr/bin/'+'chromedriver.zip'
             download(response, 10, downloadPath, 'ChromeDriver - Linux')
             with zipfile.ZipFile(downloadPath, 'r') as zip_ref:
                 zip_ref.extractall(os.path.dirname(downloadPath))
                 os.remove(downloadPath)
-            os.chmod('/usr/bin/chromedriver', stat.S_IXUSR)
+            os.chmod(driverPath, stat.S_IXUSR)
 
     else:
         print("Failed to update.  Contact Christian for help.")
