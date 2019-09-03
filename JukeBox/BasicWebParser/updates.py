@@ -47,6 +47,20 @@ def download(downloadResponse, chunk_size, filePath, pBarDescription):
             for chunk in  progressBar:
                 fp.write(chunk)
 
+def update(response, driverPath, operatingSys):
+    downloadPath = driverPath+'.zip'
+    # check if chromdriver exists and remove old version
+    if os.path.exists(driverPath):
+        os.remove(driverPath)
+    # download new version
+    download(response, 10, downloadPath, 'ChromeDriver - %s' % (operatingSys))
+    # unzip
+    with zipfile.ZipFile(downloadPath, 'r') as zip_ref:
+        zip_ref.extractall(os.path.dirname(downloadPath))
+    os.remove(downloadPath)
+    if operatingSys != 'win32':
+        os.chmod(driverPath, stat.S_IXUSR)
+
 def chromeDriver(url):
     retryCount = 0
     session = HTMLSession()
@@ -72,33 +86,13 @@ def chromeDriver(url):
         response = requests.get(downloadLink)
         if sys.platform == 'darwin':
             driverPath = '/usr/local/bin/chromedriver'
-            if os.path.exists(driverPath):
-                os.remove(driverPath)
-            downloadPath = driverPath+'.zip'
-            download(response, 10, downloadPath, 'ChromeDriver - Mac')
-            with zipfile.ZipFile(downloadPath, 'r') as zip_ref:
-                zip_ref.extractall(os.path.dirname(downloadPath))
-            os.remove(downloadPath)
-            os.chmod(driverPath, stat.S_IXUSR)
+            update(response, driverPath, sys.platform)
         elif sys.platform == 'win32':
             driverPath = os.path.join('C:', os.sep,'webdrivers', 'chromedriver')
-            if os.path.exists(driverPath):
-                os.remove(driverPath)
-            downloadPath = driverPath + '.zip'
-            download(response, 10, downloadPath, 'ChromeDriver - Windows')
-            with zipfile.ZipFile(downloadPath, 'r') as zip_ref:
-                zip_ref.extractall(os.path.dirname(downloadPath))
-            os.remove(downloadPath)
+            update(response, driverPath, sys.platform)
         else:
             driverPath = '/usr/bin/chromedriver'
-            downloadPath = driverPath+'.zip'
-            if os.path.exists(driverPath):
-                os.remove(driverPath)
-            download(response, 10, downloadPath, 'ChromeDriver - Linux')
-            with zipfile.ZipFile(downloadPath, 'r') as zip_ref:
-                zip_ref.extractall(os.path.dirname(downloadPath))
-            os.remove(downloadPath)
-            os.chmod(driverPath, stat.S_IXUSR)
+            update(response, driverPath, sys.platform)
 
     else:
         print("Failed to update.  Contact Christian for help.")
