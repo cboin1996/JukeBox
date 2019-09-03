@@ -72,27 +72,32 @@ def chromeDriver(url):
         response = requests.get(downloadLink)
         if sys.platform == 'darwin':
             driverPath = '/usr/local/bin/chromedriver'
-            os.remove(driverPath)
+            if os.path.exists(driverPath):
+                os.remove(driverPath)
             downloadPath = driverPath+'.zip'
             download(response, 10, downloadPath, 'ChromeDriver - Mac')
             with zipfile.ZipFile(downloadPath, 'r') as zip_ref:
                 zip_ref.extractall(os.path.dirname(downloadPath))
-                os.remove(downloadPath)
+            os.remove(downloadPath)
             os.chmod(driverPath, stat.S_IXUSR)
         elif sys.platform == 'win32':
-            driverPath = os.path.join('c','webdrivers', 'chromedriver')
+            driverPath = os.path.join('C:', os.sep,'webdrivers', 'chromedriver')
+            if os.path.exists(driverPath):
+                os.remove(driverPath)
             downloadPath = driverPath + '.zip'
             download(response, 10, downloadPath, 'ChromeDriver - Windows')
             with zipfile.ZipFile(downloadPath, 'r') as zip_ref:
                 zip_ref.extractall(os.path.dirname(downloadPath))
-                os.remove(downloadPath)
+            os.remove(downloadPath)
         else:
             driverPath = '/usr/bin/chromedriver'
             downloadPath = driverPath+'.zip'
+            if os.path.exists(driverPath):
+                os.remove(driverPath)
             download(response, 10, downloadPath, 'ChromeDriver - Linux')
             with zipfile.ZipFile(downloadPath, 'r') as zip_ref:
                 zip_ref.extractall(os.path.dirname(downloadPath))
-                os.remove(downloadPath)
+            os.remove(downloadPath)
             os.chmod(driverPath, stat.S_IXUSR)
 
     else:

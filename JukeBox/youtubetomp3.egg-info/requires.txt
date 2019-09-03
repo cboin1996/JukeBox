@@ -9,3 +9,4 @@ speechrecognition
 pyaudio
 pocketsphinx
 python-vlc
+requests-html
