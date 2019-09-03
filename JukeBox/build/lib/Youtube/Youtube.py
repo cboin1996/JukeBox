@@ -13,6 +13,7 @@ from iTunesManipulator import iTunesSearch
 import speech_recognition as sr
 import SpeechAnalysis
 import time
+from BasicWebParser import updates
 
 def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
     # get absolute path to file so the script csan be executed from anywhr
@@ -29,13 +30,13 @@ def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
     # perform search of youtube...
     return youtubeSession.enterSearchForm(youtubeSession.urls['homePage'], youtubeSession.urls['serviceSearch'], searchQuery)
 
-
-def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolder='', pathToSettings='', debugMode=False):
+# integerVideoId defaults to 0, but can be used in autodownload recusively to remove the bad link to song.
+def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolder='', pathToSettings='', debugMode=False, counter=0, integerVideoId=None):
     # array of tuples for storing (title, url)
     videoUrls = []
 
     responseObject = {
-        'error' : '',
+        'error' : None,
         'success' : False,
         'songPath' : None
     }
@@ -48,7 +49,14 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     if debugMode == False:
         options.add_argument('headless')
     options.add_argument('--disable-gpu')
-    browser = webdriver.Chrome(options=options)
+    options.add_argument("--log-level=3")
+    try:
+        browser = webdriver.Chrome(options=options)
+    except:
+        print("ERROR>>>New version of ChromeDriver Required. Downloading")
+        BasicWebParser.updates.chromeDriver("https://chromedriver.chromium.org")
+
+
     # browser = webdriver.Safari()
     browser.get(youtubePageResponse.url)
 
@@ -61,69 +69,67 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         if videotitle.get('href') != None:
             videoUrl = 'https://www.youtube.com' + videotitle.get('href')
             title = videotitle.get('title')
-            videoUrls.append((title, videoUrl))
-            # prints the title of video pretilly
-            print(' %d - %s: %s' %(i, title, videoUrl))
+            if i == integerVideoId:
+                print(' %d - Removed broken link here.' % (integerVideoId))
+                videoUrls.append(('Removed broken link here', None))
+            else:
+                videoUrls.append((title, videoUrl))
+                # prints the title of video pretilly
+                print(' %d - %s: %s' %(i, title, videoUrl))
             i += 1
-
     # append the watch url to the youtubetomp3 website and get with selenium so javascript loads
     # urls stored as list of tuples
     # check for command line argv -- autoDownload
-    # if autoDownload is on, grab first URL. Else, user selects...
     if autoDownload == True:
-        videoSelection = videoUrls[0][0]
-        browser.get('https://ytmp3.cc/')
-        formInput = browser.find_element_by_name('video')
-        formInput.send_keys(videoUrls[0][1])
-        formInput.submit()
-        print("Converting: %s" % (videoSelection))
+        integerVideoId = counter
 
     else:
-        integerVideoId = int(input("Select the song you want by entering the number beside it. [%d to %d].. '404' to search again: " % (0, len(videoUrls)-1)))
-
+        if integerVideoId == None:
+            integerVideoId = int(input("Select the song you want by entering the number beside it. [%d to %d].. '404' to search again: " % (0, len(videoUrls)-1)))
+        else:
+            integerVideoId = int(input("Select the song you want by entering the number beside it. Not [%d].. '404' to search again: " % (integerVideoId)))
         ## Error handle for function.. check None type in Main
         if integerVideoId == 404:
             responseObject['success'] = False
             responseObject['error'] = '404'
             return responseObject
 
-        # error handling for url selection
-        while integerVideoId not in range(0, len(videoUrls)):
-            integerVideoId = int(input("Try Again.. [%d to %d] " % (0, len(videoUrls)-1)))
+        # error handling for url selection.. check for None type removed link from line 67
+        while integerVideoId not in range(0, len(videoUrls)) or videoUrls[integerVideoId][1] == None:
+            integerVideoId = int(input("Try Again (Not [%s]) " % (integerVideoId)))
 
-        videoSelection = videoUrls[integerVideoId][0]
-        browser.get('https://ytmp3.cc/')
-        formInput = browser.find_element_by_name('video')
-        formInput.send_keys(videoUrls[integerVideoId][1])
-        formInput.submit()
-        print("Converting: %s" % (videoSelection))
-
-    # ensure the javascript has time to run, when the id="Download" appears it is okay to close window.
-    wait = WebDriverWait(browser, 10)
-    # page fully loaded upon download id being present
-    element = wait.until(EC.element_to_be_clickable((By.ID, 'download')))
-
-    pageText = BeautifulSoup(browser.page_source, 'html.parser')
-
-    # tag a with attribute download='file.mp3' containt the downloadlink at href attr
-    downloadTag = pageText.find('a', id='download')
-    print(downloadTag)
+    videoSelection = videoUrls[integerVideoId][0]
+    browser.get('https://ytmp3.cc/')
+    formInput = browser.find_element_by_name('video')
+    formInput.send_keys(videoUrls[integerVideoId][1])
+    formInput.submit()
+    print("Converting: %s" % (videoSelection))
 
     try:
+        # ensure the javascript has time to run, when the id="Download" appears it is okay to close window.
+        wait = WebDriverWait(browser, 10)
+        # page fully loaded upon download id being present
+        element = wait.until(EC.element_to_be_clickable((By.LINK_TEXT, 'Download')))
+
+        pageText = BeautifulSoup(browser.page_source, 'html.parser')
+
+        # tag a with attribute download='file.mp3' containt the downloadlink at href attr
+        downloadTag = pageText.find('a', string="Download")
         downloadLink = downloadTag.get('href')
 
     except:
-        error = pageText.find('div', class_="alert alert-warning")
+        print("!!-----Error------!!")
         print("Something went wrong on the youtubetomp3 website: ")
+        print("This error is on their side.. either the conversion timed out or the file can't be converted on that site.")
+        print("Returning to song search.. Please Try again")
 
-        print(error.contents)
-
-        print("I swear this doesn't happen to me often.")
-        print("Returning to song search.")
-        responseObject['success'] = False
-        responseObject['error'] = 'youMP3fail'
-        return responseObject
-
+        if counter >= 5:
+            responseObject['success'] = False
+            responseObject['error'] = 'youMP3fail'
+            print("Tried 5 different downloads.. all failed. Quitting to final menu")
+            return
+        else:
+            return youtubeSongDownload(youtubePageResponse, autoDownload, pathToDumpFolder, pathToSettings, debugMode, counter=counter+1, integerVideoId=integerVideoId)
 
     print("Downloading from: ", downloadLink)
 
@@ -132,7 +138,6 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     # must strip the illegal characters from the videoTitle for saving to work smoothly
     print('Removing any illegal characters in filename.')
     videoSelection = removeIllegalCharacters(videoSelection)
-
 
     localSaveFileToPath = os.path.join(pathToDumpFolder, videoSelection + '.mp3')
 
@@ -146,7 +151,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         print("Done. Playing.. " + videoSelection + ".mp3" + " Now. Enjoy")
         print("Located currently at: ", os.path.join(localSaveFileToPath))
 
-        responseObject['error'] = 'None'
+        responseObject['error'] = None
         responseObject['success'] = True
         responseObject['songPath'] = os.path.join(localSaveFileToPath)
         return responseObject

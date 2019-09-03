@@ -3,6 +3,7 @@ setup.py
 BasicWebParser/DataPrinter.py
 BasicWebParser/Logins.py
 BasicWebParser/__init__.py
+BasicWebParser/updates.py
 Youtube/Youtube.py
 Youtube/__init__.py
 youtubetomp3.egg-info/PKG-INFO

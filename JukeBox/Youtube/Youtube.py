@@ -1,5 +1,5 @@
 import requests
-from BasicWebParser import Logins
+from BasicWebParser import Logins, updates
 from bs4 import BeautifulSoup
 import json
 import vlc
@@ -13,6 +13,7 @@ from iTunesManipulator import iTunesSearch
 import speech_recognition as sr
 import SpeechAnalysis
 import time
+
 
 def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
     # get absolute path to file so the script csan be executed from anywhr
@@ -49,7 +50,14 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         options.add_argument('headless')
     options.add_argument('--disable-gpu')
     options.add_argument("--log-level=3")
-    browser = webdriver.Chrome(options=options)
+    try:
+        browser = webdriver.Chrome(options=options)
+    except:
+        print("ERROR>>>New version of ChromeDriver Required. Downloading")
+        updates.chromeDriver("https://chromedriver.chromium.org")
+        browser = webdriver.Chrome(options=options)
+
+
     # browser = webdriver.Safari()
     browser.get(youtubePageResponse.url)
 
