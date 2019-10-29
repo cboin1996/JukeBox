@@ -69,7 +69,7 @@ def chromeDriver(url):
     # latest stable release found with stable in span tag.  Get the hyperlink nextTime
     # and then open up that link to perform download.
     tag = soup.find("span", string=re.compile('stable'))
-    downloadPageLink = tag.next_sibling.get('href')
+    downloadPageLink = tag.findNext('a').get('href')
     print("Gathered the latest download version at the link: ", downloadPageLink)
     response = session.get(downloadPageLink)
     response.html.render(timeout=0, sleep=2)
