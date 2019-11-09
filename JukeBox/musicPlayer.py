@@ -60,7 +60,7 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
     iTunesPaths['searchedSongResult'] = []
 
     if operatingSystem == 'darwin':
-        pathToItunesAutoAdd = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes.localized')
+        pathToItunesAutoAdd = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to Music.localized')
         addToItunesPath = glob.glob(pathToItunesAutoAdd, recursive=True)
 
         if len(addToItunesPath) == 0:
