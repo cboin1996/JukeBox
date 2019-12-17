@@ -5,6 +5,13 @@ import json
 import os
 import eyed3
 
+trackName = 'trackName'
+artistName = 'artistName'
+collectionName = 'collectionName'
+artworkUrl100 = 'artworkUrl100'
+primaryGenreName = 'primaryGenreName'
+track_num = 'trackNumber'
+track_count = 'trackCount'
 # prints list from top down so its more user friendly, items are pretty big
 def prettyPrinter(listOfDicts):
     i = len(listOfDicts) - 1
@@ -43,13 +50,6 @@ def artworkSearcher(artworkUrl):
 
 def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
 
-    trackName = 'trackName'
-    artistName = 'artistName'
-    collectionName = 'collectionName'
-    artworkUrl100 = 'artworkUrl100'
-    primaryGenreName = 'primaryGenreName'
-    track_num = 'trackNumber'
-
     # Create MP3File instance.
     print("Adding your tags.")
     print("Your file temperarily located at: ", mp3Path)
@@ -66,7 +66,8 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
     audiofile.tag.album = dictionaryOfTags[collectionName]
     audiofile.tag.title = dictionaryOfTags[trackName]
     audiofile.tag.genre = dictionaryOfTags[primaryGenreName]
-    audiofile.tag.track_num = dictionaryOfTags[track_num]
+    audiofile.tag.track_num = (dictionaryOfTags[track_num], dictionaryOfTags[track_count])
+
 
     if response.status_code == 200:
         audiofile.tag.images.set(type_=3, img_data=response.content, mime_type='image/png', description=u"Art", img_url=None)
@@ -80,12 +81,6 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
 # entity is usually song for searching songs
 def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=False):
     parsedResultsList = []
-    trackName = 'trackName'
-    artistName = 'artistName'
-    collectionName = 'collectionName'
-    artworkUrl100 = 'artworkUrl100'
-    primaryGenreName = 'primaryGenreName'
-    track_num = 'trackNumber'
     resultDictionary = {}
     requiredJsonKeys = [trackName, artistName, collectionName, artworkUrl100, primaryGenreName, track_num]
     searchParameters = {'term':searchVariable, 'entity':entity, 'limit':limit}
@@ -105,6 +100,7 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
                 resultDictionary[artworkUrl100] = searchResult[artworkUrl100]
                 resultDictionary[primaryGenreName] = searchResult[primaryGenreName]
                 resultDictionary[track_num] = searchResult[track_num]
+                resultDictionary[track_count] = searchResult[track_count]
                 parsedResultsList.append(resultDictionary)
             else:
                 print("Skipping song data as result lacked either a name, artist, album, artwork or genre in the API")
