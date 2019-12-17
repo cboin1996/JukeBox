@@ -12,7 +12,7 @@ def prettyPrinter(listOfDicts):
     for element in reversed(listOfDicts):
         print(i, end='')
         for k,v in element.items():
-            print('\t' + k + " - " + v)
+            print('\t%s - %s' % (k, v))
             # print(artistName + " - " + tag[artistName])
             # print(collectionName + " - " + tag[collectionName])
             # print(artworkUrl100 + " - " + tag[artworkUrl100])
@@ -48,6 +48,7 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
     collectionName = 'collectionName'
     artworkUrl100 = 'artworkUrl100'
     primaryGenreName = 'primaryGenreName'
+    track_num = 'trackNumber'
 
     # Create MP3File instance.
     print("Adding your tags.")
@@ -65,6 +66,7 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
     audiofile.tag.album = dictionaryOfTags[collectionName]
     audiofile.tag.title = dictionaryOfTags[trackName]
     audiofile.tag.genre = dictionaryOfTags[primaryGenreName]
+    audiofile.tag.track_num = dictionaryOfTags[track_num]
 
     if response.status_code == 200:
         audiofile.tag.images.set(type_=3, img_data=response.content, mime_type='image/png', description=u"Art", img_url=None)
@@ -83,8 +85,9 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
     collectionName = 'collectionName'
     artworkUrl100 = 'artworkUrl100'
     primaryGenreName = 'primaryGenreName'
+    track_num = 'trackNumber'
     resultDictionary = {}
-    requiredJsonKeys = [trackName, artistName, collectionName, artworkUrl100, primaryGenreName]
+    requiredJsonKeys = [trackName, artistName, collectionName, artworkUrl100, primaryGenreName, track_num]
     searchParameters = {'term':searchVariable, 'entity':entity, 'limit':limit}
 
     itunesResponse = requests.get('https://itunes.apple.com/search', params=searchParameters)
@@ -101,6 +104,7 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
                 resultDictionary[collectionName] = searchResult[collectionName]
                 resultDictionary[artworkUrl100] = searchResult[artworkUrl100]
                 resultDictionary[primaryGenreName] = searchResult[primaryGenreName]
+                resultDictionary[track_num] = searchResult[track_num]
                 parsedResultsList.append(resultDictionary)
             else:
                 print("Skipping song data as result lacked either a name, artist, album, artwork or genre in the API")
@@ -140,7 +144,7 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
 
     print('Selecting item: %d' % (trackPropertySelectionNumber))
     for k,v in trackProperties.items():
-        print(' - ' + k + ' : ' + v)
+        print(' - %s : %s' % (k, v))
 
     return trackProperties
 

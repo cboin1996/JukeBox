@@ -1,11 +1,1 @@
-{
-  "downloads":
-    {
-      "tryCount": 3,
-      "retryTime": 30
-    },
-  "gDrive":
-    {
-      "gDriveFolderPath" : "/Users/christianboin/GoogleDrive/mP3"
-    }
-}
+{"downloads": {"tryCount": 3, "retryTime": 45}, "gDrive": {"gDriveFolderPath": "/Users/christianboin/GoogleDrive/mP3"}}
