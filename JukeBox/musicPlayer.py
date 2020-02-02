@@ -390,6 +390,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
     continueGettingSongs = ''
     continueEditing = ''
     editorOrSongDownload = ''
+    searchFor = ''
     # editor functionality -- alpha test.. doesnt quite work. rest of code is in Editor.py
     # while editorOrSongDownload != 'quit':
     #
@@ -400,6 +401,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
     while continueGettingSongs != 'no' :
         # initialize searchList to empty each iteration
         searchList = []
+
         if speechRecog == False:
             searchFor = input("Enter song(s).. separated by a ';' OR 'set' to edit settings: ")
 
@@ -419,14 +421,11 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                 print(speechResponse['transcription'])
                 if 'hello' in speechResponse['transcription'].lower():
 
-                    p = vlc.MediaPlayer(os.path.join(pathToDirectory, 'speechPrompts', 'cbgoogle.mp3'))
-                    p.play()
+                    os.system('say "I am listening. One moment"')
                     time.sleep(2)
                     break
 
-            p = vlc.MediaPlayer(os.path.join(pathToDirectory, 'speechPrompts', 'SaySongs.mp3'))
-            p.play()
-            time.sleep(2)
+            os.system('say "what song do you want?"')
             searchList = SpeechAnalysis.main(mic, r)
 
 
@@ -470,9 +469,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
             continueGettingSongs = input('Want to go again (yes/no): ')
 
         if speechRecog == True:
-            p = vlc.MediaPlayer(os.path.join(pathToDirectory, 'speechPrompts', 'repeat.mp3'))
-            p.play()
-            time.sleep(1.5) #startup time
+            os.system('say "Would you like another song?"')
             continuePlaying = SpeechAnalysis.main(mic, r)
             continueGettingSongs = continuePlaying[0]
 
