@@ -422,7 +422,6 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                 if 'hello' in speechResponse['transcription'].lower():
 
                     os.system('say "I am listening. One moment"')
-                    time.sleep(2)
                     break
 
             os.system('say "what song do you want?"')
