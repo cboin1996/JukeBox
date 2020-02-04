@@ -9,13 +9,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import glob
 import shutil, os, tqdm, sys
-from iTunesManipulator import iTunesSearch
-from iTunesManipulator import Editor
+from iTunesManipulator import (iTunes, Editor, iTunesSearch)
 import speech_recognition as sr
 import SpeechAnalysis
 import time
 from Youtube import Youtube
 import random
+from speechPrompts import computer
+
 
 # Change log
 # Cboin v 1.0.2.1 -- patched itunes search api not returning track names.  Also patched to use latest ytmp3 html.
@@ -42,6 +43,9 @@ def namePlates(argument, argument2, debugMode, OS):
 
     if argument2 == True:
         print("=------Voice Edition Beta------=")
+        if OS == 'darwin':
+            os.system('say "Welcome to the c boin Jukebox."')
+
     if debugMode == True:
         print("=----------Debug Mode----------=")
 
@@ -51,67 +55,11 @@ def namePlates(argument, argument2, debugMode, OS):
     if OS == 'win32':
         print("=---------For Windows----------=")
 
-    print("=-----------V1.0.2.1-------------=")
+    print("=-----------V1.0.2.2-----------=")
     print("================================")
 
     return OS
 
-def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResult':[]}, searchFor=''):
-    iTunesPaths['searchedSongResult'] = []
-
-    if operatingSystem == 'darwin':
-        pathToItunesAutoAdd = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to Music.localized')
-        addToItunesPath = glob.glob(pathToItunesAutoAdd, recursive=True)
-
-        if len(addToItunesPath) == 0:
-            print('You do not have iTunes installed on this machine. Continueing without.')
-            return None
-
-        iTunesPaths['autoAdd'] = addToItunesPath[0]
-        # '*.*' means anyfilename, anyfiletype
-        # /*/* gets through artist, then album or itunes folder structure
-        # iTUNES LIBRARY SEARCH ALGORITHM -- returns lists of matches
-        pathToSong = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*','*.*')
-        path = glob.glob(pathToSong, recursive=True)
-
-        iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor)
-
-    elif operatingSystem == 'win32':
-        pathToItunesAutoAdd = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes')
-        addToItunesPath = glob.glob(pathToItunesAutoAdd, recursive=True)
-
-        if len(addToItunesPath) == 0:
-            print('You do not have iTunes installed on this machine. Continueing without.')
-            return None
-
-        iTunesPaths['autoAdd'] = addToItunesPath[0]
-
-        # '*.*' means anyfilename, anyfiletype
-        # /*/* gets through artist, then album or itunes folder structure
-        # iTUNES LIBRARY SEARCH ALGORITHM -- returns lists of matches
-        pathToSong = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*', '*.*')
-        path = glob.glob(pathToSong, recursive=True)
-
-        iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor)
-
-    else:
-        print("Unrecognized OS. No Itunes recognizable.")
-        return None
-
-    return iTunesPaths
-
-
-def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
-
-    for songPath in songPaths:
-        songNameSplit = songPath.split(os.sep)
-        formattedName = songNameSplit[len(songNameSplit)-1].lower() + songNameSplit[len(songNameSplit)-3].lower()
-        formattedName = Youtube.removeIllegalCharacters(formattedName)
-        # songNameSplit is list of itunes file path.. artist is -3 from length, song is -1
-        if searchParameters.lower() in formattedName.lower():
-            iTunesPaths['searchedSongResult'].append(songPath)
-
-    return iTunesPaths
 
 def formatFileName(pathToFile, sliceKey, stringToAdd):
     # very last thing to do is to add "_complt" to the mp3.  This indicated it has gone through the entire process
@@ -133,72 +81,10 @@ def runMainWithOrWithoutItunes(microPhone,
                                 speechRecogOn=False,
                                 pathToSettings='',
                                 debugMode=False):
-    artists = [] # will hold list of artists
-    songNames = [] # will hold list of songNames
 
     if iTunesInstalled == True:
-
-        if len(iTunesPaths['searchedSongResult']) == 0:
-            print("File not found in iTunes Library.. Getting From Youtube")
-
-        else:
-
-            # get the first item of the songs returned from the list of song paths matching
-            # plays song immediatly, so return after this executes
-            print("Here are song(s) in your library matching your search: ")
-            i = 0
-            for songPath in iTunesPaths['searchedSongResult']:
-                songName = songPath.split(os.sep)
-                artists.append(songName[len(songName)-3])
-                songNames.append(songName[len(songName)-1])
-                print('  %d \t- %s: %s' % (i, artists[i], songNames[i]))
-                i += 1
-
-            # autoDownload condition
-            if autoDownload == True:
-                print("Song name too similar to one or more of above! Skipping.")
-                return
-
-            if speechRecogOn == False:
-                print('Which one do you want to hear?')
-                songSelection = input("Type 'you' to search youtube instead. 'ag' to search again. 'sh' to shuffle through the list: ")
-
-            if speechRecogOn == True:
-                songSelection = 0
-
-            if songSelection == 'ag':
-                print('Returning to beginning.')
-                return
-
-            # play the song only if they want, otherwise continute with program.
-            if songSelection != 'you' and songSelection != 'sh':
-                songSelection = int(songSelection)
-                while songSelection not in range(0, len(iTunesPaths['searchedSongResult'])):
-                    songSelection = int(input('Invalid Input. Try Again'))
-
-                p = vlc.MediaPlayer(iTunesPaths['searchedSongResult'][songSelection])
-                time.sleep(1.5) #startup time
-                p.play()
-
-                userInput = input("Playing: %s - %s. Hit Enter to stop playing... " % (artists[songSelection], songNames[songSelection]))
-                p.stop()
-                return
-
-            # shuffle algorithm TODO: move to a function
-            if songSelection == 'sh':
-                while len(iTunesPaths['searchedSongResult']) - 1 >= 0:
-                    songSelection = random.randint(0, len(iTunesPaths['searchedSongResult']) - 1)
-                    p = vlc.MediaPlayer(iTunesPaths['searchedSongResult'][songSelection])
-                    time.sleep(1.5) #startup time
-                    p.play()
-                    tempItunesSong = iTunesPaths['searchedSongResult'][songSelection].split(os.sep)
-                    userInput = input("Playing: %s - %s. Hit Enter to stop playing... " % (tempItunesSong[len(tempItunesSong)-3],tempItunesSong[len(tempItunesSong)-1]))
-                    p.stop()
-                    iTunesPaths['searchedSongResult'].remove(iTunesPaths['searchedSongResult'][songSelection])
-
-                return
-
-
+        if iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecogOn) == True:
+            return
 
     response = Youtube.getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
     youtubeResponseObject = Youtube.youtubeSongDownload(youtubePageResponse=response,
@@ -420,18 +306,15 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                     speechResponse['transcription'] = 'None'
                 print(speechResponse['transcription'])
                 if 'hello' in speechResponse['transcription'].lower():
-
-                    os.system('say "I am listening. One moment"')
+                    computer.speak(operatingSystem, "I am listening.", file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'))
                     break
-
-            os.system('say "what song do you want?"')
+            computer.speak(operatingSystem, "What song would you like to hear?", file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'whatsong.m4a'))
             searchList = SpeechAnalysis.main(mic, r)
-
 
         # take a list of songs
         for searchForSong in searchList:
             print(" - Running program for: ", searchForSong)
-            iTunesPaths = setItunesPaths(operatingSystem, searchFor=searchForSong)
+            iTunesPaths = iTunes.setItunesPaths(operatingSystem, searchFor=searchForSong)
             if searchFor == '1=1':
                 Editor.syncWithGDrive(gDriveFolderPath=musicPlayerSettings["gDrive"]["gDriveFolderPath"],
                                       iTunesAutoAddFolderPath=iTunesPaths['autoAdd'])
@@ -468,7 +351,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
             continueGettingSongs = input('Want to go again (yes/no): ')
 
         if speechRecog == True:
-            os.system('say "Would you like another song?"')
+            computer.speak(operatingSystem, 'Would you like to continue?', file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'anotherone.m4a'))
             continuePlaying = SpeechAnalysis.main(mic, r)
             continueGettingSongs = continuePlaying[0]
 
@@ -476,7 +359,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
     print("================================")
     print("=--------Have a fine day-------=")
     print("================================")
-
+    if speechRecog == True and operatingSystem=='darwin':
+        computer.speak(operatingSystem, 'Goodbye.')
 
 if __name__=="__main__":
     main(sys.argv)

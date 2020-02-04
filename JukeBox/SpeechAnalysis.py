@@ -27,6 +27,7 @@ def recognize_speech_from_mic(recognizer, microphone, active=False):
     # from the microphone
     with microphone as source:
         # if active == False:
+        print('Hold on, I am adjusting to the ambience of the room')
         recognizer.adjust_for_ambient_noise(source)
         # print('Speak now human. I am your servant.')
         audio = recognizer.listen(source)
@@ -63,12 +64,9 @@ def recognize_speech_from_mic(recognizer, microphone, active=False):
 
 
 def main(mic, r, searchList=[]):
-
-
-    print('Hold on, I am adjusting to the ambience of the room')
     response = recognize_speech_from_mic(r, mic)
 
-    while response['success'] == False:
+    while response['success'] == False or response['error'] != None:
         print('Error. Try again')
         response = recognize_speech_from_mic(r, mic)
 
