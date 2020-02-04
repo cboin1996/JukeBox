@@ -76,14 +76,29 @@ def runMainWithOrWithoutItunes(microPhone,
                                 iTunesInstalled=True,
                                 searchFor='',
                                 autoDownload=False,
-                                localDumpFolder='',
+                                pathToDirectory='',
                                 iTunesPaths={},
                                 speechRecogOn=False,
-                                pathToSettings='',
                                 debugMode=False):
+    localDumpFolder = os.path.join(pathToDirectory, 'dump')
+    pathToSettings = os.path.join(pathToDirectory, 'settings.json')
 
     if iTunesInstalled == True:
         if iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecogOn) == True:
+            return
+
+    if speechRecogOn == True:
+        responseText = SpeechAnalysis.main(microPhone,
+                                            recognizer,
+                                            talking=True,
+                                            OS=sys.platform,
+                                            string_to_say="Would you like to download %s" %(searchFor),
+                                            file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'wouldyouDL.m4a'),
+                                            pathToDirectory=pathToDirectory)
+        if 'yes' in responseText: # check if user wants to download or not
+            computer.speak(sys.platform, 'Downloading.', os.path.join(pathToDirectory, 'speechPrompts', 'downloading.m4a'))
+            autoDownload=True # perform autodownload for that songs
+        else:
             return
 
     response = Youtube.getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
@@ -105,6 +120,8 @@ def runMainWithOrWithoutItunes(microPhone,
 
     # No none type is good news.. continue as normal
     if youtubeResponseObject['songPath'] != None and youtubeResponseObject['error'] == None:
+        if speechRecogOn == True:
+            computer.speak(sys.platform, 'Playing song.', os.path.join(pathToDirectory, 'speechPrompts', 'playingSong.m4a'))
         p = vlc.MediaPlayer(youtubeResponseObject['songPath'])
         time.sleep(1.5) #startup time
         p.play()
@@ -125,9 +142,9 @@ def runMainWithOrWithoutItunes(microPhone,
                                                     iTunesInstalled=iTunesInstalled,
                                                     searchFor=searchFor,
                                                     autoDownload=autoDownload,
-                                                    localDumpFolder=localDumpFolder,
+                                                    pathToDirectory=pathToDirectory,
                                                     iTunesPaths=iTunesPaths,
-                                                    pathToSettings=pathToSettings,
+                                                    speechRecogOn=speechRecogOn,
                                                     debugMode=debugMode)
 
         # parseItunesSearchApi() throws None return type if the user selects no properties
@@ -141,7 +158,7 @@ def runMainWithOrWithoutItunes(microPhone,
         if iTunesInstalled == True:
 
             # autoDownload check
-            if autoDownload == False:
+            if autoDownload == False or speechRecogOn == True:
                 userInput = input("Type 's' to save to itunes, anything else to save locally to 'dump' folder. ")
 
             else:
@@ -167,7 +184,7 @@ def runMainWithOrWithoutItunes(microPhone,
 
         else:
             # autoDownload check
-            if autoDownload == False:
+            if autoDownload == False or speechRecogOn==True:
                 input("Local File is ready. Hit enter to stop playing.")
                 p.stop()
 
@@ -301,15 +318,16 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
         # run the speechRecog edition -- BETA
         else:
             while True:
-                speechResponse = SpeechAnalysis.recognize_speech_from_mic(r, mic, True)
-                if speechResponse['transcription'] == None:
-                    speechResponse['transcription'] = 'None'
-                print(speechResponse['transcription'])
-                if 'hello' in speechResponse['transcription'].lower():
-                    computer.speak(operatingSystem, "I am listening.", file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'))
+                speechResponse = SpeechAnalysis.main(mic, r, talking=False)
+                if 'hello' in speechResponse:
                     break
-            computer.speak(operatingSystem, "What song would you like to hear?", file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'whatsong.m4a'))
-            searchList = SpeechAnalysis.main(mic, r)
+            searchList = SpeechAnalysis.main(mic,
+                                             r,
+                                             talking=True,
+                                             OS=operatingSystem,
+                                             string_to_say="I am listening.",
+                                             file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'),
+                                             pathToDirectory=pathToDirectory)
 
         # take a list of songs
         for searchForSong in searchList:
@@ -327,10 +345,9 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                                             iTunesInstalled=False,
                                             searchFor=searchForSong,
                                             autoDownload=autoDownload,
-                                            localDumpFolder=localDumpFolder,
+                                            pathToDirectory=pathToDirectory,
                                             iTunesPaths=iTunesPaths,
                                             speechRecogOn=speechRecog,
-                                            pathToSettings=pathToSettings,
                                             debugMode=debugMode)
 
             else:
@@ -339,10 +356,9 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                                             iTunesInstalled=True,
                                             searchFor=searchForSong,
                                             autoDownload=autoDownload,
-                                            localDumpFolder=localDumpFolder,
+                                            pathToDirectory=pathToDirectory,
                                             iTunesPaths=iTunesPaths,
                                             speechRecogOn=speechRecog,
-                                            pathToSettings=pathToSettings,
                                             debugMode=debugMode)
 
             print('=----------Done Cycle--------=')
@@ -351,8 +367,13 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
             continueGettingSongs = input('Want to go again (yes/no): ')
 
         if speechRecog == True:
-            computer.speak(operatingSystem, 'Would you like to continue?', file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'anotherone.m4a'))
-            continuePlaying = SpeechAnalysis.main(mic, r)
+            continuePlaying = SpeechAnalysis.main(mic,
+                                                  r,
+                                                  talking=True,
+                                                  OS=operatingSystem,
+                                                  string_to_say='Would you like to continue?',
+                                                  file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'anotherone.m4a'),
+                                                  pathToDirectory=pathToDirectory)
             continueGettingSongs = continuePlaying[0]
 
     # editor functionality goes here (from iTunesManipulator.Editor)

@@ -17,7 +17,6 @@ def check_iTunes_for_song(iTunesPaths,
         print("File not found in iTunes Library.. Getting From Youtube")
         return False
     else:
-
         # get the first item of the songs returned from the list of song paths matching
         # plays song immediatly, so return after this executes
         print("Here are song(s) in your library matching your search: ")
@@ -53,7 +52,7 @@ def check_iTunes_for_song(iTunesPaths,
 
             if speechRecogOn == True:
                 computer.speak(sys.platform,
-                               "Playing: %s - %s. Hit Enter to stop playing... " % (artists[songSelection], songNames[songSelection]),
+                               "Playing: %s." % (songNames[songSelection].replace('.mp3', '')),
                                )
 
             p = vlc.MediaPlayer(iTunesPaths['searchedSongResult'][songSelection])

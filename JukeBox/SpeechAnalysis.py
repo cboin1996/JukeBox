@@ -3,10 +3,17 @@ import musicPlayer
 import speech_recognition as sr
 import random
 import time
+from speechPrompts import computer
+import os
 
-def recognize_speech_from_mic(recognizer, microphone, active=False):
+def recognize_speech_from_mic(recognizer,
+                              microphone,
+                              OS=None,
+                              string_to_say=None,
+                              talking=False,
+                              file_to_play=None,
+                              active=False):
     """Transcribe speech from recorded from `microphone`.
-
     Returns a dictionary with three keys:
     "success": a boolean indicating whether or not the API request was
                successful
@@ -29,7 +36,11 @@ def recognize_speech_from_mic(recognizer, microphone, active=False):
         # if active == False:
         print('Hold on, I am adjusting to the ambience of the room')
         recognizer.adjust_for_ambient_noise(source)
-        # print('Speak now human. I am your servant.')
+        if talking == True:
+            computer.speak(OS, string_to_say, file_to_play=file_to_play)
+            print("Speak Now.")
+        if talking == False:
+            print("Speak Now.")
         audio = recognizer.listen(source)
 
     # set up the response object
@@ -63,16 +74,30 @@ def recognize_speech_from_mic(recognizer, microphone, active=False):
     return response
 
 
-def main(mic, r, searchList=[]):
-    response = recognize_speech_from_mic(r, mic)
+def main(mic,
+         r,
+         OS='',
+         string_to_say='',
+         talking=False,
+         file_to_play=None,
+         searchList=[],
+         pathToDirectory=''):
+
+    response = recognize_speech_from_mic(r,
+                                         mic,
+                                         OS,
+                                         string_to_say=string_to_say,
+                                         talking=talking,
+                                         file_to_play=file_to_play)
 
     while response['success'] == False or response['error'] != None:
         print('Error. Try again')
-        response = recognize_speech_from_mic(r, mic)
-
-        if response['success'] == True:
-            print('You said: ', response["transcription"])
-            searchList = response["transcription"]
+        response = recognize_speech_from_mic(r,
+                                             mic,
+                                             OS,
+                                             string_to_say='Error try again',
+                                             talking=talking,
+                                             file_to_play=os.path.join(pathToDirectory,'speechPrompts', 'tryAgain.m4a'))
 
     if response['success'] == True:
         print('You said: ', response['transcription'])
