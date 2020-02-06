@@ -55,6 +55,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     options.add_argument("--disable-extensions");
     options.add_argument('--disable-gpu')
     options.add_argument("--log-level=3")
+    options.add_argument('--enable-blink-features=HTMLImports')
 
     try:
         browser = webdriver.Chrome(options=options)
