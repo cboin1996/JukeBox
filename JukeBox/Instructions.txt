@@ -1,0 +1,13 @@
+-- GENERAL --
+
+- When entering songs, format as: song1 artist1; song2 artist2 .. songN artistN
+  for best search results
+- When launching the program, you can write auto, voice, or debug.
+    - auto automatically downloads songs
+    - voice runs the speech recognition beta
+    - debug runs the debug mode which shows the browser automation
+
+-- Speech Recognition --
+
+- When asked to hear another song, say 'yes' to return to idle listener, say a
+  song name to search for it again, or 'no' to quit

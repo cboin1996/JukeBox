@@ -10,12 +10,14 @@ from selenium.webdriver.support import expected_conditions as EC
 import glob
 import shutil, os, tqdm, sys
 from iTunesManipulator import (iTunes, Editor, iTunesSearch)
+from Features import help
 import speech_recognition as sr
 import SpeechAnalysis
 import time
 from Youtube import Youtube
 import random
 from speechPrompts import computer
+from Player import jukebox
 
 
 # Change log
@@ -82,7 +84,6 @@ def runMainWithOrWithoutItunes(microPhone,
                                 debugMode=False):
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
     pathToSettings = os.path.join(pathToDirectory, 'settings.json')
-
     if iTunesInstalled == True:
         if iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecogOn) == True:
             return
@@ -131,7 +132,7 @@ def runMainWithOrWithoutItunes(microPhone,
                                                             autoDownload=autoDownload)
 
         # this checks to see if the user is happy with the song, only if in select edition
-        if autoDownload == False:
+        if autoDownload == False or speechRecogOn == False:
             continueToSaveOrNot = input("Hit enter if this sounds right. To try another song -- enter (no): ")
 
             if continueToSaveOrNot == 'no':
@@ -158,22 +159,37 @@ def runMainWithOrWithoutItunes(microPhone,
         if iTunesInstalled == True:
 
             # autoDownload check
-            if autoDownload == False or speechRecogOn == True:
+            if autoDownload == False:
                 userInput = input("Type 's' to save to itunes, anything else to save locally to 'dump' folder. ")
+                p.stop()
+
+            elif speechRecogOn==True and autoDownload == True: # speech recog check for save
+                jukebox.wait_until_end(p, 'Type ctrl c to stop playing.')
+                p.stop()
+                save_or_not = SpeechAnalysis.main(microPhone,
+                                                  recognizer,
+                                                  talking=True,
+                                                  OS=sys.platform,
+                                                  string_to_say="Should I save to iTunes?",
+                                                  file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'shouldSaveToItunes.m4a'),
+                                                  pathToDirectory=pathToDirectory)
+                if 'yes' in save_or_not:
+                    userInput = 's'
+                    computer.speak(sys.platform, 'Saving to Itunes.', os.path.join(pathToDirectory, 'speechPrompts', 'savingiTunes.m4a'))
+
+                else:
+                    userInput = ''
+                    computer.speak(sys.platform, 'Saving Locally', os.path.join(pathToDirectory, 'speechPrompts', 'savingLocal.m4a'))
 
             else:
                 print("Saving to iTunes.. whether you like it or not.")
                 userInput = 's'
-
+                p.stop()
 
             if userInput == 's':
-                # dont know if i want this extra input
-                # input("Your file is ready to be moved.. just hit enter to stop playing.")
-                p.stop()
                 formattedSongName = formatFileName(pathToFile=youtubeResponseObject['songPath'], sliceKey=".mp3", stringToAdd="_complt")
                 shutil.move(formattedSongName, iTunesPaths['autoAdd'])
                 print("Moved your file to iTunes.")
-
 
             else:
                 print("Saved your file locally.")
@@ -184,75 +200,19 @@ def runMainWithOrWithoutItunes(microPhone,
 
         else:
             # autoDownload check
-            if autoDownload == False or speechRecogOn==True:
-                input("Local File is ready. Hit enter to stop playing.")
-                p.stop()
-
+            if autoDownload == False:
+                jukebox.wait_until_end(p, 'Type ctrl c to stop playing.')
+            elif speechRecogOn == True and autoDownload == True:
+                jukebox.wait_until_end(p, 'Type ctrl c to stop playing.')
+                computer.speak(sys.platform, 'Saving Locally', os.path.join(pathToDirectory, 'speechPrompts', 'savingLocal.m4a'))
             else:
                 print("Saving locally. Whether you like it or not.")
-                p.stop()
+            p.stop()
             formattedSongName = formatFileName(pathToFile=youtubeResponseObject['songPath'], sliceKey=".mp3", stringToAdd="_complt")
             return
     if youtubeResponseObject['error'] == 'youMP3fail':
         print("YoutubeMp3 failed too many times. quitting to last menu.")
         return
-
-
-
-def editSettings(pathToSettings='', settingSelections=''):
-    with open(pathToSettings, 'r') as settings_file:
-        settings_data = json.load(settings_file)
-
-
-    while settingSelections != 'quit':
-        i = 0
-        print("Here are your settings.")
-        for key, val in settings_data.items():
-            print("(Genre) - ", key)
-            for k, v in val.items():
-                print('\t' + k + '\t- ', v)
-
-        settingGenreChoice = input("Which setting genre do you want to edit? 'quit' to quit: ")
-
-        if settingGenreChoice == 'quit':
-            print('Quitting.')
-            settingSelections = settingGenreChoice
-        else:
-            while settingGenreChoice not in settings_data.keys():
-                settingGenreChoice = input('Not a valid setting genre Dammit! Try again: ')
-
-            print('Editing: ', settingGenreChoice)
-            for key, val in settings_data[settingGenreChoice].items():
-                print('\t' + key + '\t- ', val)
-
-            settingSelections = input('Enter your setting names: (settingOne, settingTwo, etc. ): ')
-            settingChangeList = settingSelections.split(', ')
-
-
-            for setting in settingChangeList:
-                # check for proper setting
-                while setting not in settings_data[settingGenreChoice].keys():
-                    setting = input("'%s' is not in the settings.  Enter a proper setting: " % (setting))
-
-                updateSetting = input("Enter your new value for '%s': " % (setting))
-
-                if setting == 'retryTime' or 'tryCount':
-                    updateSetting = int(updateSetting)
-
-                settings_data[settingGenreChoice].update({setting:updateSetting})
-
-                with open(pathToSettings, 'w') as write_to_settings:
-                    json.dump(settings_data, write_to_settings)
-                    print("Setting updated. ")
-
-            print("Here are your updated settings.")
-            for key, val in settings_data.items():
-                print("(Genre) - ", key)
-                for k, v in val.items():
-                    print('\t' + k + '\t- ', v)
-
-            settingSelections = input("Type 'quit' to quit, anything to go again: ")
-            print("--Done Update--")
 
 # 'auto' argv will get first video.  Manual will allow user to select video.. default behaviour
 # pass argv to youtubeSongDownload
@@ -274,7 +234,10 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
     if len(argv) > 1:
         if argv[1] == 'auto':
             autoDownload = True
-        if argv[1] == 'voice':
+        if 'voice' in argv and 'debug' in argv:
+            speechRecog = True
+            debugMode = True
+        if 'voice' in argv:
             speechRecog = True
         if len(argv) > 2 and argv[1] == 'auto' and argv[2] == 'debug':
             autoDownload = True
@@ -290,7 +253,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
     # determine which OS we are operating on.  Work with that OS to set
     operatingSystem = namePlates(autoDownload, speechRecog, debugMode, sys.platform)
 
-    continueGettingSongs = ''
+    continueGettingSongs = 'yes' # initialize to yes in order to trigger idle listening
     continueEditing = ''
     editorOrSongDownload = ''
     searchFor = ''
@@ -304,35 +267,39 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
     while continueGettingSongs != 'no' :
         # initialize searchList to empty each iteration
         searchList = []
-
         if speechRecog == False:
-            searchFor = input("Enter song(s).. separated by a ';' OR 'set' to edit settings: ")
+            searchFor = input("Enter song(s) [song1; song2], 'instr' to view instructions OR 'set' to edit settings: ")
 
             if searchFor == 'set':
-                editSettings(pathToSettings=pathToSettings)
-            # secret command for syncing with gDrive files.  Special feature!
-
+                help.editSettings(pathToSettings=pathToSettings)
+            elif searchFor == 'instr':
+                help.view_instructions(os.path.join(pathToDirectory, 'Instructions.txt'))
             else:
                 searchList = searchFor.split('; ')
 
         # run the speechRecog edition -- BETA
         else:
-            while True:
-                speechResponse = SpeechAnalysis.main(mic, r, talking=False)
-                if 'hello' in speechResponse:
-                    break
-            searchList = SpeechAnalysis.main(mic,
-                                             r,
-                                             talking=True,
-                                             OS=operatingSystem,
-                                             string_to_say="I am listening.",
-                                             file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'),
-                                             pathToDirectory=pathToDirectory)
+
+            if continueGettingSongs == "yes": # idly listen if user say's yes otherwise use searchList from end of loop
+                while True:
+                    speechResponse = SpeechAnalysis.main(mic, r, talking=False)
+                    if 'hello' in speechResponse:
+                        break
+                searchList = SpeechAnalysis.main(mic,
+                                                 r,
+                                                 talking=True,
+                                                 OS=operatingSystem,
+                                                 string_to_say="I am listening.",
+                                                 file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'),
+                                                 pathToDirectory=pathToDirectory)
+            else:
+                searchList = list(nextSongs) # get the next songs from previous iteration
 
         # take a list of songs
         for searchForSong in searchList:
             print(" - Running program for: ", searchForSong)
             iTunesPaths = iTunes.setItunesPaths(operatingSystem, searchFor=searchForSong)
+            # secret command for syncing with gDrive files.  Special feature!
             if searchFor == '1=1':
                 Editor.syncWithGDrive(gDriveFolderPath=musicPlayerSettings["gDrive"]["gDriveFolderPath"],
                                       iTunesAutoAddFolderPath=iTunesPaths['autoAdd'])
@@ -367,14 +334,15 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
             continueGettingSongs = input('Want to go again (yes/no): ')
 
         if speechRecog == True:
-            continuePlaying = SpeechAnalysis.main(mic,
+            nextSongs = [] # initialize to empty before ech speech read
+            nextSongs = SpeechAnalysis.main(mic,
                                                   r,
                                                   talking=True,
                                                   OS=operatingSystem,
-                                                  string_to_say='Would you like to continue?',
+                                                  string_to_say='Say another song or no to quit.',
                                                   file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'anotherone.m4a'),
                                                   pathToDirectory=pathToDirectory)
-            continueGettingSongs = continuePlaying[0]
+            continueGettingSongs = nextSongs[0] # set first word to continueGettingSongs to check if they said yes or no
 
     # editor functionality goes here (from iTunesManipulator.Editor)
     print("================================")

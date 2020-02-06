@@ -7,13 +7,15 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
 import glob
 import shutil, os, tqdm, sys
 from iTunesManipulator import iTunesSearch
 import speech_recognition as sr
 import SpeechAnalysis
 import time
-
+def test():
+    print(sys.path)
 
 def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
     # get absolute path to file so the script csan be executed from anywhr
@@ -44,12 +46,16 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         youTubeMP3_settings = json.load(read_file)
 
     # open youtube response with selenium to ensure javascript loads
-    options = webdriver.ChromeOptions()
+    # options = webdriver.ChromeOptions()
+    options = Options()
+
     # add options to make the output pretty, no browser show and no bs outputs
     if debugMode == False:
-        options.add_argument('headless')
+        options.headless = True
+    options.add_argument("--disable-extensions");
     options.add_argument('--disable-gpu')
     options.add_argument("--log-level=3")
+
     try:
         browser = webdriver.Chrome(options=options)
     except:
@@ -57,12 +63,10 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         updates.chromeDriver("https://chromedriver.chromium.org")
         browser = webdriver.Chrome(options=options)
 
-
-    # browser = webdriver.Safari()
     browser.get(youtubePageResponse.url)
 
     pageText = BeautifulSoup(browser.page_source, 'html.parser')
-
+    browser.save_screenshot('/Users/christianboin/Desktop/headless.png')
     # grab the list of video titles from the searched page
     print("Found these videos: ")
     i = 0

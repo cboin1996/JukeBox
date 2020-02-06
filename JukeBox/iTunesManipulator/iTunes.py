@@ -5,14 +5,14 @@ import random
 import glob
 from Youtube import Youtube
 from speechPrompts import computer
+from Player import jukebox
 
 """ Returns True is song is found, else false """
 def check_iTunes_for_song(iTunesPaths,
                           autoDownload,
-                          speechRecogOn,
-                          artists = [], # will hold list of artists
-                          songNames = []): # will hold list of songNames):
-
+                          speechRecogOn):
+    artists = [] # will hold list of artists
+    songNames = [] # need to be zeroed out here DO NOT MOVE into parameter.
     if len(iTunesPaths['searchedSongResult']) == 0:
         print("File not found in iTunes Library.. Getting From Youtube")
         return False
@@ -21,6 +21,7 @@ def check_iTunes_for_song(iTunesPaths,
         # plays song immediatly, so return after this executes
         print("Here are song(s) in your library matching your search: ")
         i = 0
+
         for songPath in iTunesPaths['searchedSongResult']:
             songName = songPath.split(os.sep)
             artists.append(songName[len(songName)-3])
@@ -55,24 +56,18 @@ def check_iTunes_for_song(iTunesPaths,
                                "Playing: %s." % (songNames[songSelection].replace('.mp3', '')),
                                )
 
-            p = vlc.MediaPlayer(iTunesPaths['searchedSongResult'][songSelection])
-            time.sleep(1.5) #startup time
-            p.play()
 
-            userInput = input("Playing: %s - %s. Hit Enter to stop playing... " % (artists[songSelection], songNames[songSelection]))
-            p.stop()
+            jukebox.play_file("Playing: %s - %s. ctrl c to stop playing... " % (artists[songSelection], songNames[songSelection]),
+                              iTunesPaths['searchedSongResult'][songSelection])
             return True
 
         # shuffle algorithm TODO: move to a function
         if songSelection == 'sh':
             while len(iTunesPaths['searchedSongResult']) - 1 >= 0:
                 songSelection = random.randint(0, len(iTunesPaths['searchedSongResult']) - 1)
-                p = vlc.MediaPlayer(iTunesPaths['searchedSongResult'][songSelection])
-                time.sleep(1.5) #startup time
-                p.play()
                 tempItunesSong = iTunesPaths['searchedSongResult'][songSelection].split(os.sep)
-                userInput = input("Playing: %s - %s. Hit Enter to stop playing... " % (tempItunesSong[len(tempItunesSong)-3],tempItunesSong[len(tempItunesSong)-1]))
-                p.stop()
+                jukebox.play_file("Playing: %s - %s. ctrl c to stop playing... " % (tempItunesSong[len(tempItunesSong)-3],tempItunesSong[len(tempItunesSong)-1]),
+                                  iTunesPaths['searchedSongResult'][songSelection])
                 iTunesPaths['searchedSongResult'].remove(iTunesPaths['searchedSongResult'][songSelection])
 
             return True
