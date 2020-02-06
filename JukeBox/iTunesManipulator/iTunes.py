@@ -87,7 +87,7 @@ def shuffle(iTunesPaths, speechRecogOn, pathToDirectory):
     while len(iTunesPaths['searchedSongResult']) - 1 >= 0:
         songSelection = random.randint(0, len(iTunesPaths['searchedSongResult']) - 1)
         tempItunesSong = iTunesPaths['searchedSongResult'][songSelection].split(os.sep)
-        if speechRecogOn == True:
+        if speechRecogOn == True and consec_skips == 0:
             computer.speak(sys.platform,
                            "Playing: %s." % (stripFileForSpeech(tempItunesSong[len(tempItunesSong)-1])),
                            os.path.join(pathToDirectory, 'speechPrompts', 'playingSong.m4a')
