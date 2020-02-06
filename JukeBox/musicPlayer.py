@@ -85,7 +85,7 @@ def runMainWithOrWithoutItunes(microPhone,
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
     pathToSettings = os.path.join(pathToDirectory, 'settings.json')
     if iTunesInstalled == True:
-        if iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecogOn) == True:
+        if iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecogOn, pathToDirectory) == True:
             return
 
     if speechRecogOn == True:
@@ -285,13 +285,19 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                     speechResponse = SpeechAnalysis.main(mic, r, talking=False)
                     if 'hello' in speechResponse:
                         break
-                searchList = SpeechAnalysis.main(mic,
-                                                 r,
-                                                 talking=True,
-                                                 OS=operatingSystem,
-                                                 string_to_say="I am listening.",
-                                                 file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'),
-                                                 pathToDirectory=pathToDirectory)
+
+                    if 'play' == speechResponse[0].split(' ')[0]: #shortcut -- skip the hello
+                        speechResponse = speechResponse[0].replace('play ', '') # strip play
+                        searchList = [speechResponse]
+                        break
+                if 'hello' in speechResponse:
+                    searchList = SpeechAnalysis.main(mic,
+                                                     r,
+                                                     talking=True,
+                                                     OS=operatingSystem,
+                                                     string_to_say="I am listening.",
+                                                     file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'),
+                                                     pathToDirectory=pathToDirectory)
             else:
                 searchList = list(nextSongs) # get the next songs from previous iteration
 

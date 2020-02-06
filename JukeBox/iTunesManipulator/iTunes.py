@@ -10,7 +10,8 @@ from Player import jukebox
 """ Returns True is song is found, else false """
 def check_iTunes_for_song(iTunesPaths,
                           autoDownload,
-                          speechRecogOn):
+                          speechRecogOn,
+                          pathToDirectory=''):
     artists = [] # will hold list of artists
     songNames = [] # need to be zeroed out here DO NOT MOVE into parameter.
     if len(iTunesPaths['searchedSongResult']) == 0:
@@ -39,7 +40,10 @@ def check_iTunes_for_song(iTunesPaths,
             songSelection = input("Type 'you' to search youtube instead. 'ag' to search again. 'sh' to shuffle through the list: ")
 
         if speechRecogOn == True:
-            songSelection = 0
+            if len(iTunesPaths['searchedSongResult']) > 1:
+                songSelection = 'sh'
+            else:
+                songSelection = 0
 
         if songSelection == 'ag':
             print('Returning to beginning.')
@@ -54,23 +58,48 @@ def check_iTunes_for_song(iTunesPaths,
             if speechRecogOn == True:
                 computer.speak(sys.platform,
                                "Playing: %s." % (songNames[songSelection].replace('.mp3', '')),
+                               os.path.join(pathToDirectory, 'speechPrompts', 'playingSong.m4a')
                                )
 
-
-            jukebox.play_file("Playing: %s - %s. ctrl c to stop playing... " % (artists[songSelection], songNames[songSelection]),
+            jukebox.play_file("Playing: %s - %s. ctrl c to stop." % (artists[songSelection], songNames[songSelection]),
                               iTunesPaths['searchedSongResult'][songSelection])
             return True
 
         # shuffle algorithm TODO: move to a function
         if songSelection == 'sh':
-            while len(iTunesPaths['searchedSongResult']) - 1 >= 0:
-                songSelection = random.randint(0, len(iTunesPaths['searchedSongResult']) - 1)
-                tempItunesSong = iTunesPaths['searchedSongResult'][songSelection].split(os.sep)
-                jukebox.play_file("Playing: %s - %s. ctrl c to stop playing... " % (tempItunesSong[len(tempItunesSong)-3],tempItunesSong[len(tempItunesSong)-1]),
-                                  iTunesPaths['searchedSongResult'][songSelection])
-                iTunesPaths['searchedSongResult'].remove(iTunesPaths['searchedSongResult'][songSelection])
+            shuffle(iTunesPaths, speechRecogOn, pathToDirectory)
 
             return True
+
+def shuffle(iTunesPaths, speechRecogOn, pathToDirectory):
+    consec_skips = 0
+    prev_wait_unt_end = False
+    if speechRecogOn == True:
+        computer.speak(sys.platform,
+                       "Shuffle mode activated.",
+                       os.path.join(pathToDirectory, 'speechPrompts', 'shuffleModeOn.m4a')
+                       )
+    while len(iTunesPaths['searchedSongResult']) - 1 >= 0:
+        songSelection = random.randint(0, len(iTunesPaths['searchedSongResult']) - 1)
+        tempItunesSong = iTunesPaths['searchedSongResult'][songSelection].split(os.sep)
+        if speechRecogOn == True:
+            computer.speak(sys.platform,
+                           "Playing: %s." % (tempItunesSong[len(tempItunesSong)-1]),
+                           os.path.join(pathToDirectory, 'speechPrompts', 'playingSong.m4a')
+                           )
+        wait_until_end = jukebox.play_file("Playing: %s - %s. ctrl c to stop playing... " % (tempItunesSong[len(tempItunesSong)-3],tempItunesSong[len(tempItunesSong)-1]),
+                                                                                             iTunesPaths['searchedSongResult'][songSelection])
+        if wait_until_end == False and prev_wait_unt_end == False: # check that user has skipped song
+            consec_skips += 1
+        else:
+            consec_skips = 0
+
+        if consec_skips >= 3:
+            return
+        prev_wait_unt_end = wait_until_end
+
+        iTunesPaths['searchedSongResult'].remove(iTunesPaths['searchedSongResult'][songSelection])
+
 
 def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
 

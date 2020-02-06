@@ -189,24 +189,7 @@ def dumpAndDownload(filepath, downloadLink, local_filename, counter=0, waitTime=
         if file_size == None:
             print('-------------------------')
             print("No file size.. so no progress bar.. Downloading")
-
-            for chunk in getRequestResponse.iter_content(chunk_size=chunk_size):
-                fp.write(chunk)
-                nextTime = time.time()
-
-                # # DEBUG check to verify this works.. its acting funny
-                if nextTime - firstTime > waitTime:
-                    print('Slow download.. trying again.. took >%d seconds' % (nextTime - firstTime))
-
-                    if counter == 0:
-                        return failure
-
-                    else:
-                        return dumpAndDownload(filepath=filepath,
-                                            downloadLink=downloadLink,
-                                            local_filename=local_filename,
-                                            counter=counter-1,
-                                            waitTime=waitTime)
+            iter_content = getRequestResponse.iter_content(chunk_size=chunk_size)
 
         else:
             file_size = int(file_size)
@@ -214,7 +197,7 @@ def dumpAndDownload(filepath, downloadLink, local_filename, counter=0, waitTime=
             chunk_size=1024
             num_bars = int(file_size / chunk_size)
             iterable = getRequestResponse.iter_content(chunk_size=chunk_size)
-            progressBar = tqdm.tqdm(
+            iter_content = tqdm.tqdm( # set iterable to progress Bar
                             iterable
                             , total= num_bars
                             , unit = 'KB'
@@ -223,25 +206,25 @@ def dumpAndDownload(filepath, downloadLink, local_filename, counter=0, waitTime=
                             , dynamic_ncols=True
                             )
 
-            for chunk in  progressBar:
-                fp.write(chunk)
-                nextTime = time.time()
+        for chunk in  iter_content:
+            fp.write(chunk)
+            nextTime = time.time()
 
-                # must close bar if this flag is checked. this way it prints properly
-                if nextTime - firstTime > waitTime:
-                    progressBar.close()
-                    print('Slow download.. trying again.. took >%d seconds' % (nextTime - firstTime))
+            # must close bar if this flag is checked. this way it prints properly
+            if nextTime - firstTime > waitTime:
+                progressBar.close()
+                print('Slow download.. trying again.. took >%d seconds' % (nextTime - firstTime))
 
-                    if counter == 0:
-                        print('Tried a few times.. but the downloads are slow.')
-                        return failure
+                if counter == 0:
+                    print('Tried a few times.. but the downloads are slow.')
+                    return failure
 
-                    else:
-                        return dumpAndDownload(filepath=filepath,
-                                            downloadLink=downloadLink,
-                                            local_filename=local_filename,
-                                            counter=counter-1,
-                                            waitTime=waitTime)
+                else:
+                    return dumpAndDownload(filepath=filepath,
+                                        downloadLink=downloadLink,
+                                        local_filename=local_filename,
+                                        counter=counter-1,
+                                        waitTime=waitTime)
 
     # should only get here if the download is successful
     return success

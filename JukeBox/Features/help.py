@@ -5,7 +5,15 @@ def view_instructions(file_path):
     with open(file_path,'r') as f:
         print(f.read())
     return
-    
+
+def updateShuffle(pathToSettings='', shuffleOn=False):
+    with open(pathToSettings, 'r') as settings_file:
+        settings_data = json.load(settings_file)
+
+    settings_data['shuffleOn'] = shuffleOn
+    with open(pathToSettings, 'w') as write_to_settings:
+        json.dump(settings_data, write_to_settings)
+
 def editSettings(pathToSettings='', settingSelections=''):
     with open(pathToSettings, 'r') as settings_file:
         settings_data = json.load(settings_file)
