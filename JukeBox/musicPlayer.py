@@ -287,8 +287,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                         break
 
                     if 'play' == speechResponse[0].split(' ')[0]: #shortcut -- skip the hello
-                        speechResponse = speechResponse[0].replace('play ', '') # strip play
-                        searchList = [speechResponse]
+                        speechResponse[0] = speechResponse[0].replace('play ', '') # strip play
+                        searchList = speechResponse
                         break
                 if 'hello' in speechResponse:
                     searchList = SpeechAnalysis.main(mic,
@@ -300,7 +300,6 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                                                      pathToDirectory=pathToDirectory)
             else:
                 searchList = list(nextSongs) # get the next songs from previous iteration
-
         # take a list of songs
         for searchForSong in searchList:
             print(" - Running program for: ", searchForSong)

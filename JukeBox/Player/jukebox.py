@@ -1,6 +1,7 @@
 import vlc
 import os, sys
-import threading
+import time
+
 
 def play_file(prompt, file_path, startup_time=1.5):
     vlc_instance = vlc.Instance()
@@ -21,6 +22,7 @@ def wait_until_end(player, prompt):
         current_state = player.get_state()
         while current_state != Ended:
             current_state = player.get_state()
+            time.sleep(1.25)
         return True
     except KeyboardInterrupt:
         sys.stderr.write("\r")

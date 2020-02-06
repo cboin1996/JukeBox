@@ -14,6 +14,7 @@ def check_iTunes_for_song(iTunesPaths,
                           pathToDirectory=''):
     artists = [] # will hold list of artists
     songNames = [] # need to be zeroed out here DO NOT MOVE into parameter.
+    albums = []
     if len(iTunesPaths['searchedSongResult']) == 0:
         print("File not found in iTunes Library.. Getting From Youtube")
         return False
@@ -26,8 +27,9 @@ def check_iTunes_for_song(iTunesPaths,
         for songPath in iTunesPaths['searchedSongResult']:
             songName = songPath.split(os.sep)
             artists.append(songName[len(songName)-3])
+            albums.append(songName[len(songName)-2])
             songNames.append(songName[len(songName)-1])
-            print('  %d \t- %s: %s' % (i, artists[i], songNames[i]))
+            print('  %d \t- %s - %s: %s' % (i, albums[i], artists[i], songNames[i]))
             i += 1
 
         # autoDownload condition
@@ -56,12 +58,13 @@ def check_iTunes_for_song(iTunesPaths,
                 songSelection = int(input('Invalid Input. Try Again'))
 
             if speechRecogOn == True:
+
                 computer.speak(sys.platform,
-                               "Playing: %s." % (songNames[songSelection].replace('.mp3', '')),
+                               "Playing: %s." % (stripFileForSpeech(songNames[songSelection])),
                                os.path.join(pathToDirectory, 'speechPrompts', 'playingSong.m4a')
                                )
 
-            jukebox.play_file("Playing: %s - %s. ctrl c to stop." % (artists[songSelection], songNames[songSelection]),
+            jukebox.play_file("Playing: %s - %s: %s. ctrl c to stop." % (albums[songSelection], artists[songSelection], songNames[songSelection]),
                               iTunesPaths['searchedSongResult'][songSelection])
             return True
 
@@ -70,6 +73,8 @@ def check_iTunes_for_song(iTunesPaths,
             shuffle(iTunesPaths, speechRecogOn, pathToDirectory)
 
             return True
+def stripFileForSpeech(file_name):
+    return file_name.replace('.mp3','').replace('&', 'and').replace('(', '').replace(')', '')
 
 def shuffle(iTunesPaths, speechRecogOn, pathToDirectory):
     consec_skips = 0
@@ -84,11 +89,13 @@ def shuffle(iTunesPaths, speechRecogOn, pathToDirectory):
         tempItunesSong = iTunesPaths['searchedSongResult'][songSelection].split(os.sep)
         if speechRecogOn == True:
             computer.speak(sys.platform,
-                           "Playing: %s." % (tempItunesSong[len(tempItunesSong)-1]),
+                           "Playing: %s." % (stripFileForSpeech(tempItunesSong[len(tempItunesSong)-1])),
                            os.path.join(pathToDirectory, 'speechPrompts', 'playingSong.m4a')
                            )
-        wait_until_end = jukebox.play_file("Playing: %s - %s. ctrl c to stop playing... " % (tempItunesSong[len(tempItunesSong)-3],tempItunesSong[len(tempItunesSong)-1]),
-                                                                                             iTunesPaths['searchedSongResult'][songSelection])
+        wait_until_end = jukebox.play_file("Playing: %s - %s: %a. ctrl c to stop playing... " % (tempItunesSong[len(tempItunesSong)-3], #3 is album
+                                                                                                 tempItunesSong[len(tempItunesSong)-2], #2 is artist
+                                                                                                 tempItunesSong[len(tempItunesSong)-1]), #1 is song
+                                                                                                 iTunesPaths['searchedSongResult'][songSelection])
         if wait_until_end == False and prev_wait_unt_end == False: # check that user has skipped song
             consec_skips += 1
         else:
@@ -105,7 +112,7 @@ def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
 
     for songPath in songPaths:
         songNameSplit = songPath.split(os.sep)
-        formattedName = songNameSplit[len(songNameSplit)-1].lower() + songNameSplit[len(songNameSplit)-3].lower()
+        formattedName = songNameSplit[len(songNameSplit)-1].lower() + songNameSplit[len(songNameSplit)-2].lower() + songNameSplit[len(songNameSplit)-3].lower()
         formattedName = Youtube.removeIllegalCharacters(formattedName)
         # songNameSplit is list of itunes file path.. artist is -3 from length, song is -1
         if searchParameters.lower() in formattedName.lower():

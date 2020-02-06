@@ -101,8 +101,7 @@ def main(mic,
 
     if response['success'] == True:
         print('You said: ', response['transcription'])
-        searchList = response["transcription"].lower().split(' + ')
-
+        searchList = response["transcription"].lower().replace("'",'').split(' + ')
     return searchList
 
 if __name__=="__main__":
