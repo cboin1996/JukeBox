@@ -5,13 +5,6 @@ import json
 import os
 import eyed3
 
-trackName = 'trackName'
-artistName = 'artistName'
-collectionName = 'collectionName'
-artworkUrl100 = 'artworkUrl100'
-primaryGenreName = 'primaryGenreName'
-track_num = 'trackNumber'
-track_count = 'trackCount'
 # prints list from top down so its more user friendly, items are pretty big
 def prettyPrinter(listOfDicts):
     i = len(listOfDicts) - 1
@@ -49,7 +42,13 @@ def artworkSearcher(artworkUrl):
 
 
 def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
-
+    trackName='trackName'
+    artistName='artistName'
+    collectionName='collectionName'
+    artworkUrl100='artworkUrl100'
+    primaryGenreName='primaryGenreName'
+    track_num='trackNumber'
+    track_count='trackCount'
     # Create MP3File instance.
     print("Adding your tags.")
     print("Your file temperarily located at: ", mp3Path)
@@ -79,39 +78,18 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
     return dictionaryOfTags[trackName]
 
 # entity is usually song for searching songs
-def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=False):
-    parsedResultsList = []
-    resultDictionary = {}
-    requiredJsonKeys = [trackName, artistName, collectionName, artworkUrl100, primaryGenreName, track_num]
-    searchParameters = {'term':searchVariable, 'entity':entity, 'limit':limit}
+def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=False, requiredJsonKeys=[], searchOrLookup=True, mode=''):
+    parsedResultsList = query_and_display(searchVariable, limit, entity, requiredJsonKeys, searchOrLookup)
 
-    itunesResponse = requests.get('https://itunes.apple.com/search', params=searchParameters)
-    # itunesResponse = requests.get('https://itunes.apple.com/search?term=jack+johnson')
-    print("Connected to: ", itunesResponse.url, itunesResponse.status_code)
-    if itunesResponse.status_code == 200:
-        itunesJSONDict = json.loads(itunesResponse.content)
-        for searchResult in itunesJSONDict['results']:
-            #print(searchResult)
-            resultDictionary = {}
-            if all(key in searchResult for key in requiredJsonKeys):
-                resultDictionary[trackName] = searchResult[trackName]
-                resultDictionary[artistName] = searchResult[artistName]
-                resultDictionary[collectionName] = searchResult[collectionName]
-                resultDictionary[artworkUrl100] = searchResult[artworkUrl100]
-                resultDictionary[primaryGenreName] = searchResult[primaryGenreName]
-                resultDictionary[track_num] = searchResult[track_num]
-                resultDictionary[track_count] = searchResult[track_count]
-                parsedResultsList.append(resultDictionary)
-            else:
-                print("Skipping song data as result lacked either a name, artist, album, artwork or genre in the API")
-
-        prettyPrinter(parsedResultsList)
     print('Searched for: %s' % (searchVariable))
     print('Select the number for the properties you want.. [%d to %d]'% (0, len(parsedResultsList)-1))
 
     # autoDownload check
     if autoDownload == False:
-        trackPropertySelectionNumber = int(input('Nothing here? -- type 404. Save without properties -- Type 405: '))
+        if mode == 'alb':
+            trackPropertySelectionNumber = int(input('Nothing here you like? -- type 404: '))
+        else:
+            trackPropertySelectionNumber = int(input('Nothing here? -- type 404. Save without properties -- Type 405: '))
 
     # autodownload true, set no properties.. continue on
     else:
@@ -133,8 +111,8 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
 
     # call the function again to give any amount of tries to the user
     if trackPropertySelectionNumber == 404:
-        newSearch = input('Type in a more specific song title: ')
-        return parseItunesSearchApi(searchVariable=newSearch, limit=10, entity='song')
+        newSearch = input('Type in a more specific title: ')
+        return parseItunesSearchApi(searchVariable=newSearch, limit=limit, entity=entity, requiredJsonKeys=requiredJsonKeys, searchOrLookup=searchOrLookup, mode=mode)
 
     trackProperties = parsedResultsList[trackPropertySelectionNumber]
 
@@ -143,6 +121,83 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
         print(' - %s : %s' % (k, v))
 
     return trackProperties
+
+def get_songs_in_album(searchVariable='',
+                         limit=40, entity='', requiredJsonKeys={},
+                         searchOrLookup=True):
+
+    trackProperties = query_and_display(searchVariable=searchVariable,
+                                        limit=40, entity='song',
+                                        requiredJsonKeys=requiredJsonKeys,
+                                        searchOrLookup=searchOrLookup)
+
+    return trackProperties
+
+def get_song_info(song_properties, key):
+    song_info = []
+    for element in song_properties:
+        song_info.append(element[key])
+    return song_info
+
+def remove_songs_selected(song_properties_list, requiredJsonKeys):
+    user_input = ''
+    success = True # assume successful transcription of input. WIll update on failure.
+    while True:
+        user_input = input("Enter song id's (1 4 5 etc.) you wish to not download, enter (download all), 'ag' (search again): ")
+        if user_input == '': # no songs to remove by user, so return
+            return song_properties_list # return unmodified list
+        if user_input == 'ag':
+            return None
+        user_input = user_input.split(' ')
+        for i, char in enumerate(user_input): # validate each character
+            if char.isdigit() == False:
+                print("Must enter numbers separated by a space")
+                success = False
+                break
+            elif int(char) > len(song_properties_list)-1:
+                print("Numbers must be 0 or more and less than %s"%(len(song_properties_list)-1))
+                success = False
+                break
+            else:
+                user_input[i] = int(user_input[i])
+
+        if success != False:
+            break
+
+    for index in user_input:
+        print("Removing: %s: %s" % (index, song_properties_list[index][requiredJsonKeys[0]]))
+
+    return [song for i, song in enumerate(song_properties_list) if i not in user_input]
+
+
+
+def query_and_display(searchVariable, limit, entity, requiredJsonKeys, searchOrLookup):
+    parsedResultsList = []
+    resultDictionary = {}
+    if searchOrLookup == True: # perform general search
+        searchParameters = {'term':searchVariable, 'entity':entity, 'limit':limit}
+        itunesResponse = requests.get('https://itunes.apple.com/search', params=searchParameters)
+    else: # perform lookup query by itunes id
+        searchParameters = {'id':searchVariable, 'entity':entity, 'limit':limit}
+        itunesResponse = requests.get('https://itunes.apple.com/lookup', params=searchParameters)
+
+    # itunesResponse = requests.get('https://itunes.apple.com/search?term=jack+johnson')
+    print("Connected to: ", itunesResponse.url, itunesResponse.status_code)
+    if itunesResponse.status_code == 200:
+        itunesJSONDict = json.loads(itunesResponse.content)
+        for searchResult in itunesJSONDict['results']:
+            #print(searchResult)
+            resultDictionary = {}
+            if all(key in searchResult for key in requiredJsonKeys):
+                for key in requiredJsonKeys:
+                    resultDictionary[key] = searchResult[key]
+                parsedResultsList.append(resultDictionary)
+            else:
+                print("Skipping song data as result lacked either a name, artist, album, artwork or genre in the API")
+
+        prettyPrinter(parsedResultsList)
+    return parsedResultsList
+
 
 if __name__=="__main__":
     trackProperties = parseItunesSearchApi(searchVariable='Jack johnson', limit=20, entity='song')

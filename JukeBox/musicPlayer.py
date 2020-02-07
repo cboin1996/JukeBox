@@ -10,7 +10,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import glob
 import shutil, os, tqdm, sys
 from iTunesManipulator import (iTunes, Editor, iTunesSearch)
-from Features import help
+from Features import feature
 import speech_recognition as sr
 import SpeechAnalysis
 import time
@@ -81,12 +81,10 @@ def runMainWithOrWithoutItunes(microPhone,
                                 pathToDirectory='',
                                 iTunesPaths={},
                                 speechRecogOn=False,
-                                debugMode=False):
+                                debugMode=False,
+                                trackProperties={}):
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
     pathToSettings = os.path.join(pathToDirectory, 'settings.json')
-    if iTunesInstalled == True:
-        if iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecogOn, pathToDirectory) == True:
-            return
 
     if speechRecogOn == True:
         responseText = SpeechAnalysis.main(microPhone,
@@ -127,12 +125,9 @@ def runMainWithOrWithoutItunes(microPhone,
         time.sleep(1.5) #startup time
         p.play()
 
-        trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchFor,
-                                                            limit=10, entity='song',
-                                                            autoDownload=autoDownload)
 
         # this checks to see if the user is happy with the song, only if in select edition
-        if autoDownload == False or speechRecogOn == False:
+        if autoDownload == False and speechRecogOn == False:
             continueToSaveOrNot = input("Hit enter if this sounds right. To try another song -- enter (no): ")
 
             if continueToSaveOrNot == 'no':
@@ -146,7 +141,8 @@ def runMainWithOrWithoutItunes(microPhone,
                                                     pathToDirectory=pathToDirectory,
                                                     iTunesPaths=iTunesPaths,
                                                     speechRecogOn=speechRecogOn,
-                                                    debugMode=debugMode)
+                                                    debugMode=debugMode,
+                                                    trackProperties=trackProperties)
 
         # parseItunesSearchApi() throws None return type if the user selects no properties
         if trackProperties != None:
@@ -219,7 +215,18 @@ def runMainWithOrWithoutItunes(microPhone,
 def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, debugMode = False):
     autoDownload = False
     searchList = []
-
+    requiredJsonSongKeys = ['trackName',
+                          'artistName',
+                          'collectionName',
+                          'artworkUrl100',
+                          'primaryGenreName',
+                          'trackNumber',
+                          'trackCount']
+    song_played = False # determines if song has been played by itunes.
+    prog_vers = ''
+    command=''
+    songs_in_album_props = None # will hold the songs in album properties in the new album feature
+    album_props = None # will hold the album properties in the new album feature
     # get the obsolute file path for the machine running the script
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
@@ -257,29 +264,46 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
     continueEditing = ''
     editorOrSongDownload = ''
     searchFor = ''
-    # editor functionality -- alpha test.. doesnt quite work. rest of code is in Editor.py
-    # while editorOrSongDownload != 'quit':
-    #
-    #    editorOrSongDownload = input("Type 0 to edit, 1 to download songs, 'quit' to quit: ")
-    # indent the below code and uncomment above to put editor functionality in,
-    # and paste 'and editorOrSongDownload == '1'' into while loop condition
 
     while continueGettingSongs != 'no' :
         # initialize searchList to empty each iteration
         searchList = []
         if speechRecog == False:
-            searchFor = input("Enter song(s) [song1; song2], 'instr' to view instructions OR 'set' to edit settings: ")
+            searchFor = input("Enter song(s) [song1; song2], 'instr' for instructions, 'set' for settings, 'alb' for albums: ")
 
             if searchFor == 'set':
-                help.editSettings(pathToSettings=pathToSettings)
+                prog_vers = 'set'
+                feature.editSettings(pathToSettings=pathToSettings)
             elif searchFor == 'instr':
-                help.view_instructions(os.path.join(pathToDirectory, 'Instructions.txt'))
+                prog_vers = 'instr'
+                feature.view_instructions(os.path.join(pathToDirectory, 'Instructions.txt'))
+            elif searchFor == 'alb':
+                prog_vers = 'alb'
+                artist_album_string = input("Enter artist and album name you wish to download (e.g. queen bohemian rhapsody): ")
+
+                while songs_in_album_props == None or album_props == None: # ensure user has selected album they like.
+                    album_props = iTunesSearch.parseItunesSearchApi(searchVariable=artist_album_string, # get list of album properties for search
+                                                                    entity='album', autoDownload=False, # pass in false for now. Users want to select album before letting her run
+                                                                    requiredJsonKeys=['artistName', 'collectionName', 'trackCount', 'collectionId'],
+                                                                    searchOrLookup=True,
+                                                                    mode=prog_vers)
+                    if album_props != None:
+                        songs_in_album_props = iTunesSearch.get_songs_in_album(searchVariable=album_props['collectionId'], # get list of songs for chosen album
+                                                                             limit=100, entity='song',
+                                                                             requiredJsonKeys=requiredJsonSongKeys,
+                                                                             searchOrLookup=False)
+                    if songs_in_album_props != None:
+                        songs_in_album_props = iTunesSearch.remove_songs_selected(song_properties_list=songs_in_album_props, requiredJsonKeys=requiredJsonSongKeys)
+                searchList = iTunesSearch.get_song_info(song_properties=songs_in_album_props, # get list of just songs to search from the album # 1 is artist key
+                                                        key=requiredJsonSongKeys[0]) # 0 is song key
+                album_artist_list = iTunesSearch.get_song_info(song_properties=songs_in_album_props, # get list of just songs to search from the album # 1 is artist key
+                                                               key=requiredJsonSongKeys[1]) # 1 is artist key
+                print("Conducting search for songs: %s" %(searchList))
             else:
                 searchList = searchFor.split('; ')
 
         # run the speechRecog edition -- BETA
         else:
-
             if continueGettingSongs == "yes": # idly listen if user say's yes otherwise use searchList from end of loop
                 while True:
                     speechResponse = SpeechAnalysis.main(mic, r, talking=False)
@@ -289,6 +313,17 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                     if 'play' == speechResponse[0].split(' ')[0]: #shortcut -- skip the hello
                         speechResponse[0] = speechResponse[0].replace('play ', '') # strip play
                         searchList = speechResponse
+                        command = 'play'
+                        break
+                    if 'shuffle' == speechResponse[0].split(' ')[0]: #shortcut -- skip the hello
+                        speechResponse[0] = speechResponse[0].replace('shuffle ', '') # strip play
+                        searchList = speechResponse
+                        command = 'shuffle'
+                        break
+                    if 'all' == speechResponse[0].split(' ')[0]: #shortcut -- skip the hello
+                        speechResponse[0] = speechResponse[0].replace('all ', '') # strip play
+                        searchList = speechResponse
+                        command = 'playall'
                         break
                 if 'hello' in speechResponse:
                     searchList = SpeechAnalysis.main(mic,
@@ -298,10 +333,10 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                                                      string_to_say="I am listening.",
                                                      file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'),
                                                      pathToDirectory=pathToDirectory)
-            else:
-                searchList = list(nextSongs) # get the next songs from previous iteration
-        # take a list of songs
-        for searchForSong in searchList:
+            else: # get the next songs from previous iteration
+                searchList = list(nextSongs)
+        # Iterate the list of songs
+        for i, searchForSong in enumerate(searchList):
             print(" - Running program for: ", searchForSong)
             iTunesPaths = iTunes.setItunesPaths(operatingSystem, searchFor=searchForSong)
             # secret command for syncing with gDrive files.  Special feature!
@@ -312,17 +347,28 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
             # '*.*' means anyfilename, anyfiletype
             # /*/* gets through artist, then album or itunes folder structure
             if iTunesPaths == None:
-                runMainWithOrWithoutItunes(microPhone=mic,
-                                            recognizer=r,
-                                            iTunesInstalled=False,
-                                            searchFor=searchForSong,
-                                            autoDownload=autoDownload,
-                                            pathToDirectory=pathToDirectory,
-                                            iTunesPaths=iTunesPaths,
-                                            speechRecogOn=speechRecog,
-                                            debugMode=debugMode)
-
+                iTunesInstalled = False
+                song_played = False # signals to perform a download
             else:
+                iTunesInstalled = True
+                song_played = iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecog, pathToDirectory, command)
+
+            if prog_vers == 'alb':
+                trackProperties = songs_in_album_props[i]
+                searchForSong = album_artist_list[i] + ' ' + searchForSong
+
+            elif song_played == False: # if song_played is True, suggests user played song or wants to skip iteration
+                trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchForSong,
+                                                                    limit=10, entity='song',
+                                                                    autoDownload=autoDownload,
+                                                                     requiredJsonKeys=requiredJsonSongKeys,
+                                                                     searchOrLookup=True
+                                                                    )
+                if trackProperties != None: # check to ensure that properties aree selected
+                    searchForSong = "%s %s" % (trackProperties['artistName'], trackProperties['trackName'])
+
+
+            if song_played == False: # suggests user has either chosen to download or no song found in itunes
                 runMainWithOrWithoutItunes(microPhone=mic,
                                             recognizer=r,
                                             iTunesInstalled=True,
@@ -331,7 +377,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                                             pathToDirectory=pathToDirectory,
                                             iTunesPaths=iTunesPaths,
                                             speechRecogOn=speechRecog,
-                                            debugMode=debugMode)
+                                            debugMode=debugMode,
+                                            trackProperties=trackProperties)
 
             print('=----------Done Cycle--------=')
 
