@@ -87,9 +87,9 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
     # autoDownload check
     if autoDownload == False:
         if mode == 'alb':
-            trackPropertySelectionNumber = int(input('Nothing here you like? -- type 404: '))
+            trackPropertySelectionNumber = int(input('Nothing here you like? 404, 406 to return home: '))
         else:
-            trackPropertySelectionNumber = int(input('Nothing here? -- type 404. Save without properties -- Type 405: '))
+            trackPropertySelectionNumber = int(input('Nothing here? -- type 404. Save without properties -- 405, 406 -- return home: '))
 
     # autodownload true, set no properties.. continue on
     else:
@@ -105,6 +105,8 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
         trackPropertySelectionNumber = 0
         print("No properties selected. Moving Along.")
         return
+    if trackPropertySelectionNumber == 406:
+        return '406'
     # call 404 option as last option before return because of recursion
     while trackPropertySelectionNumber not in range(0, len(parsedResultsList)) and trackPropertySelectionNumber != 404:
         trackPropertySelectionNumber = int(input("invalid input. Try Again: "))
@@ -143,11 +145,13 @@ def remove_songs_selected(song_properties_list, requiredJsonKeys):
     user_input = ''
     success = True # assume successful transcription of input. WIll update on failure.
     while True:
-        user_input = input("Enter song id's (1 4 5 etc.) you wish to not download, enter (download all), 'ag' (search again): ")
+        user_input = input("Enter song id's (1 4 5 etc.) you dont want, type: enter (download all), 'ag' (search again), 406 (cancel): ")
         if user_input == '': # no songs to remove by user, so return
             return song_properties_list # return unmodified list
-        if user_input == 'ag':
+        elif user_input == 'ag':
             return None
+        elif user_input == '406':
+            return '406'
         user_input = user_input.split(' ')
         for i, char in enumerate(user_input): # validate each character
             if char.isdigit() == False:
@@ -169,7 +173,34 @@ def remove_songs_selected(song_properties_list, requiredJsonKeys):
 
     return [song for i, song in enumerate(song_properties_list) if i not in user_input]
 
+def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJsonAlbumKeys={}, autoDownload=False, prog_vers=''):
+    songs_in_album_props = None # will hold the songs in album properties in the new album feature
+    album_props = None # will hold the album properties in the new album feature
+    while songs_in_album_props == None or album_props == None: # ensure user has selected album they like.
+        album_props = parseItunesSearchApi(searchVariable=artist_album_string, # get list of album properties for search
+                                           entity='album', autoDownload=autoDownload, # pass in false for now. Users want to select album before letting her run
+                                           requiredJsonKeys=requiredJsonAlbumKeys,
+                                           searchOrLookup=True,
+                                           mode=prog_vers)
+        if album_props == '406': # error code for the func.
+            return ('406', None, None)
+        if album_props != None:
+            songs_in_album_props = get_songs_in_album(searchVariable=album_props['collectionId'], # get list of songs for chosen album
+                                                      limit=100, entity='song',
+                                                      requiredJsonKeys=requiredJsonSongKeys,
+                                                      searchOrLookup=False)
+        if songs_in_album_props != None:
+            songs_in_album_props = remove_songs_selected(song_properties_list=songs_in_album_props, requiredJsonKeys=requiredJsonSongKeys)
+            if songs_in_album_props == '406':
+                return ('406', None, None)
 
+
+    searchList = get_song_info(song_properties=songs_in_album_props, # get list of just songs to search from the album # 1 is artist key
+                               key=requiredJsonSongKeys[0]) # 0 is song key
+    album_artist_list = get_song_info(song_properties=songs_in_album_props, # get list of just songs to search from the album # 1 is artist key
+                                      key=requiredJsonSongKeys[1]) # 1 is artist key
+    print("Conducting search for songs: %s" %(searchList))
+    return (searchList, album_artist_list, songs_in_album_props)
 
 def query_and_display(searchVariable, limit, entity, requiredJsonKeys, searchOrLookup):
     parsedResultsList = []

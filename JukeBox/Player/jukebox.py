@@ -1,29 +1,87 @@
 import vlc
 import os, sys
 import time
+import sys, termios, tty, os, time
 
-
-def play_file(prompt, file_path, startup_time=1.5):
+def play_file(prompt, file_path, startup_time=1.5, song_index=0):
     vlc_instance = vlc.Instance()
     player = vlc_instance.media_player_new()
     media = vlc_instance.media_new(file_path)
     media.get_mrl()
     player.set_media(media)
     player.play()
-    finished_playing = wait_until_end(player, prompt)
-    player.stop()
+    finished_playing = wait_until_end(player, prompt, song_index)
     return finished_playing
+""" VLC STATES """
+# {0: 'NothingSpecial',
+#  1: 'Opening',
+#  2: 'Buffering',
+#  3: 'Playing',
+#  4: 'Paused',
+#  5: 'Stopped',
+#  6: 'Ended',
+#  7: 'Error'}
 
+def wait_until_end(player, prompt, file_index):
+    paused = False
+    Ended = 6 # code for ended in vlc
+    Paused = 4
+    Playing = 3
+    Stopped = 5
 
-def wait_until_end(player, prompt):
-    try:
-        Ended = 6 # code for ended in vlc
-        print(prompt)
+    print(prompt)
+    current_state = player.get_state()
+    while current_state != Ended and current_state != Stopped:
+        action = check_for_user_input(player, state=current_state, file_index=file_index)
+        time.sleep(1)
         current_state = player.get_state()
-        while current_state != Ended:
-            current_state = player.get_state()
-            time.sleep(1.25)
-        return True
-    except KeyboardInterrupt:
-        sys.stderr.write("\r")
-        return False
+
+    return action
+
+
+def check_for_user_input(player, OS=sys.platform, state=3, file_index=0): # default state to playing
+    char = getch(OS)
+    if state == 3 and char == ' ':
+        print('Pausing.')
+        state = 4
+        player.pause()
+    elif char == ' ':
+        print("Unpausing")
+        paused = 3
+        player.pause()
+    elif char == 'd':
+        print("Playing Next")
+        player.stop()
+        return 'next'
+
+    elif char == 'q':
+        print("Quitting playlist.")
+        player.stop()
+        return 'quit'
+
+    elif char == 'a':
+        print("Restarting Song.")
+        player.stop()
+        return 'restart'
+    elif char == 'z' and file_index==0:
+        print("Can't go backwards. This is the first song.")
+    elif char == 'z':
+        print("Moving back a song.")
+        player.stop()
+        return 'rewind'
+    else: # user made no choice
+        return None
+
+def getch(OS):
+    if OS == 'win32':
+        print("poop")
+    else:
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch

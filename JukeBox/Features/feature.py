@@ -68,3 +68,25 @@ def editSettings(pathToSettings='', settingSelections=''):
 
             settingSelections = input("Type 'quit' to quit, anything to go again: ")
             print("--Done Update--")
+
+def determine_mode(arguments):
+    autoDownload = False
+    speechRecog = False
+    debugMode = False
+    if arguments[0] == 'auto':
+        autoDownload = True
+    elif 'voice' in arguments and 'debug' in arguments:
+        speechRecog = True
+        debugMode = True
+    elif 'voice' in arguments:
+        speechRecog = True
+    elif 'auto' in arguments and 'debug' in arguments:
+        autoDownload = True
+        debugMode = True
+    elif arguments[0] == 'debug':
+        debugMode = True
+
+    else:
+        return False, False, False
+
+    return autoDownload, speechRecog, debugMode

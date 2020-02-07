@@ -6,8 +6,15 @@
     - auto automatically downloads songs
     - voice runs the speech recognition beta
     - debug runs the debug mode which shows the browser automation
+- Upon the initial search when asked to enter songs you may type voice, debug,
+  select, auto, voice or even try voice debug, auto debug to switch modes.
 
 -- Speech Recognition --
 
 - When asked to hear another song, say 'yes' to return to idle listener, say a
-  song name to search for it again, or 'no' to quit
+  command name to search for, or 'no' to quit
+- List of speech recognition commands:
+    - voice, debug, auto, select -- switch mode
+    - play [songname] -- play a song
+    - all [songname/artist/album] -- play returned songs in order
+    - shuffle [songname/artist/album] -- shuffle return songs
