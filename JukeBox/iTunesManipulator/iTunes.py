@@ -94,7 +94,6 @@ def stripFileForSpeech(file_name):
     return file_name.replace('.mp3','').replace('&', 'and').replace('(', '').replace(')', '')
 
 def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory):
-    print(iTunesPaths)
     consec_skips = 0
     wait_until_end = ''
     if speechRecogOn == True:
@@ -116,7 +115,6 @@ def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory):
                                                                      iTunesPaths['searchedSongResult'][i],
                                                                      song_index=i,
                                                                      index_diff=len(iTunesPaths['searchedSongResult'])-i)
-        print(wait_until_end)
         if wait_until_end == 'rewind' and i != 0: # break loop if user desires it to be.
             i = i-1 # play previous
 

@@ -124,17 +124,6 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
 
     return trackProperties
 
-def get_songs_in_album(searchVariable='',
-                         limit=40, entity='', requiredJsonKeys={},
-                         searchOrLookup=True):
-
-    trackProperties = query_and_display(searchVariable=searchVariable,
-                                        limit=40, entity='song',
-                                        requiredJsonKeys=requiredJsonKeys,
-                                        searchOrLookup=searchOrLookup)
-
-    return trackProperties
-
 def get_song_info(song_properties, key):
     song_info = []
     for element in song_properties:
@@ -147,6 +136,8 @@ def remove_songs_selected(song_properties_list, requiredJsonKeys):
     user_input = tools.format_input_to_list(input_string=input_string, list_to_compare_to=song_properties_list)
     if user_input == None:
         return None
+    elif user_input == 'ag':
+        return 'ag'
     elif user_input == '406':
         return user_input
 
@@ -168,18 +159,18 @@ def choose_songs_selected(song_list, input_string):
         return user_input
     elif user_input == 'pl':
         return user_input
+    elif user_input == 'ag':
+        return user_input
 
     for index in user_input:
         print("Song Added: %s: %s" % (index, song_list[index]))
 
-    return [song for i, song in enumerate(song_list) if i in user_input]
-
-
+    return [song_list[i] for i in user_input]
 
 def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJsonAlbumKeys={}, autoDownload=False, prog_vers=''):
     songs_in_album_props = None # will hold the songs in album properties in the new album feature
     album_props = None # will hold the album properties in the new album feature
-    while songs_in_album_props == None or album_props == None: # ensure user has selected album they like.
+    while songs_in_album_props == None or album_props == None or songs_in_album_props == 'ag': # ensure user has selected album they like.
         album_props = parseItunesSearchApi(searchVariable=artist_album_string, # get list of album properties for search
                                            entity='album', autoDownload=autoDownload, # pass in false for now. Users want to select album before letting her run
                                            requiredJsonKeys=requiredJsonAlbumKeys,
@@ -197,6 +188,9 @@ def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJ
             if songs_in_album_props == '406':
                 return ('406', None, None)
 
+            if songs_in_album_props == 'ag': # redo the loop if again is given
+                continue
+
 
     searchList = get_song_info(song_properties=songs_in_album_props, # get list of just songs to search from the album # 1 is artist key
                                key=requiredJsonSongKeys[0]) # 0 is song key
@@ -204,6 +198,17 @@ def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJ
                                       key=requiredJsonSongKeys[1]) # 1 is artist key
     print("Conducting search for songs: %s" %(searchList))
     return (searchList, album_artist_list, songs_in_album_props)
+
+def get_songs_in_album(searchVariable='',
+                         limit=40, entity='', requiredJsonKeys={},
+                         searchOrLookup=True):
+
+    trackProperties = query_and_display(searchVariable=searchVariable,
+                                        limit=40, entity='song',
+                                        requiredJsonKeys=requiredJsonKeys,
+                                        searchOrLookup=searchOrLookup)
+
+    return trackProperties
 
 def query_and_display(searchVariable, limit, entity, requiredJsonKeys, searchOrLookup):
     parsedResultsList = []

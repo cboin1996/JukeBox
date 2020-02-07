@@ -5,7 +5,7 @@ def format_input_to_list(input_string='', list_to_compare_to=[]):
         if user_input == '': # no songs to remove by user, so return
             return list_to_compare_to # return unmodified list
         elif user_input == 'ag':
-            return None
+            return 'ag'
         elif user_input == '406':
             return '406'
         elif user_input == 'you':
