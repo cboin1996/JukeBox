@@ -87,18 +87,32 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     # urls stored as list of tuples
     # check for command line argv -- autoDownload
     if autoDownload == True:
-        integerVideoId = counter
+        integerVideoId = counter # from recursion
 
     else:
-        if integerVideoId == None:
-            integerVideoId = int(input("Select the song you want by entering the number beside it. [%d to %d].. '404' to search again: " % (0, len(videoUrls)-1)))
-        else:
-            integerVideoId = int(input("Select the song you want by entering the number beside it. Not [%d].. '404' to search again: " % (integerVideoId)))
+
         ## Error handle for function.. check None type in Main
+        while True:
+            try:
+                if integerVideoId == None:
+                    integerVideoId = input("Select song by entering the number beside it. [%d to %d].. '404' (search again), '405' (cancel download): " % (0, len(videoUrls)-1))
+                else:
+
+                    integerVideoId = input("Select song by entering the number beside it. Not [%d].. '404' (search again), '405' (cancel download): " % (integerVideoId))
+                integerVideoId = int(integerVideoId)
+                break
+            except:
+                print("Must input an integer")
+
         if integerVideoId == 404:
             responseObject['success'] = False
             responseObject['error'] = '404'
             return responseObject
+        if integerVideoId == 405:
+            responseObject['success'] = False
+            responseObject['error'] = '405'
+            return responseObject
+
 
         # error handling for url selection.. check for None type removed link from line 67
         while integerVideoId not in range(0, len(videoUrls)) or videoUrls[integerVideoId][1] == None:

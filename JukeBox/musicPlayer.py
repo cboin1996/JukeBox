@@ -116,6 +116,8 @@ def runMainWithOrWithoutItunes(microPhone,
                                                 pathToDumpFolder=localDumpFolder,
                                                 pathToSettings=pathToSettings,
                                                 debugMode=debugMode)
+    if youtubeResponseObject['error'] == '405': # return out if user wants to cancel.
+        return
 
     # No none type is good news.. continue as normal
     if youtubeResponseObject['songPath'] != None and youtubeResponseObject['error'] == None:
