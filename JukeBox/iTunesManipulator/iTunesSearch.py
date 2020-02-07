@@ -4,7 +4,7 @@ import requests
 import json
 import os
 import eyed3
-
+from Features import tools
 # prints list from top down so its more user friendly, items are pretty big
 def prettyPrinter(listOfDicts):
     i = len(listOfDicts) - 1
@@ -143,35 +143,38 @@ def get_song_info(song_properties, key):
 
 def remove_songs_selected(song_properties_list, requiredJsonKeys):
     user_input = ''
-    success = True # assume successful transcription of input. WIll update on failure.
-    while True:
-        user_input = input("Enter song id's (1 4 5 etc.) you dont want, type: enter (download all), 'ag' (search again), 406 (cancel): ")
-        if user_input == '': # no songs to remove by user, so return
-            return song_properties_list # return unmodified list
-        elif user_input == 'ag':
-            return None
-        elif user_input == '406':
-            return '406'
-        user_input = user_input.split(' ')
-        for i, char in enumerate(user_input): # validate each character
-            if char.isdigit() == False:
-                print("Must enter numbers separated by a space")
-                success = False
-                break
-            elif int(char) > len(song_properties_list)-1:
-                print("Numbers must be 0 or more and less than %s"%(len(song_properties_list)-1))
-                success = False
-                break
-            else:
-                user_input[i] = int(user_input[i])
-
-        if success != False:
-            break
+    input_string = "Enter song id's (1 4 5 etc.) you dont want, type: enter (download all), 'ag' (search again), 406 (cancel): "
+    user_input = tools.format_input_to_list(input_string=input_string, list_to_compare_to=song_properties_list)
+    if user_input == None:
+        return None
+    elif user_input == '406':
+        return user_input
 
     for index in user_input:
         print("Removing: %s: %s" % (index, song_properties_list[index][requiredJsonKeys[0]]))
 
     return [song for i, song in enumerate(song_properties_list) if i not in user_input]
+
+def choose_songs_selected(song_list, input_string):
+    user_input = ''
+    user_input = tools.format_input_to_list(input_string=input_string, list_to_compare_to=song_list)
+    if user_input == None:
+        return None
+    elif user_input == '406':
+        return user_input
+    elif user_input == 'you':
+        return user_input
+    elif user_input == 'sh':
+        return user_input
+    elif user_input == 'pl':
+        return user_input
+
+    for index in user_input:
+        print("Song Added: %s: %s" % (index, song_list[index]))
+
+    return [song for i, song in enumerate(song_list) if i in user_input]
+
+
 
 def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJsonAlbumKeys={}, autoDownload=False, prog_vers=''):
     songs_in_album_props = None # will hold the songs in album properties in the new album feature
