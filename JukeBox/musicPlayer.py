@@ -302,37 +302,14 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
             else:
                 searchList = searchFor.split('; ')
 
-        # run the speechRecog edition -- BETA
-        else:
+        else: # Speech recognition edition
             if continueGettingSongs == "yes": # idly listen if user say's yes otherwise use searchList from end of loop
                 while True:
                     speechResponse = SpeechAnalysis.main(mic, r, talking=False)
-                    if 'hello' in speechResponse:
+                    command, searchList = computer.interpret_command(speechResponse, end_cond=False)
+                    if command != None: # break loop if successful transcription occurs
                         break
 
-                    if 'play' == speechResponse[0].split(' ')[0]: #shortcut -- skip the hello
-                        speechResponse[0] = speechResponse[0].replace('play ', '') # strip play
-                        searchList = speechResponse
-                        command = 'play'
-                        break
-                    if 'shuffle' == speechResponse[0].split(' ')[0]: #shortcut -- skip the hello
-                        speechResponse[0] = speechResponse[0].replace('shuffle ', '') # strip play
-                        searchList = speechResponse
-                        command = 'shuffle'
-                        break
-                    if 'all' == speechResponse[0].split(' ')[0]: #shortcut -- skip the hello
-                        speechResponse[0] = speechResponse[0].replace('all ', '') # strip play
-                        searchList = speechResponse
-                        command = 'playall'
-                        break
-                if 'hello' in speechResponse:
-                    searchList = SpeechAnalysis.main(mic,
-                                                     r,
-                                                     talking=True,
-                                                     OS=operatingSystem,
-                                                     string_to_say="I am listening.",
-                                                     file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'),
-                                                     pathToDirectory=pathToDirectory)
             else: # get the next songs from previous iteration
                 searchList = list(nextSongs)
         # Iterate the list of songs
@@ -391,11 +368,10 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                                                   r,
                                                   talking=True,
                                                   OS=operatingSystem,
-                                                  string_to_say='Say another song or no to quit.',
+                                                  string_to_say='Say another command or no to quit.',
                                                   file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'anotherone.m4a'),
                                                   pathToDirectory=pathToDirectory)
-            continueGettingSongs = nextSongs[0] # set first word to continueGettingSongs to check if they said yes or no
-
+            continueGettingSongs = computer.interpret_command(nextSongs, end_cond=True)
     # editor functionality goes here (from iTunesManipulator.Editor)
     print("================================")
     print("=--------Have a fine day-------=")
