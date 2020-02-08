@@ -18,7 +18,9 @@ def check_iTunes_for_song(iTunesPaths,
                           autoDownload,
                           speechRecogOn,
                           pathToDirectory='',
-                          command=''):
+                          command='',
+                          mic=None,
+                          r=None):
     artists = [] # will hold list of artists
     songNames = [] # need to be zeroed out here DO NOT MOVE into parameter.
     albums = []
@@ -46,7 +48,7 @@ def check_iTunes_for_song(iTunesPaths,
 
         if speechRecogOn == False:
             print('Which one(s) do you want to hear (e.g. 0 1 3)?')
-            user_input_string = "OR type 'you' (search youtube), 'ag' (search again/skip), 'sh' (shuffle), 'pl' (play in order): "
+            user_input_string = "OR type 'you' (search youtube), 'ag' (search again/skip), 'sh' (shuffle), 'pl' (play in order), '406' (return home): "
             songSelection = iTunesSearch.choose_songs_selected(input_string=user_input_string, song_list=iTunesPaths['searchedSongResult'])
         if speechRecogOn == True and command == 'shuffle':
             songSelection = 'sh'
@@ -60,18 +62,21 @@ def check_iTunes_for_song(iTunesPaths,
         if songSelection == 'ag':
             print('Returning to beginning.')
             return True
+        if songSelection == '406':
+            print("Exiting to home.")
+            return True
 
         # shuffle algorithm TODO: move to a function
         if songSelection == 'sh':
             random.shuffle(iTunesPaths['searchedSongResult'])
-            play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, "Shuffle Mode Activated", 'shuffleModeOn.m4a')
+            play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, "Shuffle Mode Activated", 'shuffleModeOn.m4a', mic=mic, r=r, command_string=PLAYING_STRING_COMMANDS_SPECIAL)
             return True
 
         elif songSelection == 'you':
             return False
 
         elif songSelection == 'pl':
-            play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, "Ordered Mode Activated", 'orderModeOn.m4a')
+            play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, "Ordered Mode Activated", 'orderModeOn.m4a', mic=mic, r=r, command_string=PLAYING_STRING_COMMANDS_SPECIAL)
             return True
 
         # play the song(s) only if they want, otherwise continute with program.
@@ -83,19 +88,19 @@ def check_iTunes_for_song(iTunesPaths,
                                )
                 print(PLAYING_STRING_COMMANDS_DEFAULT) # provide commands
                 wait_until_end = jukebox.play_file(PLAYING_STRING_DEFAULT % (albums[songSelection], artists[songSelection], songNames[songSelection]),
-                                                   iTunesPaths['searchedSongResult'][songSelection])
+                                                   iTunesPaths['searchedSongResult'][songSelection], mic=mic, r=r, speechRecogOn=speechRecogOn, command_string=PLAYING_STRING_COMMANDS_SPECIAL)
 
                 while wait_until_end != "next" and wait_until_end != None and wait_until_end != "quit":
                     wait_until_end = jukebox.play_file(PLAYING_STRING_DEFAULT % (albums[songSelection], artists[songSelection], songNames[songSelection]),
                                                        iTunesPaths['searchedSongResult'][songSelection],
-                                                       index_diff=0)
+                                                       index_diff=0, mic=mic, r=r, speechRecogOn=speechRecogOn, command_string=PLAYING_STRING_COMMANDS_SPECIAL)
             else:
                 iTunesPaths['searchedSongResult'] = songSelection
-                play_in_order(iTunesPaths, speechRecogOn, pathToDirectory)
+                play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, mic=mic, r=r)
 
             return True
 
-def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, speech_string='', speech_path=''):
+def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, speech_string='', speech_path='', mic=None, r=None, command_string=''):
     consec_skips = 0
     wait_until_end = ''
     if speechRecogOn == True:
@@ -118,7 +123,9 @@ def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, speech_string='',
                                                                      song[len(song)-1]), #1 is song
                                                                      iTunesPaths['searchedSongResult'][i],
                                                                      song_index=i,
-                                                                     index_diff=len(iTunesPaths['searchedSongResult'])-i)
+                                                                     index_diff=len(iTunesPaths['searchedSongResult'])-i,
+                                                                     mic=mic, r=r, speechRecogOn=speechRecogOn,
+                                                                     command_string=PLAYING_STRING_COMMANDS_SPECIAL)
         if wait_until_end == 'rewind' and i != 0: # break loop if user desires it to be.
             i = i-1 # play previous
 

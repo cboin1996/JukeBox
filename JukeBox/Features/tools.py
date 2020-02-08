@@ -21,22 +21,18 @@ def format_input_to_list(input_string='', list_to_compare_to=[], mode=''):
         user_input = user_input.split(' ')
 
         for i, char in enumerate(user_input): # validate each character
-            # if char.isdigit() == False or char == '':
-            #     print("Must enter numbers separated by a single space")
-            #     success = False
-            #     break
-            # elif int(char) > len(list_to_compare_to)-1:
-            #     print("Numbers must be 0 or more and less than %s"%(len(list_to_compare_to)-1))
-            #     success = False
-            #     break
-            # else:
-            #     user_input[i] = int(user_input[i])
+
             try:
-                if int(char) < len(list_to_compare_to)-1 and int(char) >= 0:
+                if len(list_to_compare_to) == 1 and char.isdigit():
                     user_input[i] = int(user_input[i])
                     success = True
+                elif int(char) < len(list_to_compare_to)-1 and int(char) >= 0:
+                    user_input[i] = int(user_input[i])
+                    success = True
+
                 else:
                     print("Numbers must be 0 or more and less than %s"%(len(list_to_compare_to)-1))
+
             except Exception as e:
                 print("Must enter numbers separated by a single space %s" % (e))
                 success = False

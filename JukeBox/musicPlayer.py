@@ -247,7 +247,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
         argv_noPath = argv.pop(0)
         autoDownload, speechRecog, debugMode = feature.determine_mode(argv)
     # initialize for speechRecog
-    if speechRecog == True:
+    if speechRecog == True: # TODO CHANGE BACK
         mic = sr.Microphone()
         r = sr.Recognizer()
     # determine which OS we are operating on.  Work with that OS to set
@@ -325,8 +325,11 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                     song_played = False # signals to perform a download
                 else:
                     iTunesInstalled = True
-                    song_played = iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecog, pathToDirectory, command)
+                    song_played = iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecog, pathToDirectory, command, mic=mic, r=r)
 
+                if song_played == '406': # return to home
+                    break
+                    
                 if prog_vers == 'alb':
                     trackProperties = songs_in_album_props[i]
                     searchForSong = album_artist_list[i] + ' ' + searchForSong
@@ -364,12 +367,12 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
         if speechRecog == True:
             nextSongs = [] # initialize to empty before ech speech read
             nextSongs = SpeechAnalysis.main(mic,
-                                                  r,
-                                                  talking=True,
-                                                  OS=operatingSystem,
-                                                  string_to_say='Say another command or no to quit.',
-                                                  file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'anotherone.m4a'),
-                                                  pathToDirectory=pathToDirectory)
+                                              r,
+                                              talking=True,
+                                              OS=operatingSystem,
+                                              string_to_say='Say another command or no to quit.',
+                                              file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'anotherone.m4a'),
+                                              pathToDirectory=pathToDirectory)
             continueGettingSongs = computer.interpret_command(nextSongs, end_cond=True)
     # editor functionality goes here (from iTunesManipulator.Editor)
     print("================================")
