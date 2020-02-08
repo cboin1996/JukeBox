@@ -133,7 +133,7 @@ def get_song_info(song_properties, key):
 def remove_songs_selected(song_properties_list, requiredJsonKeys):
     user_input = ''
     input_string = "Enter song id's (1 4 5 etc.) you dont want, type: enter (download all), 'ag' (search again), 406 (cancel): "
-    user_input = tools.format_input_to_list(input_string=input_string, list_to_compare_to=song_properties_list)
+    user_input = tools.format_input_to_list(input_string=input_string, list_to_compare_to=song_properties_list, mode='remove')
     if user_input == None:
         return None
     elif user_input == 'ag':
@@ -148,7 +148,7 @@ def remove_songs_selected(song_properties_list, requiredJsonKeys):
 
 def choose_songs_selected(song_list, input_string):
     user_input = ''
-    user_input = tools.format_input_to_list(input_string=input_string, list_to_compare_to=song_list)
+    user_input = tools.format_input_to_list(input_string=input_string, list_to_compare_to=song_list, mode='choose')
     if user_input == None:
         return None
     elif user_input == '406':
@@ -163,7 +163,10 @@ def choose_songs_selected(song_list, input_string):
         return user_input
 
     for index in user_input:
-        print("Song Added: %s: %s" % (index, song_list[index]))
+        list_for_printing = song_list[index].split(os.sep)
+        print("Song Added: %s -- %s - %s: %s" % (index, list_for_printing[len(list_for_printing)-3],
+                                                  list_for_printing[len(list_for_printing)-2],
+                                                  list_for_printing[len(list_for_printing)-1]))
 
     return [song_list[i] for i in user_input]
 

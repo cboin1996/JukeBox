@@ -1,9 +1,12 @@
-def format_input_to_list(input_string='', list_to_compare_to=[]):
-    success = True
+def format_input_to_list(input_string='', list_to_compare_to=[], mode=''):
+    success = False
     while True:
         user_input = input(input_string)
-        if user_input == '': # no songs to remove by user, so return
+        if user_input == '' and mode=='remove': # no songs to remove by user, so return
             return list_to_compare_to # return unmodified list
+        elif user_input == '' and mode=='choose':
+            print("Come on. You gotta give me something to work with.")
+            continue
         elif user_input == 'ag':
             return 'ag'
         elif user_input == '406':
@@ -16,17 +19,31 @@ def format_input_to_list(input_string='', list_to_compare_to=[]):
             return 'pl'
 
         user_input = user_input.split(' ')
-        for i, char in enumerate(user_input): # validate each character
-            if char.isdigit() == False:
-                print("Must enter numbers separated by a space")
-                success = False
-                return None
-            elif int(char) > len(list_to_compare_to)-1:
-                print("Numbers must be 0 or more and less than %s"%(len(list_to_compare_to)-1))
-                success = False
-                return None
-            else:
-                user_input[i] = int(user_input[i])
 
-        if success != False:
+        for i, char in enumerate(user_input): # validate each character
+            # if char.isdigit() == False or char == '':
+            #     print("Must enter numbers separated by a single space")
+            #     success = False
+            #     break
+            # elif int(char) > len(list_to_compare_to)-1:
+            #     print("Numbers must be 0 or more and less than %s"%(len(list_to_compare_to)-1))
+            #     success = False
+            #     break
+            # else:
+            #     user_input[i] = int(user_input[i])
+            try:
+                if int(char) < len(list_to_compare_to)-1 and int(char) >= 0:
+                    user_input[i] = int(user_input[i])
+                    success = True
+                else:
+                    print("Numbers must be 0 or more and less than %s"%(len(list_to_compare_to)-1))
+            except Exception as e:
+                print("Must enter numbers separated by a single space %s" % (e))
+                success = False
+                break
+        # this will not get reached unless successful trancsription
+        if success == True:
             return user_input
+
+def stripFileForSpeech(file_name):
+    return file_name.replace('.mp3','').replace('&', 'and').replace('(', '').replace(')', '').replace("'", '')
