@@ -93,7 +93,8 @@ def runMainWithOrWithoutItunes(microPhone,
                                             OS=sys.platform,
                                             string_to_say="Would you like to download %s" %(searchFor),
                                             file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'wouldyouDL.m4a'),
-                                            pathToDirectory=pathToDirectory)
+                                            pathToDirectory=pathToDirectory,
+                                            expected=['yes', 'no'])
         if 'yes' in responseText: # check if user wants to download or not
             computer.speak(sys.platform, 'Downloading.', os.path.join(pathToDirectory, 'speechPrompts', 'downloading.m4a'))
             autoDownload=True # perform autodownload for that songs
@@ -170,7 +171,8 @@ def runMainWithOrWithoutItunes(microPhone,
                                                   OS=sys.platform,
                                                   string_to_say="Should I save to iTunes?",
                                                   file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'shouldSaveToItunes.m4a'),
-                                                  pathToDirectory=pathToDirectory)
+                                                  pathToDirectory=pathToDirectory,
+                                                  expected=['yes', 'no'])
                 if 'yes' in save_or_not:
                     userInput = 's'
                     computer.speak(sys.platform, 'Saving to Itunes.', os.path.join(pathToDirectory, 'speechPrompts', 'savingiTunes.m4a'))
@@ -290,11 +292,14 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
         else: # Speech recognition edition
             if continueGettingSongs == "yes": # idly listen if user say's yes otherwise use searchList from end of loop
                 while True:
-                    speechResponse = SpeechAnalysis.main(mic, r, talking=False)
+                    speechResponse = SpeechAnalysis.main(mic, r, talking=False, phrase_time_limit=4)
                     command, searchList = computer.interpret_command(speechResponse, end_cond=False)
 
+                    if command == 'quit':
+                        return
                     if command != None: # break loop if successful transcription occurs
                         break
+
 
             else: # get the next songs from previous iteration
                 searchList = list(nextSongs)
@@ -329,7 +334,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
 
                 if song_played == '406': # return to home
                     break
-                    
+
                 if prog_vers == 'alb':
                     trackProperties = songs_in_album_props[i]
                     searchForSong = album_artist_list[i] + ' ' + searchForSong
@@ -375,7 +380,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                                               pathToDirectory=pathToDirectory)
             continueGettingSongs = computer.interpret_command(nextSongs, end_cond=True)
     # editor functionality goes here (from iTunesManipulator.Editor)
-    print("================================")
+    print("\n================================")
     print("=--------Have a fine day-------=")
     print("================================")
     if speechRecog == True and operatingSystem=='darwin':

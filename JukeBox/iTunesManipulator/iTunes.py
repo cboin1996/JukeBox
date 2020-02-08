@@ -50,6 +50,7 @@ def check_iTunes_for_song(iTunesPaths,
             print('Which one(s) do you want to hear (e.g. 0 1 3)?')
             user_input_string = "OR type 'you' (search youtube), 'ag' (search again/skip), 'sh' (shuffle), 'pl' (play in order), '406' (return home): "
             songSelection = iTunesSearch.choose_songs_selected(input_string=user_input_string, song_list=iTunesPaths['searchedSongResult'])
+
         if speechRecogOn == True and command == 'shuffle':
             songSelection = 'sh'
 
@@ -57,8 +58,9 @@ def check_iTunes_for_song(iTunesPaths,
             songSelection = 'pl'
 
         elif speechRecogOn == True and command == 'play':
-            songSelection = 0
-
+            iTunesPaths['searchedSongResult'] = [iTunesPaths['searchedSongResult'][0]] # select first song, data requires list
+            play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, "Single Mode Activated", 'singleModeOn.m4a', mic=mic, r=r, command_string=PLAYING_STRING_COMMANDS_SPECIAL)
+            return True
         if songSelection == 'ag':
             print('Returning to beginning.')
             return True
@@ -81,27 +83,14 @@ def check_iTunes_for_song(iTunesPaths,
 
         # play the song(s) only if they want, otherwise continute with program.
         else:
-            if speechRecogOn == True: # speech recognition selects the first song.
-                computer.speak(sys.platform,
-                               "Playing: %s." % (tools.stripFileForSpeech(songNames[songSelection])),
-                               os.path.join(pathToDirectory, 'speechPrompts', 'playingSong.m4a')
-                               )
-                print(PLAYING_STRING_COMMANDS_DEFAULT) # provide commands
-                wait_until_end = jukebox.play_file(PLAYING_STRING_DEFAULT % (albums[songSelection], artists[songSelection], songNames[songSelection]),
-                                                   iTunesPaths['searchedSongResult'][songSelection], mic=mic, r=r, speechRecogOn=speechRecogOn, command_string=PLAYING_STRING_COMMANDS_SPECIAL)
-
-                while wait_until_end != "next" and wait_until_end != None and wait_until_end != "quit":
-                    wait_until_end = jukebox.play_file(PLAYING_STRING_DEFAULT % (albums[songSelection], artists[songSelection], songNames[songSelection]),
-                                                       iTunesPaths['searchedSongResult'][songSelection],
-                                                       index_diff=0, mic=mic, r=r, speechRecogOn=speechRecogOn, command_string=PLAYING_STRING_COMMANDS_SPECIAL)
-            else:
+            if speechRecogOn == False:
                 iTunesPaths['searchedSongResult'] = songSelection
                 play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, mic=mic, r=r)
 
             return True
 
 def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, speech_string='', speech_path='', mic=None, r=None, command_string=''):
-    consec_skips = 0
+
     wait_until_end = ''
     if speechRecogOn == True:
         computer.speak(sys.platform,
@@ -110,10 +99,9 @@ def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, speech_string='',
                        )
     print(PLAYING_STRING_COMMANDS_DEFAULT) # provide commands
     i = 0
-    print()
     while i < len(iTunesPaths['searchedSongResult']):
         song = iTunesPaths['searchedSongResult'][i].split(os.sep)
-        if speechRecogOn == True and consec_skips == 0:
+        if speechRecogOn == True:
             computer.speak(sys.platform,
                            "Playing: %s." % (tools.stripFileForSpeech(song[len(song)-1])),
                            os.path.join(pathToDirectory, 'speechPrompts', 'playingSong.m4a')
