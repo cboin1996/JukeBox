@@ -43,7 +43,7 @@ def wait_until_end(player, prompt, file_index, index_diff, mic, r, speechRecogOn
     current_state = player.get_state()
     while current_state != Ended and current_state != Stopped: # return the action if there is one
         if speechRecogOn == True:
-            command = speech_listen_for_keyword(mic, r, key_word='hello jukebox', player=player, phrase_time_limit=3)
+            command = speech_listen_for_keyword(mic, r, key_word='hello jukebox', player=player, phrase_time_limit=4.5)
             if command == 'Aborted':
                 speechRecogOn = False
                 print(command_string) # output commands to user
@@ -138,6 +138,21 @@ def check_for_user_input(player, OS=sys.platform, state=3, file_index=0, index_d
         return 'restart'
     if (char == 'z' or command == 'previous') and file_index==0 :
         print("Can't go backwards. This is the first song.")
+        if speechRecogOn == True:
+            speechResponse = SpeechAnalysis.main(mic, r,
+                                                  talking=True, OS=sys.platform,
+                                                  string_to_say="Cannot go backwards. Do you want to restart the song?",
+                                                  file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'cantBackDoRestart.m4a'),
+                                                  pathToDirectory=pathToDirectory,
+                                                  phrase_time_limit=4,
+                                                  expected=['yes', 'no'])
+            if 'yes' in computer.interpret_command(speechResponse, end_cond=True):
+                player.stop()
+                return 'restart'
+            else:
+                player.set_pause(0)
+                return None
+
     elif char == 'z' or command == 'previous':
         print("Moving back a song.")
         player.stop()

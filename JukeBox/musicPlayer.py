@@ -378,8 +378,14 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                                               OS=operatingSystem,
                                               string_to_say='Say another command or no to quit.',
                                               file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'anotherone.m4a'),
-                                              pathToDirectory=pathToDirectory)
-            commmand, continueGettingSongs = computer.interpret_command(nextSongs, end_cond=False)
+                                              pathToDirectory=pathToDirectory,
+                                              phrase_time_limit=4)
+            commmand, continueGettingSongs = computer.interpret_command(nextSongs, end_cond=True)
+            if continueGettingSongs == None: # if no command is interpreted, return to idle mode
+                computer.speak(sys.platform, string_to_say='No command given. Returning to idle.',
+                              file_to_play=os.path.join(sys.path[0],'speechPrompts','noCommandReturnIdle.m4a'))
+                continueGettingSongs = 'yes'
+
     # editor functionality goes here (from iTunesManipulator.Editor)
     print("\n================================")
     print("=--------Have a fine day-------=")

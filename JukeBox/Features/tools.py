@@ -160,4 +160,4 @@ def check_for_speech_keyboard_hit(player, OS=sys.platform, state=3, file_index=0
         return None # user made no valid choice
 
 def stripFileForSpeech(file_name):
-    return file_name.replace('.mp3','').replace('&', 'and').replace('(', '').replace(')', '').replace("'", '')
+    return file_name.replace('.mp3','').replace('&', 'and').replace('(', '').replace(')', '').replace("'", '').replace('[', '').replace(']', '')

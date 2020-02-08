@@ -6,6 +6,7 @@ import time
 from speechPrompts import computer
 import os, sys
 from Player import jukebox
+from Features import tools
 
 def recognize_speech_from_mic(recognizer,
                               microphone,
@@ -115,12 +116,21 @@ def main(mic,
     else:
         mask = (response['transcription'] not in expected)
     while response['success'] == False or response['error'] != None or mask:
-        sys.stdout.write('\rError. Try again                                      ')
+        if expected == None: # rengerate mask each loop
+            mask = False
+        else:
+            mask = (response['transcription'] not in expected)
+
+        if expected != None:
+            error_prompt = 'Error. Expect commands: %s' % (tools.stripFileForSpeech("%s"%(expected)))
+        else:
+            error_prompt = 'Error. Try Again.'
+        sys.stdout.write('\rError. Try again. You said: %s  ..                                    ' % (response['transcription']))
         sys.stdout.flush()
         response = recognize_speech_from_mic(r,
                                              mic,
                                              OS,
-                                             string_to_say='Error try again',
+                                             string_to_say=error_prompt,
                                              talking=talking,
                                              file_to_play=os.path.join(pathToDirectory,'speechPrompts', 'tryAgain.m4a'),
                                              timeout=timeout,
