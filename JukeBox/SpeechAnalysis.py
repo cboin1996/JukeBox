@@ -23,6 +23,12 @@ def recognize_speech_from_mic(recognizer,
     "transcription": `None` if speech could not be transcribed,
                otherwise a string containing the transcribed text
     """
+    # set up the response object
+    response = {
+        "success": True,
+        "error": None,
+        "transcription": None
+    }
     # check that recognizer and microphone arguments are appropriate type
     if not isinstance(recognizer, sr.Recognizer):
         raise TypeError("`recognizer` must be `Recognizer` instance")
@@ -41,14 +47,14 @@ def recognize_speech_from_mic(recognizer,
             print("Speak Now.")
         if talking == False:
             print("Speak Now.")
-        audio = recognizer.listen(source)
+        try:
+            audio = recognizer.listen(source)
+        except KeyboardInterrupt:
+            print("\nSpeech Interrupted by keyboard interrupt.")
+            response['success'] = False
+            response['error'] = 'KeyboardInterrupt'
 
-    # set up the response object
-    response = {
-        "success": True,
-        "error": None,
-        "transcription": None
-    }
+            return response
 
     # try recognizing the speech in the recording
     # if a RequestError or UnknownValueError exception is caught,

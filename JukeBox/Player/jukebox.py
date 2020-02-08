@@ -63,26 +63,24 @@ def wait_until_end(player, prompt, file_index, index_diff, mic, r, speechRecogOn
         return action # do the necessary action
 
 def speech_listen_for_keyword(mic, r, key_word, pathToDirectory=sys.path[0], player=None):
-    try:
-        speechResponse = SpeechAnalysis.recognize_speech_from_mic(r,
-                                                                   mic,
-                                                                   talking=False)
-        if speechResponse['success'] == True and speechResponse['error'] == None:
 
-            print('You said: ', speechResponse['transcription'])
-            response = speechResponse["transcription"].lower().replace("'",'').split(' + ')
+    speechResponse = SpeechAnalysis.recognize_speech_from_mic(r,
+                                                               mic,
+                                                               talking=False)
+    if speechResponse['success'] == True and speechResponse['error'] == None:
 
-            if computer.interpret_command(response, True, key_word=key_word) == key_word:
-                player.set_pause(1) # pause song for speech
-                speechResponse = SpeechAnalysis.main(mic, r,
-                                                  talking=True, OS=sys.platform,
-                                                  string_to_say="I am listening",
-                                                  file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'),
-                                                  pathToDirectory=pathToDirectory)
-                return computer.interpret_action(speechResponse) # if end_cond is true, return only a command
+        print('You said: ', speechResponse['transcription'])
+        response = speechResponse["transcription"].lower().replace("'",'').split(' + ')
 
-    except KeyboardInterrupt:
-        print("User aborted speech recognition.")
+        if computer.interpret_command(response, True, key_word=key_word) == key_word:
+            player.set_pause(1) # pause song for speech
+            speechResponse = SpeechAnalysis.main(mic, r,
+                                              talking=True, OS=sys.platform,
+                                              string_to_say="I am listening",
+                                              file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'),
+                                              pathToDirectory=pathToDirectory)
+            return computer.interpret_action(speechResponse) # if end_cond is true, return only a command
+    if speechResponse['error'] == 'KeyboardInterrupt':
         return 'Aborted'
 
 # index_diff is 1 upon end of the playlist.

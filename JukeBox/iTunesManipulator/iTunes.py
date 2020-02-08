@@ -53,7 +53,7 @@ def check_iTunes_for_song(iTunesPaths,
         if speechRecogOn == True and command == 'shuffle':
             songSelection = 'sh'
 
-        elif speechRecogOn == True and command == 'playall':
+        elif speechRecogOn == True and command == 'all':
             songSelection = 'pl'
 
         elif speechRecogOn == True and command == 'play':
