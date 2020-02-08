@@ -103,6 +103,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
                 break
             except:
                 print("Must input an integer")
+                integerVideoId = None
 
         if integerVideoId == 404:
             responseObject['success'] = False

@@ -87,9 +87,12 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
     # autoDownload check
     if autoDownload == False:
         if mode == 'alb':
-            trackPropertySelectionNumber = int(input('Nothing here you like? 404, 406 to return home: '))
+            input_prompt = 'Nothing here you like? 404, 406 to return home: '
+            trackPropertySelectionNumber = tools.format_input_to_int(input_prompt, mask='', low_bound=0, high_bound=len(parsedResultsList)-1)
+
         else:
-            trackPropertySelectionNumber = int(input('Nothing here? -- type 404. Save without properties -- 405, 406 -- return home: '))
+            input_prompt = 'Nothing here? -- type 404. Save without properties -- 405, 406 -- return home: '
+            trackPropertySelectionNumber = tools.format_input_to_int(input_prompt, mask='save_no_prop', low_bound=0, high_bound=len(parsedResultsList)-1)
 
     # autodownload true, set no properties.. continue on
     else:
@@ -107,9 +110,6 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
         return
     if trackPropertySelectionNumber == 406:
         return '406'
-    # call 404 option as last option before return because of recursion
-    while trackPropertySelectionNumber not in range(0, len(parsedResultsList)) and trackPropertySelectionNumber != 404:
-        trackPropertySelectionNumber = int(input("invalid input. Try Again: "))
 
     # call the function again to give any amount of tries to the user
     if trackPropertySelectionNumber == 404:
@@ -135,7 +135,7 @@ def remove_songs_selected(song_properties_list, requiredJsonKeys):
     input_string = "Enter song id's (1 4 5 etc.) you dont want, type: enter (download all), 'ag' (search again), 406 (cancel): "
     user_input = tools.format_input_to_list(input_string=input_string, list_to_compare_to=song_properties_list, mode='remove')
     if user_input == None:
-        return None
+        return song_properties_list # return the full list
     elif user_input == 'ag':
         return 'ag'
     elif user_input == '406':
@@ -146,9 +146,9 @@ def remove_songs_selected(song_properties_list, requiredJsonKeys):
 
     return [song for i, song in enumerate(song_properties_list) if i not in user_input]
 
-def choose_songs_selected(song_list, input_string):
+def choose_items(props_lyst, input_string):
     user_input = ''
-    user_input = tools.format_input_to_list(input_string=input_string, list_to_compare_to=song_list, mode='choose')
+    user_input = tools.format_input_to_list(input_string=input_string, list_to_compare_to=props_lyst, mode='choose')
     if user_input == None:
         return None
     elif user_input == '406':
@@ -163,12 +163,12 @@ def choose_songs_selected(song_list, input_string):
         return user_input
 
     for index in user_input:
-        list_for_printing = song_list[index].split(os.sep)
+        list_for_printing = props_lyst[index].split(os.sep)
         print("Song Added: %s -- %s - %s: %s" % (index, list_for_printing[len(list_for_printing)-3],
                                                   list_for_printing[len(list_for_printing)-2],
                                                   list_for_printing[len(list_for_printing)-1]))
 
-    return [song_list[i] for i in user_input]
+    return [props_lyst[i] for i in user_input]
 
 def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJsonAlbumKeys={}, autoDownload=False, prog_vers=''):
     songs_in_album_props = None # will hold the songs in album properties in the new album feature

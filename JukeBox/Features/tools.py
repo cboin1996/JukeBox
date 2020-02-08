@@ -10,7 +10,7 @@ def format_input_to_list(input_string='', list_to_compare_to=[], mode=''):
     while True:
         user_input = input(input_string)
         if user_input == '' and mode=='remove': # no songs to remove by user, so return
-            return list_to_compare_to # return unmodified list
+            return None # None signallying none to remove
         elif user_input == '' and mode=='choose':
             print("Come on. You gotta give me something to work with.")
             continue
@@ -47,6 +47,24 @@ def format_input_to_list(input_string='', list_to_compare_to=[], mode=''):
         # this will not get reached unless successful trancsription
         if success == True:
             return user_input
+
+def format_input_to_int(input_prompt, mask, low_bound, high_bound):
+    while True:
+        string = input(input_prompt)
+
+        try:
+            if string == '406':
+                return 406
+            if string == '405' and mask == 'save_no_prop':
+                return 405
+            if string == '404':
+                return 404
+            if 0 <= int(string) and high_bound >= int(string):
+                return int(string)
+            else:
+                print("Number must be more than 0 and less than %s" % (high_bound))
+        except:
+            print("Come on. Invalid input.")
 
 class KBHit:
 

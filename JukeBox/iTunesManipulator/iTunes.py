@@ -49,7 +49,7 @@ def check_iTunes_for_song(iTunesPaths,
         if speechRecogOn == False:
             print('Which one(s) do you want to hear (e.g. 0 1 3)?')
             user_input_string = "OR type 'you' (search youtube), 'ag' (search again/skip), 'sh' (shuffle), 'pl' (play in order), '406' (return home): "
-            songSelection = iTunesSearch.choose_songs_selected(input_string=user_input_string, song_list=iTunesPaths['searchedSongResult'])
+            songSelection = iTunesSearch.choose_items(input_string=user_input_string, props_lyst=iTunesPaths['searchedSongResult'])
 
         if speechRecogOn == True and command == 'shuffle':
             songSelection = 'sh'
@@ -66,7 +66,7 @@ def check_iTunes_for_song(iTunesPaths,
             return True
         if songSelection == '406':
             print("Exiting to home.")
-            return True
+            return '406'
 
         # shuffle algorithm TODO: move to a function
         if songSelection == 'sh':

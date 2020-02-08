@@ -281,13 +281,14 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                     searchList = artist_album_string # will quit out.
                 else:
                     searchList, album_artist_list, songs_in_album_props = iTunesSearch.launch_album_mode(artist_album_string=artist_album_string,
-                                                                                                        requiredJsonSongKeys=requiredJsonSongKeys,
-                                                                                                        requiredJsonAlbumKeys=requiredJsonAlbumKeys,
-                                                                                                        autoDownload=False,
-                                                                                                        prog_vers=prog_vers)
+                                                                            requiredJsonSongKeys=requiredJsonSongKeys,
+                                                                            requiredJsonAlbumKeys=requiredJsonAlbumKeys,
+                                                                            autoDownload=False,
+                                                                            prog_vers=prog_vers)
 
             else:
                 searchList = searchFor.split('; ')
+                prog_vers = ''
 
         else: # Speech recognition edition
             if continueGettingSongs == "yes": # idly listen if user say's yes otherwise use searchList from end of loop
@@ -339,7 +340,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                     trackProperties = songs_in_album_props[i]
                     searchForSong = album_artist_list[i] + ' ' + searchForSong
 
-                elif song_played == False: # if song_played is True, suggests user played song or wants to skip iteration
+                elif song_played == False: # if song_played is True, suggests user played song or wants to skip iteration, thus perform download
                     trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchForSong,
                                                                         limit=10, entity='song',
                                                                         autoDownload=autoDownload,
