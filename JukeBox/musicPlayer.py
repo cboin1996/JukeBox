@@ -385,6 +385,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                 computer.speak(sys.platform, string_to_say='No command given. Returning to idle.',
                               file_to_play=os.path.join(sys.path[0],'speechPrompts','noCommandReturnIdle.m4a'))
                 continueGettingSongs = 'yes'
+            elif continueGettingSongs == 'no':
+                break # quit
 
     # editor functionality goes here (from iTunesManipulator.Editor)
     print("\n================================")
