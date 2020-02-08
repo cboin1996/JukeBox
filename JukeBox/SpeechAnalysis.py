@@ -43,22 +43,27 @@ def recognize_speech_from_mic(recognizer,
     # from the microphone
     with microphone as source:
         sys.stdout.write('\rHold on, I am adjusting to the ambience of the room')
-        recognizer.adjust_for_ambient_noise(source)
-        sys.stdout.flush()
-        if talking == True:
-            computer.speak(OS, string_to_say, file_to_play=file_to_play)
-            sys.stdout.write("\rSpeak Now.                                         ")
-        if talking == False:
-            sys.stdout.write("\rSpeak Now.                                         ")
-        sys.stdout.flush()
-
         try:
+            recognizer.adjust_for_ambient_noise(source)
+            sys.stdout.flush()
+            if talking == True:
+                computer.speak(OS, string_to_say, file_to_play=file_to_play)
+                sys.stdout.write("\rSpeak Now.                                         ")
+            if talking == False:
+                sys.stdout.write("\rSpeak Now.                                         ")
+            sys.stdout.flush()
+
             audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
         except KeyboardInterrupt:
             print("\nSpeech Interrupted by keyboard interrupt.")
             response['success'] = False
             response['error'] = 'KeyboardInterrupt'
 
+            try:
+                time.sleep(1)
+            except KeyboardInterrupt:
+                print('User did two keyboard interrupts in a row. Breaking program')
+                raise
             return response
 
     # try recognizing the speech in the recording

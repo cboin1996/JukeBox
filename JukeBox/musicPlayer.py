@@ -302,8 +302,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                         break
 
 
-            else: # get the next songs from previous iteration
-                searchList = list(nextSongs)
+            else: # get the next songs from previous iteration of speech
+                searchList = list(continueGettingSongs)
 
         if command in listOfModes: # determine which version to be in.
             command = command.split(' ')
@@ -314,7 +314,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                 r = sr.Recognizer()
             continue # return to top of loop.
 
-        if searchList != '406':
+        if searchList != '406': # if it is, skip whole searching process
             # Iterate the list of songs
             for i, searchForSong in enumerate(searchList):
                 print(" - Running program for: ", searchForSong)
@@ -379,7 +379,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                                               string_to_say='Say another command or no to quit.',
                                               file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'anotherone.m4a'),
                                               pathToDirectory=pathToDirectory)
-            continueGettingSongs = computer.interpret_command(nextSongs, end_cond=True)
+            commmand, continueGettingSongs = computer.interpret_command(nextSongs, end_cond=False)
     # editor functionality goes here (from iTunesManipulator.Editor)
     print("\n================================")
     print("=--------Have a fine day-------=")
