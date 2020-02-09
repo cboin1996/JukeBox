@@ -67,7 +67,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     browser.get(youtubePageResponse.url)
 
     pageText = BeautifulSoup(browser.page_source, 'html.parser')
-    browser.save_screenshot('/Users/christianboin/Desktop/headless.png')
+    # browser.save_screenshot('/Users/christianboin/Desktop/headless.png') # uncomment to debug headless chrome
     # grab the list of video titles from the searched page
     print("Found these videos: ")
     i = 0
