@@ -216,7 +216,8 @@ def run_download(microPhone,
 
 def run_for_songs(mic=None, r=None, iTunesInstalled=None, searchList=[], autoDownload=None,
                 pathToDirectory=None, speechRecogOn=None, debugMode=None, command=None,
-                musicPlayerSettings=None, prog_vers='', operatingSystem=None, searchFor=None, requiredJsonSongKeys=None):
+                musicPlayerSettings=None, prog_vers='', operatingSystem=None, searchFor=None,
+                requiredJsonSongKeys=None, album_artist_list=None, songs_in_album_props=None):
     for i, searchForSong in enumerate(searchList):
         print(" - Running program for: ", searchForSong)
         iTunesPaths = iTunes.setItunesPaths(operatingSystem, searchFor=searchForSong)
@@ -254,6 +255,7 @@ def run_for_songs(mic=None, r=None, iTunesInstalled=None, searchList=[], autoDow
             elif trackProperties != None: # check to ensure that properties aree selected
                 searchForSong = "%s %s" % (trackProperties['artistName'], trackProperties['trackName'])
 
+        if song_played == False: # run for either album or regualar song download
             run_download(microPhone=mic,
                          recognizer=r,
                          iTunesInstalled=True,
@@ -280,6 +282,9 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
                           'trackNumber',
                           'trackCount']
     requiredJsonAlbumKeys = ['artistName', 'collectionName', 'trackCount', 'collectionId']
+    album_artist_list=[]
+    songs_in_album_props=[]
+
     song_played = False # determines if song has been played by itunes.
     prog_vers = ''
     command=''
@@ -287,6 +292,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
     speechRecogOn = False
     debugMode = False
     listOfModes = ['auto','voice','debug', 'select', 'voice debug', 'auto debug']
+
+
     # get the obsolute file path for the machine running the script
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
@@ -372,7 +379,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
             run_for_songs(mic=mic, r=r, iTunesInstalled=True, searchList=searchList, autoDownload=autoDownload,
                             pathToDirectory=pathToDirectory, speechRecogOn=speechRecogOn, debugMode=debugMode,command=command,
                             musicPlayerSettings=musicPlayerSettings, prog_vers=prog_vers, operatingSystem=operatingSystem, searchFor=searchFor,
-                            requiredJsonSongKeys=requiredJsonSongKeys)
+                            requiredJsonSongKeys=requiredJsonSongKeys, album_artist_list=album_artist_list,
+                            songs_in_album_props=songs_in_album_props)
 
         if speechRecogOn == False:
             continueGettingSongs = input('Want to go again (yes/no): ')
