@@ -11,19 +11,18 @@ def speak(OS, string_to_say, file_to_play=None):
         time.sleep(2) # play file
     return
 # used in main program
-def interpret_command(speech_text, end_cond=False, key_word=' '):
+def interpret_command(speech_text, only_command=False, key_word=' '):
     list_of_commands = ['quit', 'play', 'shuffle', 'all', 'voice', 'debug', 'auto', 'select', 'no', 'yes']
 
     if key_word != ' ':
-        if key_word == speech_text[0].lower() and end_cond==True: #shortcut -- skip the hello
+        if key_word == speech_text[0].lower() and only_command==True: #shortcut -- skip the hello
             return key_word
 
     for command in list_of_commands:
-        if command == speech_text[0].split(' ')[0] and end_cond == False:
+        if command == speech_text[0].split(' ')[0] and only_command == False:
             speech_text[0] = speech_text[0].replace('%s ' %(command),'')
-            print(command, speech_text)
-            return (command, speech_text)
-        if command == speech_text[0].split(' ')[0] and end_cond == True:
+            return command, speech_text
+        if command == speech_text[0].split(' ')[0] and only_command == True:
             return command
 
 
@@ -32,7 +31,7 @@ def interpret_command(speech_text, end_cond=False, key_word=' '):
 
 # used in music playback
 def interpret_action(speech_text):
-    actions = ['resume', 'next', 'pause', 'restart', 'previous', 'quit']
+    actions = ['resume', 'next', 'pause', 'restart', 'previous', 'stop']
     for action in actions:
         if action == speech_text[0].split(' ')[0]: #shortcut -- skip the hello
             return speech_text[0].split(' ')[0]

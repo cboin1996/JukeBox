@@ -125,16 +125,12 @@ def main(mic,
             error_prompt = 'Error. Expect commands: %s' % (tools.stripFileForSpeech("%s"%(expected)))
         else:
             error_prompt = 'Error. Try Again.'
+
         sys.stdout.write('\rError. Try again. You said: %s  ..                                    ' % (response['transcription']))
         sys.stdout.flush()
-        response = recognize_speech_from_mic(r,
-                                             mic,
-                                             OS,
-                                             string_to_say=error_prompt,
-                                             talking=talking,
+        response = recognize_speech_from_mic(r,mic,OS,string_to_say=error_prompt,talking=talking,
                                              file_to_play=os.path.join(pathToDirectory,'speechPrompts', 'tryAgain.m4a'),
-                                             timeout=timeout,
-                                             phrase_time_limit=phrase_time_limit,
+                                             timeout=timeout,phrase_time_limit=phrase_time_limit,
                                              )
 
     if response['success'] == True:

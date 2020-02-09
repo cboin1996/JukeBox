@@ -16,7 +16,7 @@ PLAYING_STRING_COMMANDS_SPECIAL = PLAYING_STRING_COMMANDS_DEFAULT + "\n - d (nex
 """ Returns True is song is found/research/skip, else false """
 def check_iTunes_for_song(iTunesPaths,
                           autoDownload,
-                          speechRecogOn,
+                          speechRecogOn=None,
                           pathToDirectory='',
                           command='',
                           mic=None,

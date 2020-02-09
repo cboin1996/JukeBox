@@ -83,8 +83,8 @@ def speech_listen_for_keyword(mic, r, key_word, pathToDirectory=sys.path[0], pla
                                                   file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'),
                                                   pathToDirectory=pathToDirectory,
                                                   phrase_time_limit=phrase_time_limit,
-                                                  expected = ['resume', 'next', 'pause', 'restart', 'previous', 'quit'])
-            return computer.interpret_action(speechResponse) # if end_cond is true, return only a command
+                                                  expected = ['resume', 'next', 'pause', 'restart', 'previous', 'stop'])
+            return computer.interpret_action(speechResponse) 
     if speechResponse['error'] == 'KeyboardInterrupt':
         return 'Aborted'
 
@@ -115,7 +115,7 @@ def check_for_user_input(player, OS=sys.platform, state=3, file_index=0, index_d
                                                   pathToDirectory=pathToDirectory,
                                                   phrase_time_limit=4,
                                                   expected=['yes', 'no'])
-            if 'yes' in computer.interpret_command(speechResponse, end_cond=True):
+            if 'yes' in computer.interpret_command(speechResponse, only_command=True):
                 player.stop()
                 return 'quit'
             else:
@@ -127,7 +127,7 @@ def check_for_user_input(player, OS=sys.platform, state=3, file_index=0, index_d
         player.stop()
         return 'next'
 
-    if char == 'q' or command == 'quit':
+    if char == 'q' or command == 'stop':
         print("Quitting playlist.")
         player.stop()
         return 'quit'
@@ -146,7 +146,7 @@ def check_for_user_input(player, OS=sys.platform, state=3, file_index=0, index_d
                                                   pathToDirectory=pathToDirectory,
                                                   phrase_time_limit=4,
                                                   expected=['yes', 'no'])
-            if 'yes' in computer.interpret_command(speechResponse, end_cond=True):
+            if 'yes' in computer.interpret_command(speechResponse, only_command=True):
                 player.stop()
                 return 'restart'
             else:

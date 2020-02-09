@@ -73,7 +73,7 @@ def formatFileName(pathToFile, sliceKey, stringToAdd):
 
 # this function allows the module to be ran with or without itunes installed.
 # if iTunes is not installed, the files are tagged and stored in dump folder.
-def runMainWithOrWithoutItunes(microPhone,
+def run_download(microPhone,
                                 recognizer,
                                 iTunesInstalled=True,
                                 searchFor='',
@@ -136,7 +136,7 @@ def runMainWithOrWithoutItunes(microPhone,
             if continueToSaveOrNot == 'no':
                 print('Returning to beginning.')
                 p.stop()
-                return runMainWithOrWithoutItunes(microPhone=microPhone,
+                return run_download(microPhone=microPhone,
                                                     recognizer=recognizer,
                                                     iTunesInstalled=iTunesInstalled,
                                                     searchFor=searchFor,
@@ -214,9 +214,62 @@ def runMainWithOrWithoutItunes(microPhone,
         print("YoutubeMp3 failed too many times. quitting to last menu.")
         return
 
+def run_for_songs(mic=None, r=None, iTunesInstalled=None, searchList=[], autoDownload=None,
+                pathToDirectory=None, speechRecogOn=None, debugMode=None, command=None,
+                musicPlayerSettings=None, prog_vers='', operatingSystem=None, searchFor=None, requiredJsonSongKeys=None):
+    for i, searchForSong in enumerate(searchList):
+        print(" - Running program for: ", searchForSong)
+        iTunesPaths = iTunes.setItunesPaths(operatingSystem, searchFor=searchForSong)
+
+        # '*.*' means anyfilename, anyfiletype
+        # /*/* gets through artist, then album or itunes folder structure
+        if iTunesPaths == None:
+            iTunesInstalled = False
+            song_played = False # signals to perform a download
+        else:
+            iTunesInstalled = True
+            song_played = iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecogOn, pathToDirectory, command, mic=mic, r=r)
+
+        if song_played == '406': # return to home
+            return
+
+        if prog_vers == 'alb':
+            trackProperties = songs_in_album_props[i]
+            searchForSong = album_artist_list[i] + ' ' + searchForSong
+        # secret command for syncing with gDrive files.  Special feature!
+        elif searchFor == '1=1':
+            Editor.syncWithGDrive(gDriveFolderPath=musicPlayerSettings["gDrive"]["gDriveFolderPath"],
+                                  iTunesAutoAddFolderPath=iTunesPaths['autoAdd'])
+            break
+
+        elif song_played == False: # if song_played is True, suggests user played song or wants to skip iteration, thus perform download
+            trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchForSong,
+                                                                limit=10, entity='song',
+                                                                autoDownload=autoDownload,
+                                                                 requiredJsonKeys=requiredJsonSongKeys,
+                                                                 searchOrLookup=True
+                                                                )
+            if trackProperties == '406': # return to home entry
+                return
+            elif trackProperties != None: # check to ensure that properties aree selected
+                searchForSong = "%s %s" % (trackProperties['artistName'], trackProperties['trackName'])
+
+            run_download(microPhone=mic,
+                         recognizer=r,
+                         iTunesInstalled=True,
+                         searchFor=searchForSong,
+                         autoDownload=autoDownload,
+                         pathToDirectory=pathToDirectory,
+                         iTunesPaths=iTunesPaths,
+                         speechRecogOn=speechRecogOn,
+                         debugMode=debugMode,
+                         trackProperties=trackProperties)
+
+        print('=----------Done Cycle--------=')
+
 # 'auto' argv will get first video.  Manual will allow user to select video.. default behaviour
 # pass argv to youtubeSongDownload
-def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, debugMode = False):
+def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False, debugMode = False):
     autoDownload = False
     searchList = []
     requiredJsonSongKeys = ['trackName',
@@ -231,7 +284,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
     prog_vers = ''
     command=''
     autoDownload = False
-    speechRecog = False
+    speechRecogOn = False
     debugMode = False
     listOfModes = ['auto','voice','debug', 'select', 'voice debug', 'auto debug']
     # get the obsolute file path for the machine running the script
@@ -247,13 +300,13 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
     # check for running version
     if len(argv) > 1:
         argv_noPath = argv.pop(0)
-        autoDownload, speechRecog, debugMode = feature.determine_mode(argv)
-    # initialize for speechRecog
-    if speechRecog == True: # TODO CHANGE BACK
+        autoDownload, speechRecogOn, debugMode = feature.determine_mode(argv)
+    # initialize for speechRecogOn
+    if speechRecogOn == True: # TODO CHANGE BACK
         mic = sr.Microphone()
         r = sr.Recognizer()
     # determine which OS we are operating on.  Work with that OS to set
-    operatingSystem = namePlates(autoDownload, speechRecog, debugMode, sys.platform)
+    operatingSystem = namePlates(autoDownload, speechRecogOn, debugMode, sys.platform)
 
     continueGettingSongs = 'yes' # initialize to yes in order to trigger idle listening
     continueEditing = ''
@@ -263,7 +316,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
     while continueGettingSongs != 'no' :
         # initialize searchList to empty each iteration
         searchList = []
-        if speechRecog == False:
+
+        if speechRecogOn == False:
             searchFor = input("Enter song(s) [song1; song2], 'instr' for instructions, 'set' for settings, 'alb' for albums: ")
             if searchFor in listOfModes: # will be used to determine if mode chaneg has been selected
                 command = searchFor
@@ -276,15 +330,13 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                 feature.view_instructions(os.path.join(pathToDirectory, 'Instructions.txt'))
             elif searchFor == 'alb':
                 prog_vers = 'alb'
-                artist_album_string = input("Enter artist and album name you wish to download. Type 406 to cancel: ")
-                if artist_album_string == '406':
-                    searchList = artist_album_string # will quit out.
+                album_user_input = input("Enter artist and album name you wish to download. Type 406 to cancel: ")
+                if album_user_input == '406':
+                    searchList = album_user_input # will quit out.
                 else:
-                    searchList, album_artist_list, songs_in_album_props = iTunesSearch.launch_album_mode(artist_album_string=artist_album_string,
-                                                                            requiredJsonSongKeys=requiredJsonSongKeys,
-                                                                            requiredJsonAlbumKeys=requiredJsonAlbumKeys,
-                                                                            autoDownload=False,
-                                                                            prog_vers=prog_vers)
+                    searchList, album_artist_list, songs_in_album_props = iTunesSearch.launch_album_mode(artist_album_string=album_user_input,
+                                                                            requiredJsonSongKeys=requiredJsonSongKeys,requiredJsonAlbumKeys=requiredJsonAlbumKeys,
+                                                                            autoDownload=False, prog_vers=prog_vers)
 
             else:
                 searchList = searchFor.split('; ')
@@ -294,7 +346,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
             if continueGettingSongs == "yes": # idly listen if user say's yes otherwise use searchList from end of loop
                 while True:
                     speechResponse = SpeechAnalysis.main(mic, r, talking=False, phrase_time_limit=4)
-                    command, searchList = computer.interpret_command(speechResponse, end_cond=False)
+                    command, searchList = computer.interpret_command(speechResponse, only_command=False)
 
                     if command == 'quit':
                         return
@@ -307,70 +359,25 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
 
         if command in listOfModes: # determine which version to be in.
             command = command.split(' ')
-            autoDownload, speechRecog, debugMode = feature.determine_mode(command)
-            operatingSystem = namePlates(autoDownload, speechRecog, debugMode, sys.platform)
-            if speechRecog == True: # declare microphone and recognizer instance
+            autoDownload, speechRecogOn, debugMode = feature.determine_mode(command)
+            operatingSystem = namePlates(autoDownload, speechRecogOn, debugMode, sys.platform)
+            if speechRecogOn == True: # declare microphone and recognizer instance
                 mic = sr.Microphone()
                 r = sr.Recognizer()
             continue # return to top of loop.
 
-        if searchList != '406': # if it is, skip whole searching process
+        if searchList != '406': # if it is, skip whole song playing/searching process
             # Iterate the list of songs
-            for i, searchForSong in enumerate(searchList):
-                print(" - Running program for: ", searchForSong)
-                iTunesPaths = iTunes.setItunesPaths(operatingSystem, searchFor=searchForSong)
-                # secret command for syncing with gDrive files.  Special feature!
-                if searchFor == '1=1':
-                    Editor.syncWithGDrive(gDriveFolderPath=musicPlayerSettings["gDrive"]["gDriveFolderPath"],
-                                          iTunesAutoAddFolderPath=iTunesPaths['autoAdd'])
-                    break
-                # '*.*' means anyfilename, anyfiletype
-                # /*/* gets through artist, then album or itunes folder structure
-                if iTunesPaths == None:
-                    iTunesInstalled = False
-                    song_played = False # signals to perform a download
-                else:
-                    iTunesInstalled = True
-                    song_played = iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecog, pathToDirectory, command, mic=mic, r=r)
+            print(command, searchList)
+            run_for_songs(mic=mic, r=r, iTunesInstalled=True, searchList=searchList, autoDownload=autoDownload,
+                            pathToDirectory=pathToDirectory, speechRecogOn=speechRecogOn, debugMode=debugMode,command=command,
+                            musicPlayerSettings=musicPlayerSettings, prog_vers=prog_vers, operatingSystem=operatingSystem, searchFor=searchFor,
+                            requiredJsonSongKeys=requiredJsonSongKeys)
 
-                if song_played == '406': # return to home
-                    break
-
-                if prog_vers == 'alb':
-                    trackProperties = songs_in_album_props[i]
-                    searchForSong = album_artist_list[i] + ' ' + searchForSong
-
-                elif song_played == False: # if song_played is True, suggests user played song or wants to skip iteration, thus perform download
-                    trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchForSong,
-                                                                        limit=10, entity='song',
-                                                                        autoDownload=autoDownload,
-                                                                         requiredJsonKeys=requiredJsonSongKeys,
-                                                                         searchOrLookup=True
-                                                                        )
-                    if trackProperties == '406': # return to home entry
-                        break
-                    elif trackProperties != None: # check to ensure that properties aree selected
-                        searchForSong = "%s %s" % (trackProperties['artistName'], trackProperties['trackName'])
-
-
-                if song_played == False: # suggests user has either chosen to download or no song found in itunes
-                    runMainWithOrWithoutItunes(microPhone=mic,
-                                                recognizer=r,
-                                                iTunesInstalled=True,
-                                                searchFor=searchForSong,
-                                                autoDownload=autoDownload,
-                                                pathToDirectory=pathToDirectory,
-                                                iTunesPaths=iTunesPaths,
-                                                speechRecogOn=speechRecog,
-                                                debugMode=debugMode,
-                                                trackProperties=trackProperties)
-
-                print('=----------Done Cycle--------=')
-
-        if speechRecog == False:
+        if speechRecogOn == False:
             continueGettingSongs = input('Want to go again (yes/no): ')
 
-        if speechRecog == True:
+        if speechRecogOn == True:
             nextSongs = [] # initialize to empty before ech speech read
             nextSongs = SpeechAnalysis.main(mic,
                                               r,
@@ -380,19 +387,20 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecog=False, d
                                               file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'anotherone.m4a'),
                                               pathToDirectory=pathToDirectory,
                                               phrase_time_limit=4)
-            commmand, continueGettingSongs = computer.interpret_command(nextSongs, end_cond=True)
+            new_command, continueGettingSongs = computer.interpret_command(nextSongs, only_command=False)
+            command = new_command # unpacking is weird. If i used command it would not update.
             if continueGettingSongs == None: # if no command is interpreted, return to idle mode
                 computer.speak(sys.platform, string_to_say='No command given. Returning to idle.',
                               file_to_play=os.path.join(sys.path[0],'speechPrompts','noCommandReturnIdle.m4a'))
                 continueGettingSongs = 'yes'
-            elif continueGettingSongs == 'no':
+            elif continueGettingSongs[0] == 'no':
                 break # quit
 
     # editor functionality goes here (from iTunesManipulator.Editor)
     print("\n================================")
     print("=--------Have a fine day-------=")
     print("================================")
-    if speechRecog == True and operatingSystem=='darwin':
+    if speechRecogOn == True and operatingSystem=='darwin':
         computer.speak(operatingSystem, 'Goodbye.')
 
 
