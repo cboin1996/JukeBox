@@ -10,7 +10,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import glob
 import shutil, os, tqdm, sys
 from iTunesManipulator import (iTunes, Editor, iTunesSearch)
-from Features import feature
+from Features import feature, tools
 import speech_recognition as sr
 import SpeechAnalysis
 import time
@@ -18,6 +18,8 @@ from Youtube import Youtube
 import random
 from speechPrompts import computer
 from Player import jukebox
+import GlobalVariables
+
 
 
 # Change log
@@ -86,21 +88,6 @@ def run_download(microPhone,
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
     pathToSettings = os.path.join(pathToDirectory, 'settings.json')
 
-    if speechRecogOn == True:
-        responseText = SpeechAnalysis.main(microPhone,
-                                            recognizer,
-                                            talking=True,
-                                            OS=sys.platform,
-                                            string_to_say="Would you like to download %s" %(searchFor),
-                                            file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'wouldyouDL.m4a'),
-                                            pathToDirectory=pathToDirectory,
-                                            expected=['yes', 'no'])
-        if 'yes' in responseText: # check if user wants to download or not
-            computer.speak(sys.platform, 'Downloading.', os.path.join(pathToDirectory, 'speechPrompts', 'downloading.m4a'))
-            autoDownload=True # perform autodownload for that songs
-        else:
-            return
-
     response = Youtube.getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)
     youtubeResponseObject = Youtube.youtubeSongDownload(youtubePageResponse=response,
                                                         autoDownload=autoDownload,
@@ -163,7 +150,14 @@ def run_download(microPhone,
                 p.stop()
 
             elif speechRecogOn==True and autoDownload == True: # speech recog check for save
-                jukebox.wait_until_end(p, 'Type ctrl c to stop playing.')
+                action = ''
+                print(GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT) # provide commands
+                while True: # used this block again below. Should be its own function.. but am too right now.
+                    action = jukebox.wait_until_end(player=p, prompt='', file_index=0,
+                                       index_diff=1, mic=microPhone, r=recognizer, speechRecogOn=speechRecogOn, command_string=GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT)
+                    if action == GlobalVariables.player_stop:
+                        break
+                    p.play()
                 p.stop()
                 save_or_not = SpeechAnalysis.main(microPhone,
                                                   recognizer,
@@ -172,7 +166,9 @@ def run_download(microPhone,
                                                   string_to_say="Should I save to iTunes?",
                                                   file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'shouldSaveToItunes.m4a'),
                                                   pathToDirectory=pathToDirectory,
-                                                  expected=['yes', 'no'])
+                                                  expected=['yes', 'no'],
+                                                  phrase_time_limit=4
+                                                  )
                 if 'yes' in save_or_not:
                     userInput = 's'
                     computer.speak(sys.platform, 'Saving to Itunes.', os.path.join(pathToDirectory, 'speechPrompts', 'savingiTunes.m4a'))
@@ -201,9 +197,17 @@ def run_download(microPhone,
         else:
             # autoDownload check
             if autoDownload == False:
-                jukebox.wait_until_end(p, 'Type ctrl c to stop playing.')
+                input("Type anything to stop playing.")
+
             elif speechRecogOn == True and autoDownload == True:
-                jukebox.wait_until_end(p, 'Type ctrl c to stop playing.')
+                print(GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT) # provide commands
+                while True: # wait until user ends song.
+                    action = jukebox.wait_until_end(player=p, prompt='', file_index=0,
+                                       index_diff=1, mic=microPhone, r=recognizer, speechRecogOn=speechRecogOn, command_string=GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT)
+                    if action == GlobalVariables.player_stop:
+                        break
+                    p.play()
+
                 computer.speak(sys.platform, 'Saving Locally', os.path.join(pathToDirectory, 'speechPrompts', 'savingLocal.m4a'))
             else:
                 print("Saving locally. Whether you like it or not.")
@@ -214,7 +218,7 @@ def run_download(microPhone,
         print("YoutubeMp3 failed too many times. quitting to last menu.")
         return
 
-def run_for_songs(mic=None, r=None, iTunesInstalled=None, searchList=[], autoDownload=None,
+def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
                 pathToDirectory=None, speechRecogOn=None, debugMode=None, command=None,
                 musicPlayerSettings=None, prog_vers='', operatingSystem=None, searchFor=None,
                 requiredJsonSongKeys=None, album_artist_list=None, songs_in_album_props=None):
@@ -244,11 +248,26 @@ def run_for_songs(mic=None, r=None, iTunesInstalled=None, searchList=[], autoDow
             break
 
         elif song_played == False: # if song_played is True, suggests user played song or wants to skip iteration, thus perform download
+            if speechRecogOn == True:
+                responseText = SpeechAnalysis.main(mic,
+                                                    r,
+                                                    talking=True,
+                                                    OS=sys.platform,
+                                                    string_to_say="File not found. Would you like to download %s" %(tools.stripFileForSpeech(searchFor)),
+                                                    file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'wouldyouDL.m4a'),
+                                                    pathToDirectory=pathToDirectory,
+                                                    expected=['yes', 'no'])
+                if 'yes' in responseText: # check if user wants to download or not
+                    computer.speak(sys.platform, 'Downloading.', os.path.join(pathToDirectory, 'speechPrompts', 'downloading.m4a'))
+                    autoDownload=True # perform autodownload for that songs
+                else:
+                    return
+
             trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchForSong,
                                                                 limit=10, entity='song',
                                                                 autoDownload=autoDownload,
-                                                                 requiredJsonKeys=requiredJsonSongKeys,
-                                                                 searchOrLookup=True
+                                                                requiredJsonKeys=requiredJsonSongKeys,
+                                                                searchOrLookup=True
                                                                 )
             if trackProperties == '406': # return to home entry
                 return
@@ -258,7 +277,7 @@ def run_for_songs(mic=None, r=None, iTunesInstalled=None, searchList=[], autoDow
         if song_played == False: # run for either album or regualar song download
             run_download(microPhone=mic,
                          recognizer=r,
-                         iTunesInstalled=True,
+                         iTunesInstalled=iTunesInstalled,
                          searchFor=searchForSong,
                          autoDownload=autoDownload,
                          pathToDirectory=pathToDirectory,
@@ -376,7 +395,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
         if searchList != '406': # if it is, skip whole song playing/searching process
             # Iterate the list of songs
             print(command, searchList)
-            run_for_songs(mic=mic, r=r, iTunesInstalled=True, searchList=searchList, autoDownload=autoDownload,
+            run_for_songs(mic=mic, r=r, searchList=searchList, autoDownload=autoDownload,
                             pathToDirectory=pathToDirectory, speechRecogOn=speechRecogOn, debugMode=debugMode,command=command,
                             musicPlayerSettings=musicPlayerSettings, prog_vers=prog_vers, operatingSystem=operatingSystem, searchFor=searchFor,
                             requiredJsonSongKeys=requiredJsonSongKeys, album_artist_list=album_artist_list,

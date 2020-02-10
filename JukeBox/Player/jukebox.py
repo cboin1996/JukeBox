@@ -4,6 +4,7 @@ import time
 import SpeechAnalysis
 from speechPrompts import computer
 from Features import tools
+import GlobalVariables
 
 if sys.platform != 'win32':
     import termios, tty, select, atexit
@@ -30,20 +31,20 @@ def play_file(prompt, file_path, startup_time=1.5, song_index=0, index_diff=0, m
 #  6: 'Ended',
 #  7: 'Error'}
 
-def wait_until_end(player, prompt, file_index, index_diff, mic, r, speechRecogOn=False, command_string=''):
+def wait_until_end(player, prompt, file_index, index_diff, mic, r, speechRecogOn=False, command_string=GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT):
     paused = False
     Ended = 6 # code for ended in vlc
     Paused = 4
     Playing = 3
     Stopped = 5
     kb = tools.KBHit()
-    command = ''
+    command = ' '
     print(prompt)
-
     current_state = player.get_state()
     while current_state != Ended and current_state != Stopped: # return the action if there is one
+        setting = None
         if speechRecogOn == True:
-            command = speech_listen_for_keyword(mic, r, key_word='hello jukebox', player=player, phrase_time_limit=4.5)
+            command, setting = speech_listen_for_keyword(mic, r, key_word='hello jukebox', player=player, phrase_time_limit=4.5)
             if command == 'Aborted':
                 speechRecogOn = False
                 print(command_string) # output commands to user
@@ -52,7 +53,7 @@ def wait_until_end(player, prompt, file_index, index_diff, mic, r, speechRecogOn
         time.sleep(0.5) # so the cpu isnt destroyed
 
         action = check_for_user_input(player, state=current_state, file_index=file_index, index_diff=index_diff,
-                                      kb=kb, command=command, speechRecogOn=speechRecogOn, mic=mic, r=r)
+                                      kb=kb, command=command, speechRecogOn=speechRecogOn, mic=mic, r=r, volume=setting)
         if action != None and command == 'Aborted': # once user has put action in, renable the speech recog.
             speechRecogOn = True
         current_state = player.get_state() # get the state before beginning next iteration
@@ -83,13 +84,16 @@ def speech_listen_for_keyword(mic, r, key_word, pathToDirectory=sys.path[0], pla
                                                   file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'),
                                                   pathToDirectory=pathToDirectory,
                                                   phrase_time_limit=phrase_time_limit,
-                                                  expected = ['resume', 'next', 'pause', 'restart', 'previous', 'stop'])
-            return computer.interpret_action(speechResponse) 
+                                                  expected = ['resume', 'next', 'pause', 'restart', 'previous', 'stop', 'volume'])
+            return computer.interpret_action(speechResponse)
     if speechResponse['error'] == 'KeyboardInterrupt':
-        return 'Aborted'
+        return 'Aborted', None
+    return None, None
 
 # index_diff is 1 upon end of the playlist.
-def check_for_user_input(player, OS=sys.platform, state=3, file_index=0, index_diff=0, kb=None, command='', speechRecogOn=False, mic=None, r=None, pathToDirectory=sys.path[0]): # default state to playing
+def check_for_user_input(player, OS=sys.platform, state=3, file_index=0,
+                        index_diff=0, kb=None, command='', speechRecogOn=False,
+                        mic=None, r=None, pathToDirectory=sys.path[0], volume=None): # default state to playing
     # char = getch(OS)
     char = ''
     if kb.kbhit():
@@ -117,7 +121,7 @@ def check_for_user_input(player, OS=sys.platform, state=3, file_index=0, index_d
                                                   expected=['yes', 'no'])
             if 'yes' in computer.interpret_command(speechResponse, only_command=True):
                 player.stop()
-                return 'quit'
+                return GlobalVariables.player_stop
             else:
                 player.set_pause(0)
                 return None
@@ -127,10 +131,10 @@ def check_for_user_input(player, OS=sys.platform, state=3, file_index=0, index_d
         player.stop()
         return 'next'
 
-    if char == 'q' or command == 'stop':
+    if char == 'q' or command == GlobalVariables.player_stop:
         print("Quitting playlist.")
         player.stop()
-        return 'quit'
+        return GlobalVariables.player_stop
 
     if char == 'a' or command == 'restart':
         print("Restarting Song.")
@@ -157,5 +161,15 @@ def check_for_user_input(player, OS=sys.platform, state=3, file_index=0, index_d
         print("Moving back a song.")
         player.stop()
         return 'rewind'
+
+    if command == 'volume' and volume != None:
+        print('Set volume to %s' %(volume))
+        player.audio_set_volume(volume)
+        player.set_pause(0)
+        return None
+    elif command == 'volume' and volume == None:
+        print("No volume percent given.")
+        player.set_pause(0)
+        return None
 
     return None # user made no choice

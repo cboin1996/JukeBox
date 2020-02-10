@@ -1,6 +1,7 @@
 import vlc
 import os
 import time
+import GlobalVariables
 def speak(OS, string_to_say, file_to_play=None):
     if OS == 'darwin':
         os.system('say ' + string_to_say)
@@ -12,7 +13,7 @@ def speak(OS, string_to_say, file_to_play=None):
     return
 # used in main program
 def interpret_command(speech_text, only_command=False, key_word=' '):
-    list_of_commands = ['quit', 'play', 'shuffle', 'all', 'voice', 'debug', 'auto', 'select', 'no', 'yes']
+    list_of_commands = GlobalVariables.list_of_speech_commands
 
     if key_word != ' ':
         if key_word == speech_text[0].lower() and only_command==True: #shortcut -- skip the hello
@@ -31,9 +32,17 @@ def interpret_command(speech_text, only_command=False, key_word=' '):
 
 # used in music playback
 def interpret_action(speech_text):
-    actions = ['resume', 'next', 'pause', 'restart', 'previous', 'stop']
-    for action in actions:
-        if action == speech_text[0].split(' ')[0]: #shortcut -- skip the hello
-            return speech_text[0].split(' ')[0]
-    if speech_text[0] not in actions:
-        return speech_text[0].split(' ')[0]
+
+
+    for action in GlobalVariables.player_actions:
+        if action == 'volume':
+            if '%' in speech_text[0]: # if no percent given return no volume
+                volume = int(speech_text[0].split(' ')[1].replace('%', ''))
+            else:
+                volume = None
+
+            return action,volume
+        elif action == speech_text[0].split(' ')[0]: #shortcut -- skip the hello
+            return speech_text[0].split(' ')[0], None
+    if speech_text[0] not in GlobalVariables.player_actions:
+        return speech_text[0].split(' ')[0], None

@@ -114,24 +114,25 @@ def main(mic,
     if expected == None:
         mask = False
     else:
-        mask = (response['transcription'] not in expected)
-    while response['success'] == False or response['error'] != None or mask:
-        if expected == None: # rengerate mask each loop
-            mask = False
+        if response['transcription'] != None:
+            mask = (response['transcription'].split(' ')[0] not in expected) # check first word for commamnd
         else:
-            mask = (response['transcription'] not in expected)
-
+            response['transcription'] = None
+    while response['success'] == False or response['error'] != None or mask:
         if expected != None:
-            error_prompt = 'Error. Expect commands: %s' % (tools.stripFileForSpeech("%s"%(expected)))
+            error_prompt = 'Error. You said: %s. Expecting commands: %s. Try again now.' % (response['transcription'],tools.stripFileForSpeech("%s"%(expected)))
+            print(error_prompt)
         else:
             error_prompt = 'Error. Try Again.'
 
-        sys.stdout.write('\rError. Try again. You said: %s  ..                                    ' % (response['transcription']))
-        sys.stdout.flush()
         response = recognize_speech_from_mic(r,mic,OS,string_to_say=error_prompt,talking=talking,
                                              file_to_play=os.path.join(pathToDirectory,'speechPrompts', 'tryAgain.m4a'),
                                              timeout=timeout,phrase_time_limit=phrase_time_limit,
                                              )
+        if expected == None and response['error'] == None: # rengerate mask each loop
+            mask = False
+        else:
+            mask = (response['transcription'].split(' ')[0] not in expected)
 
     if response['success'] == True:
         sys.stdout.write('\rYou said: ' + response['transcription'] + '                  ')
