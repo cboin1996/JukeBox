@@ -2,9 +2,11 @@ import glob
 
 import requests
 import json
-import os
+import os, sys
 import eyed3
 from Features import tools
+from iTunesManipulator import iTunes
+import GlobalVariables
 # prints list from top down so its more user friendly, items are pretty big
 def prettyPrinter(listOfDicts):
     i = len(listOfDicts) - 1
@@ -86,7 +88,7 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
 
     # autoDownload check
     if autoDownload == False:
-        if mode == 'alb':
+        if mode == GlobalVariables.alb_mode_string:
             input_prompt = 'Nothing here you like? 404, 406 to return home: '
             trackPropertySelectionNumber = tools.format_input_to_int(input_prompt, mask='', low_bound=0, high_bound=len(parsedResultsList)-1)
 
@@ -109,7 +111,7 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
         print("No properties selected. Moving Along.")
         return
     if trackPropertySelectionNumber == 406:
-        return '406'
+        return GlobalVariables.quit_string
 
     # call the function again to give any amount of tries to the user
     if trackPropertySelectionNumber == 404:
@@ -138,7 +140,7 @@ def remove_songs_selected(song_properties_list, requiredJsonKeys):
         return song_properties_list # return the full list
     elif user_input == 'ag':
         return 'ag'
-    elif user_input == '406':
+    elif user_input == GlobalVariables.quit_string:
         return user_input
 
     for index in user_input:
@@ -151,9 +153,9 @@ def choose_items(props_lyst, input_string):
     user_input = tools.format_input_to_list(input_string=input_string, list_to_compare_to=props_lyst, mode='choose')
     if user_input == None:
         return None
-    elif user_input == '406':
+    elif user_input == GlobalVariables.quit_string:
         return user_input
-    elif user_input == 'you':
+    elif user_input == GlobalVariables.perf_search_string:
         return user_input
     elif user_input == 'sh':
         return user_input
@@ -163,6 +165,7 @@ def choose_items(props_lyst, input_string):
         return user_input
 
     for index in user_input:
+        print(props_lyst)
         list_for_printing = props_lyst[index].split(os.sep)
         print("Song Added: %s -- %s - %s: %s" % (index, list_for_printing[len(list_for_printing)-3],
                                                   list_for_printing[len(list_for_printing)-2],
@@ -173,14 +176,21 @@ def choose_items(props_lyst, input_string):
 def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJsonAlbumKeys={}, autoDownload=False, prog_vers=''):
     songs_in_album_props = None # will hold the songs in album properties in the new album feature
     album_props = None # will hold the album properties in the new album feature
+    iTunesPaths = iTunes.setItunesPaths(operatingSystem=sys.platform, searchFor=artist_album_string)
+
+    song_played = iTunes.check_iTunes_for_song(iTunesPaths, autoDownload=False, speechRecogOn=False,
+                                               pathToDirectory=sys.path[0])
+    if song_played == GlobalVariables.quit_string or song_played == True:
+        return (GlobalVariables.quit_string, None, None)
+
     while songs_in_album_props == None or album_props == None or songs_in_album_props == 'ag': # ensure user has selected album they like.
         album_props = parseItunesSearchApi(searchVariable=artist_album_string, # get list of album properties for search
                                            entity='album', autoDownload=autoDownload, # pass in false for now. Users want to select album before letting her run
                                            requiredJsonKeys=requiredJsonAlbumKeys,
                                            searchOrLookup=True,
                                            mode=prog_vers)
-        if album_props == '406': # error code for the func.
-            return ('406', None, None)
+        if album_props == GlobalVariables.quit_string: # error code for the func.
+            return (GlobalVariables.quit_string, None, None)
         if album_props != None:
             songs_in_album_props = get_songs_in_album(searchVariable=album_props['collectionId'], # get list of songs for chosen album
                                                       limit=100, entity='song',
@@ -188,8 +198,8 @@ def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJ
                                                       searchOrLookup=False)
         if songs_in_album_props != None:
             songs_in_album_props = remove_songs_selected(song_properties_list=songs_in_album_props, requiredJsonKeys=requiredJsonSongKeys)
-            if songs_in_album_props == '406':
-                return ('406', None, None)
+            if songs_in_album_props == GlobalVariables.quit_string:
+                return (GlobalVariables.quit_string, None, None)
 
             if songs_in_album_props == 'ag': # redo the loop if again is given
                 continue

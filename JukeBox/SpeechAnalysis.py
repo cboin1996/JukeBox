@@ -116,8 +116,7 @@ def main(mic,
     else:
         if response['transcription'] != None:
             mask = (response['transcription'].split(' ')[0] not in expected) # check first word for commamnd
-        else:
-            response['transcription'] = None
+
     while response['success'] == False or response['error'] != None or mask:
         if expected != None:
             error_prompt = 'Error. You said: %s. Expecting commands: %s. Try again now.' % (response['transcription'],tools.stripFileForSpeech("%s"%(expected)))
@@ -132,7 +131,9 @@ def main(mic,
         if expected == None and response['error'] == None: # rengerate mask each loop
             mask = False
         else:
-            mask = (response['transcription'].split(' ')[0] not in expected)
+            if response['transcription'] != None:
+                mask = (response['transcription'].split(' ')[0] not in expected) # check first word for commamnd
+
 
     if response['success'] == True:
         sys.stdout.write('\rYou said: ' + response['transcription'] + '                  ')

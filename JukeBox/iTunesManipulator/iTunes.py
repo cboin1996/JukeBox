@@ -24,7 +24,7 @@ def check_iTunes_for_song(iTunesPaths,
     albums = []
     songSelection = ''
     if len(iTunesPaths['searchedSongResult']) == 0:
-        print("File not found in iTunes Library.. Getting From Youtube")
+        print("File not found in iTunes Library.. Searching iTunes API")
         return False
     else:
         # get the first item of the songs returned from the list of song paths matching
@@ -47,7 +47,7 @@ def check_iTunes_for_song(iTunesPaths,
 
         if speechRecogOn == False:
             print('Which one(s) do you want to hear (e.g. 0 1 3)?')
-            user_input_string = "OR type 'you' (search youtube), 'ag' (search again/skip), 'sh' (shuffle), 'pl' (play in order), '406' (return home): "
+            user_input_string = "OR type 'se' (perform search), 'ag' (search again/skip), 'sh' (shuffle), 'pl' (play in order), '406' (return home): "
             songSelection = iTunesSearch.choose_items(input_string=user_input_string, props_lyst=iTunesPaths['searchedSongResult'])
 
         if speechRecogOn == True and command == 'shuffle':
@@ -63,9 +63,9 @@ def check_iTunes_for_song(iTunesPaths,
         if songSelection == 'ag':
             print('Returning to beginning.')
             return True
-        if songSelection == '406':
+        if songSelection == GlobalVariables.quit_string:
             print("Exiting to home.")
-            return '406'
+            return GlobalVariables.quit_string
 
         # shuffle algorithm TODO: move to a function
         if songSelection == 'sh':
@@ -73,7 +73,7 @@ def check_iTunes_for_song(iTunesPaths,
             play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, "Shuffle Mode Activated", 'shuffleModeOn.m4a', mic=mic, r=r)
             return True
 
-        elif songSelection == 'you':
+        elif songSelection == 'se':
             return False
 
         elif songSelection == 'pl':
@@ -123,46 +123,27 @@ def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, speech_string='',
 
 def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResult':[]}, searchFor=''):
     iTunesPaths['searchedSongResult'] = []
-
     if operatingSystem == 'darwin':
         pathToItunesAutoAdd = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to Music.localized')
-        addToItunesPath = glob.glob(pathToItunesAutoAdd, recursive=True)
-
-        if len(addToItunesPath) == 0:
-            print('You do not have iTunes installed on this machine. Continueing without.')
-            return None
-
-        iTunesPaths['autoAdd'] = addToItunesPath[0]
-        # '*.*' means anyfilename, anyfiletype
-        # /*/* gets through artist, then album or itunes folder structure
-        # iTUNES LIBRARY SEARCH ALGORITHM -- returns lists of matches
         pathToSong = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*','*.*')
-        path = glob.glob(pathToSong, recursive=True)
-
-        iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor)
-
     elif operatingSystem == 'win32':
         pathToItunesAutoAdd = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes')
-        addToItunesPath = glob.glob(pathToItunesAutoAdd, recursive=True)
-
-        if len(addToItunesPath) == 0:
-            print('You do not have iTunes installed on this machine. Continueing without.')
-            return None
-
-        iTunesPaths['autoAdd'] = addToItunesPath[0]
-
-        # '*.*' means anyfilename, anyfiletype
-        # /*/* gets through artist, then album or itunes folder structure
-        # iTUNES LIBRARY SEARCH ALGORITHM -- returns lists of matches
         pathToSong = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*', '*.*')
-        path = glob.glob(pathToSong, recursive=True)
-
-        iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor)
-
     else:
         print("Unrecognized OS. No Itunes recognizable.")
         return None
+    addToItunesPath = glob.glob(pathToItunesAutoAdd, recursive=True)
 
+    if len(addToItunesPath) == 0:
+        print('You do not have iTunes installed on this machine. Continueing without.')
+        return None
+
+    iTunesPaths['autoAdd'] = addToItunesPath[0]
+    # '*.*' means anyfilename, anyfiletype
+    # /*/* gets through artist, then album or itunes folder structure
+    # iTUNES LIBRARY SEARCH ALGORITHM -- returns lists of matches
+    path = glob.glob(pathToSong, recursive=True)
+    iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor)
     return iTunesPaths
 
 def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
@@ -175,5 +156,5 @@ def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
         # songNameSplit is list of itunes file path.. artist is -3 from length, song is -1
         if searchParameters.lower() in formattedName.lower():
             iTunesPaths['searchedSongResult'].append(songPath)
-    iTunesPaths['searchedSongResult'] = sorted(iTunesPaths['searchedSongResult'])
+    iTunesPaths['searchedSongResult'] = sorted(iTunesPaths['searchedSongResult']) # sort tracks alphabetically
     return iTunesPaths

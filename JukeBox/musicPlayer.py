@@ -222,6 +222,7 @@ def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
                 pathToDirectory=None, speechRecogOn=None, debugMode=None, command=None,
                 musicPlayerSettings=None, prog_vers='', operatingSystem=None, searchFor=None,
                 requiredJsonSongKeys=None, album_artist_list=None, songs_in_album_props=None):
+
     for i, searchForSong in enumerate(searchList):
         print(" - Running program for: ", searchForSong)
         iTunesPaths = iTunes.setItunesPaths(operatingSystem, searchFor=searchForSong)
@@ -235,10 +236,10 @@ def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
             iTunesInstalled = True
             song_played = iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecogOn, pathToDirectory, command, mic=mic, r=r)
 
-        if song_played == '406': # return to home
+        if song_played == GlobalVariables.quit_string: # return to home
             return
 
-        if prog_vers == 'alb':
+        if prog_vers == GlobalVariables.alb_mode_string:
             trackProperties = songs_in_album_props[i]
             searchForSong = album_artist_list[i] + ' ' + searchForSong
         # secret command for syncing with gDrive files.  Special feature!
@@ -269,7 +270,7 @@ def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
                                                                 requiredJsonKeys=requiredJsonSongKeys,
                                                                 searchOrLookup=True
                                                                 )
-            if trackProperties == '406': # return to home entry
+            if trackProperties == GlobalVariables.quit_string: # return to home entry
                 return
             elif trackProperties != None: # check to ensure that properties aree selected
                 searchForSong = "%s %s" % (trackProperties['artistName'], trackProperties['trackName'])
@@ -354,10 +355,10 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
             elif searchFor == 'instr':
                 prog_vers = 'instr'
                 feature.view_instructions(os.path.join(pathToDirectory, 'Instructions.txt'))
-            elif searchFor == 'alb':
-                prog_vers = 'alb'
+            elif searchFor == GlobalVariables.alb_mode_string:
+                prog_vers = GlobalVariables.alb_mode_string
                 album_user_input = input("Enter artist and album name you wish to download. Type 406 to cancel: ")
-                if album_user_input == '406':
+                if album_user_input == GlobalVariables.quit_string:
                     searchList = album_user_input # will quit out.
                 else:
                     searchList, album_artist_list, songs_in_album_props = iTunesSearch.launch_album_mode(artist_album_string=album_user_input,
@@ -392,7 +393,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
                 r = sr.Recognizer()
             continue # return to top of loop.
 
-        if searchList != '406': # if it is, skip whole song playing/searching process
+        if searchList != GlobalVariables.quit_string: # if it is, skip whole song playing/searching process
             # Iterate the list of songs
             print(command, searchList)
             run_for_songs(mic=mic, r=r, searchList=searchList, autoDownload=autoDownload,

@@ -4,3 +4,6 @@ PLAYING_STRING_COMMANDS_SPECIAL = PLAYING_STRING_COMMANDS_DEFAULT + "\n - d (nex
 player_actions = ['resume', 'next', 'pause', 'restart', 'previous', 'stop', 'volume']
 player_stop = 'stop'
 list_of_speech_commands = ['quit', 'single', 'shuffle', 'play', 'voice', 'debug', 'auto', 'select', 'no', 'yes']
+quit_string = '406'
+alb_mode_string = 'alb'
+perf_search_string = 'se'

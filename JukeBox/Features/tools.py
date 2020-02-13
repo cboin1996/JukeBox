@@ -1,4 +1,5 @@
 import os, sys
+import GlobalVariables
 if sys.platform != 'win32':
     import termios, tty, select, atexit
     from select import select
@@ -16,10 +17,10 @@ def format_input_to_list(input_string='', list_to_compare_to=[], mode=''):
             continue
         elif user_input == 'ag':
             return 'ag'
-        elif user_input == '406':
-            return '406'
-        elif user_input == 'you':
-            return 'you'
+        elif user_input == GlobalVariables.quit_string:
+            return GlobalVariables.quit_string
+        elif user_input == GlobalVariables.perf_search_string:
+            return GlobalVariables.perf_search_string
         elif user_input == 'sh':
             return 'sh'
         elif user_input == 'pl':
@@ -53,7 +54,7 @@ def format_input_to_int(input_prompt, mask, low_bound, high_bound):
         string = input(input_prompt)
 
         try:
-            if string == '406':
+            if string == GlobalVariables.quit_string:
                 return 406
             if string == '405' and mask == 'save_no_prop':
                 return 405

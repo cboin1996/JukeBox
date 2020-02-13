@@ -148,7 +148,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
             responseObject['success'] = False
             responseObject['error'] = 'youMP3fail'
             print("Tried 5 different downloads.. all failed. Quitting to final menu")
-            return
+            return responseObject
         else:
             return youtubeSongDownload(youtubePageResponse, autoDownload, pathToDumpFolder, pathToSettings, debugMode, counter=counter+1, integerVideoId=integerVideoId)
 
