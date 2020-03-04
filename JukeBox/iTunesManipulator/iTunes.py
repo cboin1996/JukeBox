@@ -11,7 +11,13 @@ from Features import tools
 import GlobalVariables
 
 
-""" Returns True is song is found/research/skip, else false """
+"""
+Checks computers iTunes to see if it is installed
+args: iTunes song paths dict, autodownload mode enabled, speech recognition mode enabled,
+      path to root script folder, speech recognition command, microphone object,
+      speech recognition object
+Return: True is song is found/research/skip, else false
+ """
 def check_iTunes_for_song(iTunesPaths,
                           autoDownload,
                           speechRecogOn=None,
@@ -88,6 +94,13 @@ def check_iTunes_for_song(iTunesPaths,
 
             return True
 
+"""
+Begins playing through a list of songs in order
+args: iTunes song paths dict, speech recognition command, path to root script folder,
+      output speech text, audiofile path for speech prompt (windows), microphone object,
+      speech recognizer object
+Returns: None
+"""
 def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, speech_string='', speech_path='', mic=None, r=None):
 
     wait_until_end = ''
@@ -121,6 +134,13 @@ def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, speech_string='',
         if wait_until_end == GlobalVariables.player_stop: # break loop if user desires it to be.
             break # quit
 
+"""
+Determines whether iTunes is installed on the computer, and generates path to
+the automatically add to iTunes folder
+args: operating system from sys.platform, iTunesPaths dictionary object, song to search iTunes for
+Returns: object with path to automatically add to iTunes folder and songs matching
+         user's search
+"""
 def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResult':[]}, searchFor=''):
     iTunesPaths['searchedSongResult'] = []
     if operatingSystem == 'darwin':
@@ -146,6 +166,11 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
     iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor)
     return iTunesPaths
 
+"""
+Performs a search on users iTunes library by album, artist and genre
+args: paths to all iTunes songs, iTunes dictionary object, search term
+Returns: iTunesPaths dict with songs matching the search added 
+"""
 def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
 
     for songPath in songPaths:

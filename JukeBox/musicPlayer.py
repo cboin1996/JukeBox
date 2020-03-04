@@ -21,18 +21,26 @@ from Player import jukebox
 import GlobalVariables
 
 
+"""
+Change log
+Cboin v 2.0 -- Added album downloading, speech regonition, keybinding audio playing,
+                   shuffle mode and more.
+Cboin v 1.0.2.1 -- patched itunes search api not returning track names.  Also patched to use latest ytmp3 html.
+Cboin v 1.0.2 -- youtubetomp3 website tag changed to target=_blank,
+made download smarter by retrying if taking too long
 
-# Change log
-# Cboin v 1.0.2.1 -- patched itunes search api not returning track names.  Also patched to use latest ytmp3 html.
-# Cboin v 1.0.2 -- youtubetomp3 website tag changed to target=_blank,
-# made download smarter by retrying if taking too long
+Cboin v 1.0.1 -- released to lakes computer for tests.
+Added smart search to include artists, and multi song searches.
+Also added autoDownload mode to be fully functional
 
-# Cboin v 1.0.1 -- released to lakes computer for tests.
-# Added smart search to include artists, and multi song searches.
-# Also added autoDownload mode to be fully functional
+Cboin v 1.0 -- added iTunesSearch functionality and worked on excpetion handling w/ try catch / userinput
+"""
 
-# Cboin v 1.0 -- added iTunesSearch functionality and worked on excpetion handling w/ try catch / userinput
-
+"""
+Produces nameplates and determines operating system
+args: two command line argumates, debug mode on or off, operating system
+Returns: operating system
+"""
 def namePlates(argument, argument2, debugMode, OS):
     print("================================")
     print("=-Welcome to the cBoin JukeBox-=")
@@ -59,12 +67,17 @@ def namePlates(argument, argument2, debugMode, OS):
     if OS == 'win32':
         print("=---------For Windows----------=")
 
-    print("=-----------V1.0.2.2-----------=")
+    print("=-----------V1.0.3-----------=")
     print("================================")
 
     return OS
 
-
+"""
+Formats a file name signalling it is done being tagged with MP3 metadata
+args: path to the file to format, slice key to insert string tag before, string to
+      add to filename
+Returns: None
+"""
 def formatFileName(pathToFile, sliceKey, stringToAdd):
     # very last thing to do is to add "_complt" to the mp3.  This indicated it has gone through the entire process
     indexToInsertBefore = pathToFile.find(sliceKey)
@@ -75,16 +88,24 @@ def formatFileName(pathToFile, sliceKey, stringToAdd):
 
 # this function allows the module to be ran with or without itunes installed.
 # if iTunes is not installed, the files are tagged and stored in dump folder.
+"""
+Runs the download process for a song
+args: speech recognition microphone object, speech recognition recognizer object,
+      iTunes installed or note, song to search youtube for, autodownload on or not,
+      path to root directory, iTunes paths with auto add and song path, speech
+      recognition on or not, debug mode on or not, track properties on or not
+Returns: None
+"""
 def run_download(microPhone,
-                                recognizer,
-                                iTunesInstalled=True,
-                                searchFor='',
-                                autoDownload=False,
-                                pathToDirectory='',
-                                iTunesPaths={},
-                                speechRecogOn=False,
-                                debugMode=False,
-                                trackProperties={}):
+                recognizer,
+                iTunesInstalled=True,
+                searchFor='',
+                autoDownload=False,
+                pathToDirectory='',
+                iTunesPaths={},
+                speechRecogOn=False,
+                debugMode=False,
+                trackProperties={}):
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
     pathToSettings = os.path.join(pathToDirectory, 'settings.json')
 
@@ -152,7 +173,7 @@ def run_download(microPhone,
             elif speechRecogOn==True and autoDownload == True: # speech recog check for save
                 action = ''
                 print(GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT) # provide commands
-                while True: # used this block again below. Should be its own function.. but am too right now.
+                while action != 'next': # used this block again below. Should be its own function.. but am too right now.
                     action = jukebox.wait_until_end(player=p, prompt='', file_index=0,
                                        index_diff=1, mic=microPhone, r=recognizer, speechRecogOn=speechRecogOn, command_string=GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT)
                     if action == GlobalVariables.player_stop:
@@ -201,7 +222,8 @@ def run_download(microPhone,
 
             elif speechRecogOn == True and autoDownload == True:
                 print(GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT) # provide commands
-                while True: # wait until user ends song.
+                action = ''
+                while action != 'next': # wait until user ends song. 'next is returned from wait_until_end upon completion.'
                     action = jukebox.wait_until_end(player=p, prompt='', file_index=0,
                                        index_diff=1, mic=microPhone, r=recognizer, speechRecogOn=speechRecogOn, command_string=GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT)
                     if action == GlobalVariables.player_stop:
@@ -217,7 +239,15 @@ def run_download(microPhone,
     if youtubeResponseObject['error'] == 'youMP3fail':
         print("YoutubeMp3 failed too many times. quitting to last menu.")
         return
-
+"""
+Runs through a song search process in iTunes then youtube depending on user interaction
+args: microphone object, speech recognizer object, list of songs to search for, auto download mode on or off
+      path to root script directory, speech recognition mode on or off, debug mode on or off,
+      speech recognition command, program settings from json file, program version album or song download mode,
+      computer operating system, song to search for, required json song keys to tag mp3's with,
+      list of album artist metadata, song meta data for songs in an album
+Returns: None
+"""
 def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
                 pathToDirectory=None, speechRecogOn=None, debugMode=None, command=None,
                 musicPlayerSettings=None, prog_vers='', operatingSystem=None, searchFor=None,
@@ -291,6 +321,12 @@ def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
 
 # 'auto' argv will get first video.  Manual will allow user to select video.. default behaviour
 # pass argv to youtubeSongDownload
+"""
+Main function that runs to launch the music player program
+args: command line args, speech recognizer object, microphone object, iTunes paths to auto add folder and songs dict,
+      speech recognizer mode on or not, debug mode on or not
+Returns: None
+"""
 def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False, debugMode = False):
     autoDownload = False
     searchList = []

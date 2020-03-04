@@ -14,9 +14,12 @@ from iTunesManipulator import iTunesSearch
 import speech_recognition as sr
 import SpeechAnalysis
 import time
-def test():
-    print(sys.path)
 
+"""
+Gathers youtube html tags information from json database
+args: search dict with youtubes query html tag, song name to search youtube for
+Returns: response from youtube search
+"""
 def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
     # get absolute path to file so the script csan be executed from anywhr
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
@@ -33,6 +36,13 @@ def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
     return youtubeSession.enterSearchForm(youtubeSession.urls['homePage'], youtubeSession.urls['serviceSearch'], searchQuery)
 
 # integerVideoId defaults to 0, but can be used in autodownload recusively to remove the bad link to song.
+"""
+Walks user through song selection and downloading process
+args: Youtube web page response, autodownload on or off, path to the dump folder for songs
+      path to settings folder, debug mode on or off, counter for download retries,
+      integer representing a youtube video to try converting to mp3
+Returns: response object with error status, success boolean and song path
+"""
 def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolder='', pathToSettings='', debugMode=False, counter=0, integerVideoId=None):
     # array of tuples for storing (title, url)
     videoUrls = []
@@ -183,11 +193,21 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         responseObject['error'] = 'dlFail'
         return responseObject
 
+"""
+Used for stripping file names of illegal characters used for saving
+args: the file's name to strip
+Returns: stipped file name
+"""
 def removeIllegalCharacters(fileName):
 
     return fileName.replace('\\', '').replace('"', '').replace('/', '').replace('*', '').replace('?', '').replace('<', '').replace('>', '').replace('|', '').replace("'", '').replace(':', '')
 
-
+"""
+Downloads song at download link to a file path
+args: file path to download to, link to download from, file name to save with,
+      number of times to retry, time to wait between retries
+Returns: success if download works, failure if not
+"""
 def dumpAndDownload(filepath, downloadLink, local_filename, counter=0, waitTime=0):
     # check for content length.. reuired for progress bar
     chunk = 1
@@ -228,7 +248,8 @@ def dumpAndDownload(filepath, downloadLink, local_filename, counter=0, waitTime=
 
             # must close bar if this flag is checked. this way it prints properly
             if nextTime - firstTime > waitTime:
-                progressBar.close()
+                if file_size != None: # close progress bar.
+                    iter_content.close()
                 print('Slow download.. trying again.. took >%d seconds' % (nextTime - firstTime))
 
                 if counter == 0:

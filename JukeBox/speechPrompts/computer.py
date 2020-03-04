@@ -2,6 +2,12 @@ import vlc
 import os
 import time
 import GlobalVariables
+
+"""
+Outputs audio prompt to user based on the computer OS
+args: computer operating system, speech prompt, audio file speech prompt
+Returns: None
+"""
 def speak(OS, string_to_say, file_to_play=None):
     if OS == 'darwin':
         os.system('say ' + string_to_say)
@@ -12,6 +18,11 @@ def speak(OS, string_to_say, file_to_play=None):
         time.sleep(2) # play file
     return
 # used in main program
+"""
+Interprets speech command from the list of given speech commands
+args: speech text from text to speech, boolean option to alter return, key word to check for
+Returns: Tuple with command and transcribed speech from text
+"""
 def interpret_command(speech_text, only_command=False, key_word=' '):
     list_of_commands = GlobalVariables.list_of_speech_commands
 
@@ -31,6 +42,11 @@ def interpret_command(speech_text, only_command=False, key_word=' '):
 
 
 # used in music playback
+"""
+Interprets speech prompt into an action to pose on the audio player
+args: transcribed text from speech
+Returns: a tuple with an action and the commmand
+"""
 def interpret_action(speech_text):
 
 
