@@ -67,7 +67,7 @@ def namePlates(argument, argument2, debugMode, OS):
     if OS == 'win32':
         print("=---------For Windows----------=")
 
-    print("=-----------V1.0.3-----------=")
+    print("=-----------V2.0-----------=")
     print("================================")
 
     return OS
