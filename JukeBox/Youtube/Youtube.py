@@ -91,6 +91,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
+        'nocheckcertificate': True,
         'logger': MyLogger(),
         'progress_hooks': [my_hook],
     }
