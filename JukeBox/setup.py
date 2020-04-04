@@ -13,9 +13,9 @@ setup(name='youtubetomp3',
      'python-magic-bin==0.4.14',
      'speechrecognition',
      'pyaudio',
-     'pocketsphinx',
      'python-vlc',
-     'requests-html'
+     'requests-html',
+     'youtube-dl'
      ],
      packages=find_packages()
 )

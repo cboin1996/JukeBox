@@ -14,13 +14,16 @@ from iTunesManipulator import iTunesSearch
 import speech_recognition as sr
 import SpeechAnalysis
 import time
+import youtube_dl
+from Features import tools
 
-"""
-Gathers youtube html tags information from json database
-args: search dict with youtubes query html tag, song name to search youtube for
-Returns: response from youtube search
-"""
+
 def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
+    """
+    Gathers youtube html tags information from json database
+    args: search dict with youtubes query html tag, song name to search youtube for
+    Returns: response from youtube search
+    """
     # get absolute path to file so the script csan be executed from anywhr
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
     pathToDatabase = os.path.join(pathToDirectory, '..', 'BasicWebParser', 'database.json')
@@ -35,17 +38,62 @@ def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
     # perform search of youtube...
     return youtubeSession.enterSearchForm(youtubeSession.urls['homePage'], youtubeSession.urls['serviceSearch'], searchQuery)
 
+class MyLogger(object):
+    """
+    Used for setting up youtube_dl logging
+    """
+    def info(self, msg):
+        print(msg)
+
+    def debug(self, msg):
+        pass
+
+    def warning(self, msg):
+        pass
+
+    def error(self, msg):
+        print(msg)
+
+
+def my_hook(d):
+    """
+    Hook for youtube_dl
+    param: d: download object from youtube_dl
+    """
+    if d['status'] == 'finished':
+        sys.stdout.write('\n')
+        print('Done downloading, now converting ...')
+    if d['status'] == 'downloading':
+        p = d['_percent_str']
+        p = p.replace('%','')
+        song_name = d['filename'].split(os.sep)[-1]
+        sys.stdout.write(f"\rDownloading to file: {song_name}, {d['_percent_str']}, {d['_eta_str']}")
+        sys.stdout.flush()
+
 # integerVideoId defaults to 0, but can be used in autodownload recusively to remove the bad link to song.
-"""
-Walks user through song selection and downloading process
-args: Youtube web page response, autodownload on or off, path to the dump folder for songs
-      path to settings folder, debug mode on or off, counter for download retries,
-      integer representing a youtube video to try converting to mp3
-Returns: response object with error status, success boolean and song path
-"""
+
 def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolder='', pathToSettings='', debugMode=False, counter=0, integerVideoId=None):
+    """
+    Walks user through song selection and downloading process
+    args: Youtube web page response, autodownload on or off, path to the dump folder for songs
+          path to settings folder, debug mode on or off, counter for download retries,
+          integer representing a youtube video to try converting to mp3
+    Returns: response object with error status, success boolean and song path
+    """
+
     # array of tuples for storing (title, url)
     videoUrls = []
+    # options for youtube_dl program
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'logger': MyLogger(),
+        'progress_hooks': [my_hook],
+    }
 
     responseObject = {
         'error' : None,
@@ -101,19 +149,12 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
 
     else:
 
-        ## Error handle for function.. check None type in Main
-        while True:
-            try:
-                if integerVideoId == None:
-                    integerVideoId = input("Select song by entering the number beside it. [%d to %d].. '404' (search again), '405' (cancel download): " % (0, len(videoUrls)-1))
-                else:
-
-                    integerVideoId = input("Select song by entering the number beside it. Not [%d].. '404' (search again), '405' (cancel download): " % (integerVideoId))
-                integerVideoId = int(integerVideoId)
-                break
-            except:
-                print("Must input an integer")
-                integerVideoId = None
+        if integerVideoId == None:
+            prompt = "Select song by entering the number beside it. [%d to %d].. '404' (search again), '405' (cancel download): " % (0, len(videoUrls)-1)
+            integerVideoId = tools.format_input_to_int(prompt, 'save_no_prop', 0, len(videoUrls)-1)
+        else:
+            prompt = "Select song by entering the number beside it. Not [%d].. '404' (search again), '405' (cancel download): " % (integerVideoId)
+            integerVideoId = tools.format_input_to_int(prompt, 'save_no_prop', 0, len(videoUrls)-1)
 
         if integerVideoId == 404:
             responseObject['success'] = False
@@ -126,32 +167,27 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
 
 
         # error handling for url selection.. check for None type removed link from line 67
-        while integerVideoId not in range(0, len(videoUrls)) or videoUrls[integerVideoId][1] == None:
+        while videoUrls[integerVideoId][1] == None:
             integerVideoId = int(input("Try Again (Not [%s]) " % (integerVideoId)))
 
-    videoSelection = videoUrls[integerVideoId][0]
-    browser.get('https://ytmp3.cc/')
-    formInput = browser.find_element_by_name('video')
-    formInput.send_keys(videoUrls[integerVideoId][1])
-    formInput.submit()
-    print("Converting: %s" % (videoSelection))
-
     try:
-        # ensure the javascript has time to run, when the id="Download" appears it is okay to close window.
-        wait = WebDriverWait(browser, 10)
-        # page fully loaded upon download id being present
-        element = wait.until(EC.element_to_be_clickable((By.LINK_TEXT, 'Download')))
+    # must strip the illegal characters from the videoTitle for saving to work smoothly
+        videoSelection = videoUrls[integerVideoId][0]
+        print('Removing any illegal characters in filename.')
+        videoSelection = removeIllegalCharacters(videoSelection)
+        print("Converting: %s from link %s" % (videoSelection, videoUrls[integerVideoId][1]))
+        localSaveFileToPath = os.path.join(pathToDumpFolder, videoSelection + '.mp3')
+        ydl_opts['outtmpl'] = pathToDumpFolder + os.sep + "%(title)s.%(ext)s"
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([videoUrls[integerVideoId][1]])
 
-        pageText = BeautifulSoup(browser.page_source, 'html.parser')
+        success_downloading = True if os.path.exists(localSaveFileToPath) else False
 
-        # tag a with attribute download='file.mp3' containt the downloadlink at href attr
-        downloadTag = pageText.find('a', string="Download")
-        downloadLink = downloadTag.get('href')
-
-    except:
+    except Exception as e:
+        print(f"Exception is: {e}")
         print("!!-----Error------!!")
-        print("Something went wrong on the youtubetomp3 website: ")
-        print("This error is on their side.. either the conversion timed out or the file can't be converted on that site.")
+        print("Something went wrong with youtube-dl: ")
+        print("Contact Christian for this one.")
         print("Returning to song search.. Please Try again")
 
         if counter >= 5:
@@ -160,25 +196,13 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
             print("Tried 5 different downloads.. all failed. Quitting to final menu")
             return responseObject
         else:
-            return youtubeSongDownload(youtubePageResponse, autoDownload, pathToDumpFolder, pathToSettings, debugMode, counter=counter+1, integerVideoId=integerVideoId)
-
-    print("Downloading from: ", downloadLink)
+            return youtubeSongDownload(youtubePageResponse, autoDownload, pathToDumpFolder,
+                                        pathToSettings, debugMode, counter=counter+1,
+                                        integerVideoId=integerVideoId)
 
     browser.close()
 
-    # must strip the illegal characters from the videoTitle for saving to work smoothly
-    print('Removing any illegal characters in filename.')
-    videoSelection = removeIllegalCharacters(videoSelection)
-
-    localSaveFileToPath = os.path.join(pathToDumpFolder, videoSelection + '.mp3')
-
-    successOrFailureDownloading = dumpAndDownload(filepath=localSaveFileToPath,
-                                            downloadLink=downloadLink,
-                                            local_filename=videoSelection,
-                                            counter=youTubeMP3_settings['downloads']['tryCount'],
-                                            waitTime=youTubeMP3_settings['downloads']['retryTime'])
-
-    if successOrFailureDownloading == 'success':
+    if success_downloading == True:
         print("Done. Playing.. " + videoSelection + ".mp3" + " Now. Enjoy")
         print("Located currently at: ", os.path.join(localSaveFileToPath))
 
@@ -187,81 +211,17 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         responseObject['songPath'] = os.path.join(localSaveFileToPath)
         return responseObject
 
-    if successOrFailureDownloading == 'failure':
+    else:
         print('I have failed downloading.. It took too many tries.')
         responseObject['success'] = False
         responseObject['error'] = 'dlFail'
         return responseObject
 
-"""
-Used for stripping file names of illegal characters used for saving
-args: the file's name to strip
-Returns: stipped file name
-"""
+
 def removeIllegalCharacters(fileName):
-
+    """
+    Used for stripping file names of illegal characters used for saving
+    args: the file's name to strip
+    Returns: stipped file name
+    """
     return fileName.replace('\\', '').replace('"', '').replace('/', '').replace('*', '').replace('?', '').replace('<', '').replace('>', '').replace('|', '').replace("'", '').replace(':', '')
-
-"""
-Downloads song at download link to a file path
-args: file path to download to, link to download from, file name to save with,
-      number of times to retry, time to wait between retries
-Returns: success if download works, failure if not
-"""
-def dumpAndDownload(filepath, downloadLink, local_filename, counter=0, waitTime=0):
-    # check for content length.. reuired for progress bar
-    chunk = 1
-    chunk_size=1024
-    download = 0
-    success = 'success'
-    failure = 'failure'
-
-    getRequestResponse = requests.get(downloadLink, stream=True)
-    file_size = getRequestResponse.headers.get('Content-Length')
-
-    with open(filepath, 'wb') as fp:
-        firstTime = time.time()
-
-        if file_size == None:
-            print('-------------------------')
-            print("No file size.. so no progress bar.. Downloading")
-            iter_content = getRequestResponse.iter_content(chunk_size=chunk_size)
-
-        else:
-            file_size = int(file_size)
-            chunk = 1
-            chunk_size=1024
-            num_bars = int(file_size / chunk_size)
-            iterable = getRequestResponse.iter_content(chunk_size=chunk_size)
-            iter_content = tqdm.tqdm( # set iterable to progress Bar
-                            iterable
-                            , total= num_bars
-                            , unit = 'KB'
-                            , desc = local_filename
-                            , leave = True # progressbar stays
-                            , dynamic_ncols=True
-                            )
-
-        for chunk in  iter_content:
-            fp.write(chunk)
-            nextTime = time.time()
-
-            # must close bar if this flag is checked. this way it prints properly
-            if nextTime - firstTime > waitTime:
-                if file_size != None: # close progress bar.
-                    iter_content.close()
-                print('Slow download.. trying again.. took >%d seconds' % (nextTime - firstTime))
-
-                if counter == 0:
-                    print('Tried a few times.. but the downloads are slow.')
-                    return failure
-
-                else:
-                    return dumpAndDownload(filepath=filepath,
-                                        downloadLink=downloadLink,
-                                        local_filename=local_filename,
-                                        counter=counter-1,
-                                        waitTime=waitTime)
-
-    # should only get here if the download is successful
-    return success
