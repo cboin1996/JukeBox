@@ -1,9 +1,12 @@
 # Do not track these folders:
 __pycache__
 dump
-
+youtubetomp3.egg-info
+dist
+build
 # Do not track with file extension:
 .pyc
-.egg-info
 # Do not track these files:
 .DS_Store
+test.py
+
