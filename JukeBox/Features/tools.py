@@ -64,6 +64,8 @@ def format_input_to_int(input_prompt, mask, low_bound, high_bound):
                 return int(string)
             else:
                 print("Number must be more than 0 and less than %s" % (high_bound))
+        except KeyboardInterrupt:
+            raise
         except:
             print("Come on. Invalid input.")
 
