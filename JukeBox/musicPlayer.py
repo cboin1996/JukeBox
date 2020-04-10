@@ -106,7 +106,7 @@ def run_download(microPhone,
                 speechRecogOn=False,
                 debugMode=False,
                 trackProperties={}):
-    localDumpFolder = os.path.join(pathToDirectory, 'dump')
+    localDumpFolder = os.path.join(pathToDirectory, "dump")
     pathToSettings = os.path.join(pathToDirectory, 'settings.json')
 
     response = Youtube.getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=searchFor)

@@ -63,16 +63,20 @@ def my_hook(d):
     if d['status'] == 'finished':
         sys.stdout.write('\n')
         print('Done downloading, now converting ...')
+
     if d['status'] == 'downloading':
         p = d['_percent_str']
         p = p.replace('%','')
         song_name = d['filename'].split(os.sep)[-1]
         sys.stdout.write(f"\rDownloading to file: {song_name}, {d['_percent_str']}, {d['_eta_str']}")
         sys.stdout.flush()
+    if d['status'] == 'error':
+        print("Error occured during download.")
+        success_downloading = False
 
 # integerVideoId defaults to 0, but can be used in autodownload recusively to remove the bad link to song.
 
-def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolder='', pathToSettings='', debugMode=False, counter=0, integerVideoId=None):
+def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolder="", pathToSettings="", debugMode=False, counter=0, integerVideoId=None):
     """
     Walks user through song selection and downloading process
     args: Youtube web page response, autodownload on or off, path to the dump folder for songs
@@ -132,7 +136,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     i = 0
     for videotitle in pageText.find_all(id='video-title'):
         if videotitle.get('href') != None:
-            videoUrl = 'https://www.youtube.com' + videotitle.get('href')
+            videoUrl = "https://www.youtube.com" + videotitle.get('href')
             title = videotitle.get('title')
             if i == integerVideoId:
                 print(' %d - Removed broken link here.' % (integerVideoId))
@@ -177,12 +181,14 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         print('Removing any illegal characters in filename.')
         videoSelection = removeIllegalCharacters(videoSelection)
         print("Converting: %s from link %s" % (videoSelection, videoUrls[integerVideoId][1]))
-        localSaveFileToPath = os.path.join(pathToDumpFolder, videoSelection + '.mp3')
-        ydl_opts['outtmpl'] = pathToDumpFolder + os.sep + "%(title)s.%(ext)s"
+        localSaveFileToPath = os.path.join(pathToDumpFolder, videoSelection + ".mp3")
+        songname_for_yt_dl = os.path.join(pathToDumpFolder, videoSelection)
+        ydl_opts['outtmpl'] = songname_for_yt_dl + ".%(ext)s"
+
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             ydl.download([videoUrls[integerVideoId][1]])
 
-        success_downloading = True if os.path.exists(localSaveFileToPath) else False
+        success_downloading = True
 
     except Exception as e:
         print(f"Exception is: {e}")
@@ -190,7 +196,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         print("Something went wrong with youtube-dl: ")
         print("Contact Christian for this one.")
         print("Returning to song search.. Please Try again")
-
+        success_downloading = False
         if counter >= 5:
             responseObject['success'] = False
             responseObject['error'] = 'youMP3fail'
