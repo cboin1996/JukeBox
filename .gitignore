@@ -4,9 +4,11 @@ dump
 youtubetomp3.egg-info
 dist
 build
+venv
 # Do not track with file extension:
 .pyc
 # Do not track these files:
 .DS_Store
 test.py
+settings.json
 

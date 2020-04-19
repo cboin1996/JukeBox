@@ -9,15 +9,9 @@ from Player import jukebox
 from iTunesManipulator import iTunesSearch
 from Features import tools
 import GlobalVariables
+import json
 
 
-"""
-Checks computers iTunes to see if it is installed
-args: iTunes song paths dict, autodownload mode enabled, speech recognition mode enabled,
-      path to root script folder, speech recognition command, microphone object,
-      speech recognition object
-Return: True is song is found/research/skip, else false
- """
 def check_iTunes_for_song(iTunesPaths,
                           autoDownload,
                           speechRecogOn=None,
@@ -25,6 +19,14 @@ def check_iTunes_for_song(iTunesPaths,
                           command='',
                           mic=None,
                           r=None):
+
+    """
+    Checks computers iTunes to see if it is installed
+    params: iTunes song paths dict, autodownload mode enabled, speech recognition mode enabled,
+        path to root script folder, speech recognition command, microphone object,
+        speech recognition object
+    Return: True is song is found/research/skip, else false
+    """
     artists = [] # will hold list of artists
     songNames = [] # need to be zeroed out here DO NOT MOVE into parameter.
     albums = []
@@ -94,15 +96,15 @@ def check_iTunes_for_song(iTunesPaths,
 
             return True
 
-"""
-Begins playing through a list of songs in order
-args: iTunes song paths dict, speech recognition command, path to root script folder,
-      output speech text, audiofile path for speech prompt (windows), microphone object,
-      speech recognizer object
-Returns: None
-"""
-def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, speech_string='', speech_path='', mic=None, r=None):
 
+def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, speech_string='', speech_path='', mic=None, r=None):
+    """
+    Begins playing through a list of songs in order
+    params: iTunes song paths dict, speech recognition command, path to root script folder,
+        output speech text, audiofile path for speech prompt (windows), microphone object,
+        speech recognizer object
+    Returns: None
+    """
     wait_until_end = ''
     if speechRecogOn == True:
         computer.speak(sys.platform,
@@ -134,45 +136,78 @@ def play_in_order(iTunesPaths, speechRecogOn, pathToDirectory, speech_string='',
         if wait_until_end == GlobalVariables.player_stop: # break loop if user desires it to be.
             break # quit
 
-"""
-Determines whether iTunes is installed on the computer, and generates path to
-the automatically add to iTunes folder
-args: operating system from sys.platform, iTunesPaths dictionary object, song to search iTunes for
-Returns: object with path to automatically add to iTunes folder and songs matching
-         user's search
-"""
+
 def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResult':[]}, searchFor=''):
+    """
+    Determines whether iTunes is installed on the computer, and generates path to
+    the automatically add to iTunes folder
+    params: operating system from sys.platform, iTunesPaths dictionary object, song to search iTunes for
+    Returns: object with path to automatically add to iTunes folder and songs matching
+            user's search
+    """
     iTunesPaths['searchedSongResult'] = []
+    path_to_settings = os.path.join(sys.path[0], 'settings.json')
+
+    with open(path_to_settings, 'r') as f:
+        settings_json = json.load(f)
     if operatingSystem == 'darwin':
         pathToItunesAutoAdd = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to Music.localized')
         pathToSong = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*','*.*')
     elif operatingSystem == 'win32':
-        pathToItunesAutoAdd = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes')
-        pathToSong = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*', '*.*')
+        if os.path.exists(settings_json["iTunesAutoPath"]) and os.path.exists(settings_json["iTunesBasePath"]):
+            pathToItunesAutoAdd = settings_json["iTunesAutoPath"]
+            pathToSong = settings_json["iTunesSongsPath"]
+        else:
+            pathToItunesAutoAdd = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes')
+            pathToSong = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*', '*.*')
     else:
         print("Unrecognized OS. No Itunes recognizable.")
         return None
+    print(pathToItunesAutoAdd)
     addToItunesPath = glob.glob(pathToItunesAutoAdd, recursive=True)
 
     if len(addToItunesPath) == 0:
-        print('You do not have iTunes installed on this machine. Continueing without.')
-        return None
+        
+        if settings_json['userWantsiTunes'] == 'y':
+            is_iTunes_installed = input("I can't find your iTunes.. do you have it installed in some random path baudy [y/n]? ")
+            while (is_iTunes_installed != 'y' and is_iTunes_installed != 'n'):
+                is_iTunes_installed = input('Stop messing around and say "y" or "n" [y/n]? ')  
+        
+            if is_iTunes_installed == 'y':
+                
+                path = input("Set your path to your iTunes auto add folder: ")
+                song_path = input("Set your path to where your iTunes songs are stored: ")
 
-    iTunesPaths['autoAdd'] = addToItunesPath[0]
-    # '*.*' means anyfilename, anyfiletype
-    # /*/* gets through artist, then album or itunes folder structure
-    # iTUNES LIBRARY SEARCH ALGORITHM -- returns lists of matches
+                settings_json["iTunesAutoPath"] = path
+                settings_json["iTunesBasePath"] = song_path
+                settings_json["iTunesSongsPath"] = os.path.join(song_path, '*', '*', '*.*')
+                with open (path_to_settings, 'w') as f:
+                    json.dump(settings_json, f)
+                iTunesPaths['autoAdd'] = path # set variables for successful continue of program..  
+                pathToSong = os.path.join(song_path, '*', '*', '*.*')
+            else:
+                settings_json["userWantsiTunes"] = 'n'
+                with open(path_to_settings, 'w') as f:
+                    json.dump(settings_json, f)
+                return None
+        else:
+            return None
+    else:
+        iTunesPaths['autoAdd'] = addToItunesPath[0]
+        # '*.*' means anyfilename, anyfiletype
+        # /*/* gets through artist, then album or itunes folder structure
+        # iTUNES LIBRARY SEARCH ALGORITHM -- returns lists of matches
     path = glob.glob(pathToSong, recursive=True)
     iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor)
     return iTunesPaths
 
-"""
-Performs a search on users iTunes library by album, artist and genre
-args: paths to all iTunes songs, iTunes dictionary object, search term
-Returns: iTunesPaths dict with songs matching the search added 
-"""
-def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
 
+def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
+    """
+    Performs a search on users iTunes library by album, artist and genre
+    params: paths to all iTunes songs, iTunes dictionary object, search term
+    Returns: iTunesPaths dict with songs matching the search added 
+    """
     for songPath in songPaths:
         songNameSplit = songPath.split(os.sep)
         formattedName = songNameSplit[len(songNameSplit)-1].lower() + " " + songNameSplit[len(songNameSplit)-2].lower() + " " + songNameSplit[len(songNameSplit)-3].lower()

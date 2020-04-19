@@ -354,6 +354,17 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
     pathToSettings = os.path.join(pathToDirectory, 'settings.json')
+    if not os.path.exists(pathToSettings):
+        with open(pathToSettings, 'w') as f:
+            initialized_settings = {"downloads": {"tryCount": 3, 
+                                                  "retryTime": 60}, 
+                                    "gDrive": {"gDriveFolderPath": ""}, 
+                                    "userWantsiTunes" : "y",
+                                    "iTunesAutoPath" : "",
+                                    "iTunesSongsPath" : "",
+                                    "iTunesBasePath" : ""}
+            json.dump(initialized_settings, f)
+
     with open(pathToSettings, 'r') as in_file:
         musicPlayerSettings = json.loads(in_file.read())
     #initialize dump directory

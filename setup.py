@@ -15,7 +15,7 @@ setup(name='youtubetomp3',
      'pyaudio',
      'python-vlc',
      'requests-html',
-     'youtube-dl'
+     'youtube_dl'
      ],
      packages=find_packages()
 )

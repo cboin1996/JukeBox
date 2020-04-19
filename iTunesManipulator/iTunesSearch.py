@@ -177,11 +177,12 @@ def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJ
     songs_in_album_props = None # will hold the songs in album properties in the new album feature
     album_props = None # will hold the album properties in the new album feature
     iTunesPaths = iTunes.setItunesPaths(operatingSystem=sys.platform, searchFor=artist_album_string)
-
-    song_played = iTunes.check_iTunes_for_song(iTunesPaths, autoDownload=False, speechRecogOn=False,
-                                               pathToDirectory=sys.path[0])
-    if song_played == GlobalVariables.quit_string or song_played == True:
-        return (GlobalVariables.quit_string, None, None)
+    
+    if iTunesPaths != None:
+        song_played = iTunes.check_iTunes_for_song(iTunesPaths, autoDownload=False, speechRecogOn=False,
+                                                pathToDirectory=sys.path[0])
+        if song_played == GlobalVariables.quit_string or song_played == True:
+            return (GlobalVariables.quit_string, None, None)
 
     while songs_in_album_props == None or album_props == None or songs_in_album_props == 'ag': # ensure user has selected album they like.
         album_props = parseItunesSearchApi(searchVariable=artist_album_string, # get list of album properties for search
