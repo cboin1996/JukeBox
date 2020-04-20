@@ -175,8 +175,18 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
         
             if is_iTunes_installed == 'y':
                 
-                path = input("Set your path to your iTunes auto add folder: ")
-                song_path = input("Set your path to where your iTunes songs are stored: ")
+                valid_path = False
+
+                while valid_path == False:
+                    path = input("Set your path to your iTunes auto add folder: ")
+                    song_path = input("Set your path to where your iTunes songs are stored: ")
+
+                    path = path.strip()
+                    song_path = song_path.strip()
+
+                    if os.path.exists(path):
+                        if os.path.exists(song_path):
+                            valid_path = True
 
                 settings_json["iTunesAutoPath"] = path
                 settings_json["iTunesBasePath"] = song_path
