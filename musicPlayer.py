@@ -10,7 +10,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import glob
 import shutil, os, tqdm, sys
 from iTunesManipulator import (iTunes, Editor, iTunesSearch)
-from Features import feature, tools
+from Features import feature, tools, gDrive
 import speech_recognition as sr
 import SpeechAnalysis
 import time
@@ -23,6 +23,7 @@ import GlobalVariables
 
 """
 Change log
+Cboin v 2.1 -- Added saving to google drive option
 Cboin v 2.0 -- Added album downloading, speech regonition, keybinding audio playing,
                    shuffle mode and more.
 Cboin v 1.0.2.1 -- patched itunes search api not returning track names.  Also patched to use latest ytmp3 html.
@@ -36,12 +37,13 @@ Also added autoDownload mode to be fully functional
 Cboin v 1.0 -- added iTunesSearch functionality and worked on excpetion handling w/ try catch / userinput
 """
 
-"""
-Produces nameplates and determines operating system
-args: two command line argumates, debug mode on or off, operating system
-Returns: operating system
-"""
+
 def namePlates(argument, argument2, debugMode, OS):
+    """
+    Produces nameplates and determines operating system
+    args: two command line argumates, debug mode on or off, operating system
+    Returns: operating system
+    """
     print("================================")
     print("=-Welcome to the cBoin JukeBox-=")
 
@@ -67,18 +69,18 @@ def namePlates(argument, argument2, debugMode, OS):
     if OS == 'win32':
         print("=---------For Windows----------=")
 
-    print("=-----------V2.0-----------=")
+    print("=-------------V2.1-------------=")
     print("================================")
 
     return OS
 
-"""
-Formats a file name signalling it is done being tagged with MP3 metadata
-args: path to the file to format, slice key to insert string tag before, string to
-      add to filename
-Returns: None
-"""
 def formatFileName(pathToFile, sliceKey, stringToAdd):
+    """
+    Formats a file name signalling it is done being tagged with MP3 metadata
+    args: path to the file to format, slice key to insert string tag before, string to
+        add to filename
+    Returns: None
+    """
     # very last thing to do is to add "_complt" to the mp3.  This indicated it has gone through the entire process
     indexToInsertBefore = pathToFile.find(sliceKey)
     formattedSongName = pathToFile[:indexToInsertBefore] + stringToAdd + pathToFile[indexToInsertBefore:]
@@ -88,14 +90,7 @@ def formatFileName(pathToFile, sliceKey, stringToAdd):
 
 # this function allows the module to be ran with or without itunes installed.
 # if iTunes is not installed, the files are tagged and stored in dump folder.
-"""
-Runs the download process for a song
-args: speech recognition microphone object, speech recognition recognizer object,
-      iTunes installed or note, song to search youtube for, autodownload on or not,
-      path to root directory, iTunes paths with auto add and song path, speech
-      recognition on or not, debug mode on or not, track properties on or not
-Returns: None
-"""
+
 def run_download(microPhone,
                 recognizer,
                 iTunesInstalled=True,
@@ -105,7 +100,16 @@ def run_download(microPhone,
                 iTunesPaths={},
                 speechRecogOn=False,
                 debugMode=False,
-                trackProperties={}):
+                trackProperties={},
+                musicPlayerSettings=None):
+    """
+    Runs the download process for a song
+    args: speech recognition microphone object, speech recognition recognizer object,
+        iTunes installed or note, song to search youtube for, autodownload on or not,
+        path to root directory, iTunes paths with auto add and song path, speech
+        recognition on or not, debug mode on or not, track properties on or not
+    Returns: None
+    """
     localDumpFolder = os.path.join(pathToDirectory, "dump")
     pathToSettings = os.path.join(pathToDirectory, 'settings.json')
 
@@ -167,7 +171,7 @@ def run_download(microPhone,
 
             # autoDownload check
             if autoDownload == False:
-                userInput = input("Type 's' to save to itunes, anything else to save locally to 'dump' folder. ")
+                userInput = input("Type 's' to save to itunes, 'g' to save to gDrive, anything else to save locally to 'dump' folder. ")
                 p.stop()
 
             elif speechRecogOn==True and autoDownload == True: # speech recog check for save
@@ -207,6 +211,10 @@ def run_download(microPhone,
                 formattedSongName = formatFileName(pathToFile=youtubeResponseObject['songPath'], sliceKey=".mp3", stringToAdd="_complt")
                 shutil.move(formattedSongName, iTunesPaths['autoAdd'])
                 print("Moved your file to iTunes.")
+            
+            elif userInput == 'g':
+                p.stop()
+                gDrive.save_song(musicPlayerSettings['gDrive'], youtubeResponseObject['songPath'].split(os.sep)[-1], youtubeResponseObject['songPath'])
 
             else:
                 print("Saved your file locally.")
@@ -218,7 +226,13 @@ def run_download(microPhone,
         else:
             # autoDownload check
             if autoDownload == False:
-                input("Type anything to stop playing.")
+                user_input = input("Type 'g' to save to gDrive, anything else to stop playing and save locally.")
+
+                if user_input == 'g':
+                    p.stop()
+
+                    gDrive.save_song(musicPlayerSettings['gDrive'], youtubeResponseObject['songPath'].split(os.sep)[-1], youtubeResponseObject['songPath'])
+                    return
 
             elif speechRecogOn == True and autoDownload == True:
                 print(GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT) # provide commands
@@ -239,20 +253,20 @@ def run_download(microPhone,
     if youtubeResponseObject['error'] == 'youMP3fail':
         print("YoutubeMp3 failed too many times. quitting to last menu.")
         return
-"""
-Runs through a song search process in iTunes then youtube depending on user interaction
-args: microphone object, speech recognizer object, list of songs to search for, auto download mode on or off
-      path to root script directory, speech recognition mode on or off, debug mode on or off,
-      speech recognition command, program settings from json file, program version album or song download mode,
-      computer operating system, song to search for, required json song keys to tag mp3's with,
-      list of album artist metadata, song meta data for songs in an album
-Returns: None
-"""
+
 def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
                 pathToDirectory=None, speechRecogOn=None, debugMode=None, command=None,
                 musicPlayerSettings=None, prog_vers='', operatingSystem=None, searchFor=None,
                 requiredJsonSongKeys=None, album_artist_list=None, songs_in_album_props=None):
-
+    """
+    Runs through a song search process in iTunes then youtube depending on user interaction
+    args: microphone object, speech recognizer object, list of songs to search for, auto download mode on or off
+        path to root script directory, speech recognition mode on or off, debug mode on or off,
+        speech recognition command, program settings from json file, program version album or song download mode,
+        computer operating system, song to search for, required json song keys to tag mp3's with,
+        list of album artist metadata, song meta data for songs in an album
+    Returns: None
+    """
     for i, searchForSong in enumerate(searchList):
         print(" - Running program for: ", searchForSong)
         iTunesPaths = iTunes.setItunesPaths(operatingSystem, searchFor=searchForSong)
@@ -315,7 +329,8 @@ def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
                          iTunesPaths=iTunesPaths,
                          speechRecogOn=speechRecogOn,
                          debugMode=debugMode,
-                         trackProperties=trackProperties)
+                         trackProperties=trackProperties,
+                         musicPlayerSettings = musicPlayerSettings)
 
         print('=----------Done Cycle--------=')
 
@@ -356,13 +371,14 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
     pathToSettings = os.path.join(pathToDirectory, 'settings.json')
     if not os.path.exists(pathToSettings):
         with open(pathToSettings, 'w') as f:
-            initialized_settings = {"downloads": {"tryCount": 3, 
-                                                  "retryTime": 60}, 
-                                    "gDrive": {"gDriveFolderPath": ""}, 
-                                    "userWantsiTunes" : "y",
-                                    "iTunesAutoPath" : "",
-                                    "iTunesSongsPath" : "",
-                                    "iTunesBasePath" : ""}
+            initialized_settings = {
+                                    "gDrive" : {"gDriveFolderPath": "", "folder_id" : ""}, 
+                                    "iTunes" : {"userWantsiTunes" : "y",
+                                                "iTunesAutoPath"  : "",
+                                                "iTunesSongsPath" : "",
+                                                "iTunesBasePath"  : ""}
+                                    }
+            initialized_settings["gDrive"] = gDrive.get_info()
             json.dump(initialized_settings, f)
 
     with open(pathToSettings, 'r') as in_file:
@@ -383,8 +399,6 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
     operatingSystem = namePlates(autoDownload, speechRecogOn, debugMode, sys.platform)
 
     continueGettingSongs = 'yes' # initialize to yes in order to trigger idle listening
-    continueEditing = ''
-    editorOrSongDownload = ''
     searchFor = ''
 
     while continueGettingSongs != 'no' :

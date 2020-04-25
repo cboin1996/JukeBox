@@ -11,4 +11,5 @@ venv
 .DS_Store
 test.py
 settings.json
+credentials.json
 

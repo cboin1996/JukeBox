@@ -2,7 +2,6 @@ from setuptools import setup, find_packages
 
 setup(name='youtubetomp3',
       version='1.0',
-      long_description=open('README.txt').read(),
     install_requires=[
      'requests',
      'bs4',
@@ -15,7 +14,10 @@ setup(name='youtubetomp3',
      'pyaudio',
      'python-vlc',
      'requests-html',
-     'youtube_dl'
+     'youtube_dl',
+     'google-api-python-client',
+     'google-auth-httplib2',
+     'google-auth-oauthlib'
      ],
      packages=find_packages()
 )

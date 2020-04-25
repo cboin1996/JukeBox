@@ -154,9 +154,9 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
         pathToItunesAutoAdd = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to Music.localized')
         pathToSong = os.path.join('/Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*','*.*')
     elif operatingSystem == 'win32':
-        if os.path.exists(settings_json["iTunesAutoPath"]) and os.path.exists(settings_json["iTunesBasePath"]):
-            pathToItunesAutoAdd = settings_json["iTunesAutoPath"]
-            pathToSong = settings_json["iTunesSongsPath"]
+        if os.path.exists(settings_json["iTunes"]["iTunesAutoPath"]) and os.path.exists(settings_json["iTunes"]["iTunesBasePath"]):
+            pathToItunesAutoAdd = settings_json["iTunes"]["iTunesAutoPath"]
+            pathToSong = settings_json["iTunes"]["iTunesSongsPath"]
         else:
             pathToItunesAutoAdd = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes')
             pathToSong = os.path.join('C:', os.sep, 'Users', '*', 'Music', 'iTunes', 'iTunes Media', 'Music', '*', '*', '*.*')
@@ -168,7 +168,7 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
 
     if len(addToItunesPath) == 0:
         
-        if settings_json['userWantsiTunes'] == 'y':
+        if settings_json["iTunes"]['userWantsiTunes'] == 'y':
             is_iTunes_installed = input("I can't find your iTunes.. do you have it installed in some random path baudy [y/n]? ")
             while (is_iTunes_installed != 'y' and is_iTunes_installed != 'n'):
                 is_iTunes_installed = input('Stop messing around and say "y" or "n" [y/n]? ')  
@@ -178,15 +178,15 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
                 path = input("Set your path to your iTunes auto add folder: ")
                 song_path = input("Set your path to where your iTunes songs are stored: ")
 
-                settings_json["iTunesAutoPath"] = path
-                settings_json["iTunesBasePath"] = song_path
-                settings_json["iTunesSongsPath"] = os.path.join(song_path, '*', '*', '*.*')
+                settings_json["iTunes"]["iTunesAutoPath"] = path
+                settings_json["iTunes"]["iTunesBasePath"] = song_path
+                settings_json["iTunes"]["iTunesSongsPath"] = os.path.join(song_path, '*', '*', '*.*')
                 with open (path_to_settings, 'w') as f:
                     json.dump(settings_json, f)
                 iTunesPaths['autoAdd'] = path # set variables for successful continue of program..  
                 pathToSong = os.path.join(song_path, '*', '*', '*.*')
             else:
-                settings_json["userWantsiTunes"] = 'n'
+                settings_json["iTunes"]["userWantsiTunes"] = 'n'
                 with open(path_to_settings, 'w') as f:
                     json.dump(settings_json, f)
                 return None
