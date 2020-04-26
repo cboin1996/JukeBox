@@ -25,7 +25,9 @@ pip3 install --upgrade pip
 [Chromedriver](https://chromedriver.storage.googleapis.com/index.html?path=2.45/) 
 
 See tutorial [here](https://www.youtube.com/watch?v=dz59GsdvUF8) for installing Chromedriver on windows
+
 For Mac --  place .exec into /usr/local/bin
+
 Windows -- update PATH -- right click mycomputer, advanced settings, environment   	variables, etc.  Follow tutorial for detailed steps.  Restart cmd when done.
 
 
