@@ -393,6 +393,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
     restart_required = False
     chrome_needed_instlld = False 
     ffm_needed_instlld = False
+    chromedriver_folder = ""
+    ffmpeg_folder = ""
     # initialize chromedriver
     if not updates.chromedr_installed():
         print("You don't have chromedriver installed. Let me take care of that for you :)")
