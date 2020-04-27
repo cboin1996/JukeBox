@@ -51,9 +51,6 @@ def editSettings(pathToSettings='', settingSelections=''):
 
                 updateSetting = input("Enter your new value for '%s': " % (setting))
 
-                if setting == 'retryTime' or 'tryCount':
-                    updateSetting = int(updateSetting)
-
                 settings_data[settingGenreChoice].update({setting:updateSetting})
 
                 with open(pathToSettings, 'w') as write_to_settings:
