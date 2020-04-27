@@ -56,11 +56,6 @@ brew install portaudio
 pip3 install pyaudio
 ```
 
-Install ffmpeg for extracting audio files: 
-```bash
-brew install ffmpeg
-```
-
 Configure your virtual env in the root directory WebTools
 ```bash
 python3 -m venv venv
@@ -70,16 +65,6 @@ source\venv\activate
 Navigate the directory and run setup:         
 ```bash
 python3 setup.py install
-```
-
-If libmagic fails, try:            
-```bash
-py -3 -m pip uninstall python-magic
-```
-
-If above does not work — try:      
-```bash
-py -3 -m pip install python-magic-bin==0.4.14
 ```
 
 ### KNOWN ISSUES:
