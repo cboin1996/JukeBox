@@ -143,10 +143,12 @@ def ffmpeg_installed():
 
 def ffmpeg(url, modify_path=False):
     if sys.platform == 'win32':
-        ffmpeg_root_path = os.path.join("C:", os.sep)
-        ffmpeg_location = os.path.join(ffmpeg_root_path, "ffmpeg-20200424-a501947-win64-static", "bin")
+        ffmpeg_root_path = os.path.join("C:", os.sep, 'ffmpeg')
+        if not os.path.exists(ffmpeg_root_path):
+            os.mkdir(ffmpeg_root_path)
+        ffmpeg_location = os.path.join(ffmpeg_root_path, "ffmpeg-20200424-a501947-win64-static")
         download_link = url + "/win64/static/ffmpeg-20200424-a501947-win64-static.zip"
-        path_to_binary = ffmpeg_location
+        path_to_binary = os.path.join(ffmpeg_location, "bin")
     
     elif sys.platform ==  'darwin':
         download_link = url + "/macos64/static/ffmpeg-20200424-a501947-macos64-static.zip"
