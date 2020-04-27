@@ -7,3 +7,5 @@ list_of_speech_commands = ['quit', 'single', 'shuffle', 'play', 'voice', 'debug'
 quit_string = '406'
 alb_mode_string = 'alb'
 perf_search_string = 'se'
+
+chromedriver_update_url = "https://chromedriver.chromium.org"

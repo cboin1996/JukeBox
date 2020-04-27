@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='youtubetomp3',
-      version='1.0',
+      version='2.1',
     install_requires=[
      'requests',
      'bs4',

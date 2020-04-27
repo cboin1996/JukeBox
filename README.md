@@ -1,4 +1,4 @@
-# youtubeMP3 V 1.0.2 Official Release
+# youtubeMP3 V 2.1 Official Release
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/cboin1996/WebTools)
 
@@ -14,28 +14,22 @@ pip3 install --upgrade setuptools
 pip3 install --upgrade pip
 ```
 
-[ffmpeg](https://www.ffmpeg.org/)
 
 [VLC](https://www.videolan.org/vlc/index.html) (MAKE SURE 64 BIT FOR WINDOWS)
 
 [Python](https://www.python.org/) (Note: Please use with python 3.6.. port audio only installs properly with 3.6 as of right now)
 
-[iTunes](https://www.apple.com/ca/itunes/)
+[iTunes](https://www.apple.com/ca/itunes/) (Note: you can use without iTunes. Local storage is supported as well as google drive with gdrive API)
 
-[Chromedriver](https://chromedriver.storage.googleapis.com/index.html?path=2.45/) 
-
-See tutorial [here](https://www.youtube.com/watch?v=dz59GsdvUF8) for installing Chromedriver on windows
-For Mac --  place .exec into /usr/local/bin
-Windows -- update PATH -- right click mycomputer, advanced settings, environment   	variables, etc.  Follow tutorial for detailed steps.  Restart cmd when done.
-
+This program uses chromedriver and ffmpeg.  These programs should be automatically installed on mac or windows upon the first run of the program.  Chromedriver will be automatically updated when needed by the program.
 
 ### WINDOWS INSTALLATION INSTRUCTIONS:
-
-download **ffmpeg** for extracting audio files: [ffmpeg](https://ffmpeg.org/releases/ffmpeg-4.2.2.tar.bz2)
 Navigate the directory and run setup:  
 
 ```bash
-py -3 setup.py install
+python -m venv venv
+venv\Scripts\activate
+python setup.py install
 ```
 
 If libmagic fails, try:            
@@ -60,6 +54,13 @@ Install ffmpeg for extracting audio files:
 ```bash
 brew install ffmpeg
 ```
+
+Configure your virtual env in the root directory WebTools
+```bash
+python3 -m venv venv
+source\venv\activate
+```
+
 Navigate the directory and run setup:         
 ```bash
 python3 setup.py install

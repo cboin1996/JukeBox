@@ -15,7 +15,9 @@ import speech_recognition as sr
 import SpeechAnalysis
 import time
 import youtube_dl
+from youtube_dl.utils import DownloadError
 from Features import tools
+import GlobalVariables
 
 
 def getYoutubeInfoFromDataBase(searchQuery={'search_query':''}, songName=''):
@@ -90,6 +92,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     # options for youtube_dl program
     ydl_opts = {
         'format': 'bestaudio/best',
+        'cachedir': False,
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -124,7 +127,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         browser = webdriver.Chrome(options=options)
     except:
         print("ERROR>>>New version of ChromeDriver Required. Downloading")
-        updates.chromeDriver("https://chromedriver.chromium.org")
+        updates.chromeDriver(GlobalVariables.chromedriver_update_url, modify_path=False)
         browser = webdriver.Chrome(options=options)
 
     browser.get(youtubePageResponse.url)
@@ -190,8 +193,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
 
         success_downloading = True
 
-    except Exception as e:
-        print(f"Exception is: {e}")
+    except:
         print("!!-----Error------!!")
         print("Something went wrong with youtube-dl: ")
         print("Contact Christian for this one.")

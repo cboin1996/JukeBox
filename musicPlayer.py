@@ -1,5 +1,5 @@
 import requests
-from BasicWebParser import Logins
+from BasicWebParser import Logins, updates
 from bs4 import BeautifulSoup
 import json
 import vlc
@@ -369,6 +369,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
     pathToDirectory= os.path.dirname(os.path.realpath(__file__))
     localDumpFolder = os.path.join(pathToDirectory, 'dump')
     pathToSettings = os.path.join(pathToDirectory, 'settings.json')
+
+    # initialize settings
     if not os.path.exists(pathToSettings):
         with open(pathToSettings, 'w') as f:
             initialized_settings = {
@@ -383,9 +385,32 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
 
     with open(pathToSettings, 'r') as in_file:
         musicPlayerSettings = json.loads(in_file.read())
-    #initialize dump directory
+
+    # initialize dump directory
     if not os.path.exists(localDumpFolder):
         os.makedirs(localDumpFolder)
+
+    restart_required = False
+    chrome_needed_instlld = False 
+    ffm_needed_instlld = False
+    # initialize chromedriver
+    if not updates.chromedr_installed():
+        print("You don't have chromedriver installed. Let me take care of that for you :)")
+        chromedriver_folder = updates.chromeDriver(GlobalVariables.chromedriver_update_url, modify_path=True)
+        chrome_needed_instlld = True
+    
+    # initialize ffmpeg
+    if not updates.ffmpeg_installed():
+        print("You don't have ffmpeg installed. Let me take care of that as well I guess..")
+        ffmpeg_folder = updates.ffmpeg("https://ffmpeg.zeranoe.com/builds/", modify_path=True)
+        ffm_needed_instlld = True 
+    
+    if chrome_needed_instlld or ffm_needed_instlld:
+        if sys.platform == 'win32':
+            updates.modify_path(chrome_instlld, chromedriver_folder, ffm_instlld, ffmpeg_folder)
+
+        print("Please restart cmd now for the software changes to take effect.")
+        return
 
     # check for running version
     if len(argv) > 1:
@@ -395,6 +420,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
     if speechRecogOn == True: # TODO CHANGE BACK
         mic = sr.Microphone()
         r = sr.Recognizer()
+
     # determine which OS we are operating on.  Work with that OS to set
     operatingSystem = namePlates(autoDownload, speechRecogOn, debugMode, sys.platform)
 
