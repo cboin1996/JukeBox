@@ -19,19 +19,7 @@ pip3 install --upgrade pip
 
 [Python](https://www.python.org/) (Note: Please use with python 3.6.. port audio only installs properly with 3.6 as of right now)
 
-<<<<<<< HEAD
 [iTunes](https://www.apple.com/ca/itunes/) (Note: you can use without iTunes. Local storage is supported as well as google drive with gdrive API)
-=======
-[iTunes](https://www.apple.com/ca/itunes/)
-
-[Chromedriver](https://chromedriver.storage.googleapis.com/index.html?path=2.45/) 
-
-See tutorial [here](https://www.youtube.com/watch?v=dz59GsdvUF8) for installing Chromedriver on windows
-
-For Mac --  place .exec into /usr/local/bin
-
-Windows -- update PATH -- right click mycomputer, advanced settings, environment   	variables, etc.  Follow tutorial for detailed steps.  Restart cmd when done.
->>>>>>> 6bc03efaddf695f5416e7e951491cbd029d6ce9d
 
 This program uses chromedriver and ffmpeg.  These programs should be automatically installed on mac or windows upon the first run of the program.  Chromedriver will be automatically updated when needed by the program.
 
@@ -41,7 +29,13 @@ Navigate the directory and run setup:
 ```bash
 python -m venv venv
 venv\Scripts\activate
+pip install requests
 python setup.py install
+```
+
+If one of the google-auth installs fail..
+```bash
+pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
 ```
 
 If libmagic fails, try:            
