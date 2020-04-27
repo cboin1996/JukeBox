@@ -62,7 +62,12 @@ def update(response, driverPath, operatingSys, driver_folder=None, vers=None, mo
     download(response, 10, downloadPath, f'{vers} - {operatingSys}')
     with zipfile.ZipFile(downloadPath, 'r') as zip_ref:
         zip_ref.extractall(driver_folder)
-        
+
+        if operatingSys == 'darwin' and vers=='ffmpeg':
+            shutil.move(os.path.join(driverPath, 'bin', 'ffmpeg'), driver_folder) # move ffmpeg into the usr/local/bin/ folder
+            shutil.rmtree(driverPath) # remove the big ffmpeg folder downloaded
+            driverPath = driver_folder + "ffmpeg" # update driver path so that chmod may be ran
+            
     os.remove(downloadPath)
 
     if sys.platform != 'win32':
@@ -107,7 +112,8 @@ def chromeDriver(url, modify_path=False):
         response = requests.get(downloadLink)
         if sys.platform == 'darwin':
             driverPath = '/usr/local/bin/chromedriver'
-            update(response, driverPath, sys.platform, vers='chromedriver')
+            driver_folder = '/usr/local/bin/'
+            update(response, driverPath, sys.platform, driver_folder, vers='chromedriver')
         elif sys.platform == 'win32':
             driver_folder = os.path.join('C:', os.sep, 'webdrivers')
             driverPath = os.path.join(driver_folder, 'chromedriver')
@@ -131,27 +137,30 @@ def ffmpeg_installed():
         ffmpeg_root_path = os.path.join("C:", os.sep, "ffmpeg", "ffmpeg-20200424-a501947-win64-static", "bin", "ffmpeg.exe")
         ffmpeg_exists = True if os.path.exists(ffmpeg_root_path) else False
     else: # TODO: Implement in MAC/Linux
-        ffmpeg_exists = True
+        ffmpeg_exists = True if os.path.exists("/usr/local/bin/ffmpeg") else False
 
     return ffmpeg_exists
 
 def ffmpeg(url, modify_path=False):
     if sys.platform == 'win32':
-        ffmpeg_root_path = os.path.join("C:", os.sep, 'ffmpeg')
-        ffm_location = os.path.join(ffmpeg_root_path, "ffmpeg-20200424-a501947-win64-static", "bin")
+        ffmpeg_root_path = os.path.join("C:", os.sep)
+        ffmpeg_location = os.path.join(ffmpeg_root_path, "ffmpeg-20200424-a501947-win64-static", "bin")
         download_link = url + "/win64/static/ffmpeg-20200424-a501947-win64-static.zip"
+        path_to_binary = ffmpeg_location
     
     elif sys.platform ==  'darwin':
         download_link = url + "/macos64/static/ffmpeg-20200424-a501947-macos64-static.zip"
-        print("User homebrew to install ffmpeg. ~ brew install ffmpeg")
-        return
+        ffmpeg_location = "/usr/local/bin/ffmpeg-20200424-a501947-macos64-static"
+        path_to_binary = "/usr/local/bin/"
+        ffmpeg_root_path = path_to_binary
 
     print(f"Using ffmpeg download link at {download_link}")
 
     download_response = requests.get(download_link, stream=True)
 
-    update(download_response, ffmpeg_root_path, sys.platform, ffmpeg_root_path, vers='ffmpeg', modify_path=modify_path)
-    return ffm_location
+    update(download_response, ffmpeg_location, sys.platform, ffmpeg_root_path, vers='ffmpeg', 
+           modify_path=modify_path)
+    return path_to_binary
 
 def modify_path(chrome_instlld, chromedriver_folder, ffm_instlld, ffmpeg_folder):
     """

@@ -410,9 +410,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
     if chrome_needed_instlld or ffm_needed_instlld:
         if sys.platform == 'win32':
             updates.modify_path(chrome_needed_instlld, chromedriver_folder, ffm_needed_instlld, ffmpeg_folder)
-
-        print("Please restart cmd now for the software changes to take effect.")
-        return
+            print("Please restart cmd now for the software changes to take effect.")
+            return
 
     # check for running version
     if len(argv) > 1:
