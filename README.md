@@ -17,7 +17,7 @@ pip3 install --upgrade pip
 
 [VLC](https://www.videolan.org/vlc/index.html) (MAKE SURE 64 BIT FOR WINDOWS)
 
-[Python](https://www.python.org/) (Note: Please use with python 3.6.. port audio only installs properly with 3.6 as of right now)
+[Python](https://www.python.org/) (Note: Please use with python 3.6.5. port audio only installs properly with 3.6.5 as of right now)
 
 [iTunes](https://www.apple.com/ca/itunes/) (Note: you can use without iTunes. Local storage is supported as well as google drive with gdrive API)
 
