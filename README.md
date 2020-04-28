@@ -30,22 +30,23 @@ Navigate the directory and run setup:
 python -m venv venv
 venv\Scripts\activate
 pip install requests
-python setup.py install
-```
-
-If one of the google-auth installs fail..
-```bash
 pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
+python setup.py install
 ```
 
 If libmagic fails, try:            
 ```bash
-py -3 -m pip uninstall python-magic
+python -m pip uninstall python-magic
 ```
 
 If above does not work — try:      
 ```bash
-py -3 -m pip install python-magic-bin==0.4.14
+python -m pip install python-magic-bin==0.4.14
+```
+
+To Run
+```bash
+python musicPlayer.py
 ```
 
 ### MACOS INSTALLATION INSTRUCTIONS:
