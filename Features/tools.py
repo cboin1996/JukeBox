@@ -69,6 +69,33 @@ def format_input_to_int(input_prompt, mask, low_bound, high_bound):
         except:
             print("Come on. Invalid input.")
 
+def choose_items(props_lyst, input_string):
+    user_input = ''
+    user_input = format_input_to_list(input_string=input_string, list_to_compare_to=props_lyst, mode='choose')
+    if user_input == None:
+        return None
+    elif user_input == GlobalVariables.quit_string:
+        return user_input
+    elif user_input == GlobalVariables.perf_search_string:
+        return user_input
+    elif user_input == 'sh':
+        return user_input
+    elif user_input == 'pl':
+        return user_input
+    elif user_input == 'ag':
+        return user_input
+
+    for index in user_input:
+        if "dump" not in props_lyst[index]:
+            list_for_printing = props_lyst[index].split(os.sep)
+            print("Song Added: %s -- %s - %s: %s" % (index, list_for_printing[len(list_for_printing)-3],
+                                                    list_for_printing[len(list_for_printing)-2],
+                                                    list_for_printing[len(list_for_printing)-1]))
+        else:
+            list_for_printing = props_lyst[index].split(os.sep)
+            print(f"Song Added: {list_for_printing[len(list_for_printing) -1]}")
+
+    return [props_lyst[i] for i in user_input]
 class KBHit:
 
     def __init__(self):

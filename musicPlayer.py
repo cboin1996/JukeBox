@@ -41,7 +41,7 @@ Cboin v 1.0 -- added iTunesSearch functionality and worked on excpetion handling
 def namePlates(argument, argument2, debugMode, OS):
     """
     Produces nameplates and determines operating system
-    args: two command line argumates, debug mode on or off, operating system
+    params: two command line argumates, debug mode on or off, operating system
     Returns: operating system
     """
     print("================================")
@@ -77,7 +77,7 @@ def namePlates(argument, argument2, debugMode, OS):
 def formatFileName(pathToFile, sliceKey, stringToAdd):
     """
     Formats a file name signalling it is done being tagged with MP3 metadata
-    args: path to the file to format, slice key to insert string tag before, string to
+    params: path to the file to format, slice key to insert string tag before, string to
         add to filename
     Returns: None
     """
@@ -104,7 +104,7 @@ def run_download(microPhone,
                 musicPlayerSettings=None):
     """
     Runs the download process for a song
-    args: speech recognition microphone object, speech recognition recognizer object,
+    params: speech recognition microphone object, speech recognition recognizer object,
         iTunes installed or note, song to search youtube for, autodownload on or not,
         path to root directory, iTunes paths with auto add and song path, speech
         recognition on or not, debug mode on or not, track properties on or not
@@ -171,8 +171,12 @@ def run_download(microPhone,
 
             # autoDownload check
             if autoDownload == False:
-                userInput = input("Type 's' to save to itunes, 'g' to save to gDrive, anything else to save locally to 'dump' folder. ")
-                p.stop()
+                if musicPlayerSettings['gDrive']['folder_id'] != "":
+                    userInput = input("Type 's' to save to itunes, 'g' to save to gDrive, anything else to save locally to 'dump' folder. ")
+                    p.stop()
+                else:
+                    userInput = input("Type 's' to save to itunes, anything else to save locally to 'dump' folder. ")
+                    p.stop()
 
             elif speechRecogOn==True and autoDownload == True: # speech recog check for save
                 action = ''
@@ -212,7 +216,7 @@ def run_download(microPhone,
                 shutil.move(formattedSongName, iTunesPaths['autoAdd'])
                 print("Moved your file to iTunes.")
             
-            elif userInput == 'g':
+            elif userInput == 'g' and musicPlayerSettings['gDrive']['folder_id'] != "":
                 p.stop()
                 gDrive.save_song(musicPlayerSettings['gDrive'], youtubeResponseObject['songPath'].split(os.sep)[-1], youtubeResponseObject['songPath'])
 
@@ -226,13 +230,16 @@ def run_download(microPhone,
         else:
             # autoDownload check
             if autoDownload == False:
-                user_input = input("Type 'g' to save to gDrive, anything else to stop playing and save locally.")
+                if musicPlayerSettings['gDrive']['folder_id'] != "": # check if gDrive folder exists for saving
+                    user_input = input("Type 'g' to save to gDrive, anything else to stop playing and save locally.")
 
-                if user_input == 'g':
-                    p.stop()
+                    if user_input == 'g':
+                        p.stop()
 
-                    gDrive.save_song(musicPlayerSettings['gDrive'], youtubeResponseObject['songPath'].split(os.sep)[-1], youtubeResponseObject['songPath'])
-                    return
+                        gDrive.save_song(musicPlayerSettings['gDrive'], youtubeResponseObject['songPath'].split(os.sep)[-1], youtubeResponseObject['songPath'])
+                        return
+                else:
+                    input("Type anything to save locally.")
 
             elif speechRecogOn == True and autoDownload == True:
                 print(GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT) # provide commands
@@ -260,7 +267,7 @@ def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
                 requiredJsonSongKeys=None, album_artist_list=None, songs_in_album_props=None):
     """
     Runs through a song search process in iTunes then youtube depending on user interaction
-    args: microphone object, speech recognizer object, list of songs to search for, auto download mode on or off
+    params: microphone object, speech recognizer object, list of songs to search for, auto download mode on or off
         path to root script directory, speech recognition mode on or off, debug mode on or off,
         speech recognition command, program settings from json file, program version album or song download mode,
         computer operating system, song to search for, required json song keys to tag mp3's with,
@@ -270,15 +277,17 @@ def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
     for i, searchForSong in enumerate(searchList):
         print(" - Running program for: ", searchForSong)
         iTunesPaths = iTunes.setItunesPaths(operatingSystem, searchFor=searchForSong)
-
         # '*.*' means anyfilename, anyfiletype
         # /*/* gets through artist, then album or itunes folder structure
         if iTunesPaths == None:
             iTunesInstalled = False
-            song_played = False # signals to perform a download
+            song_paths_format = os.path.join(os.path.join(pathToDirectory, "dump"), "*.*")
+            dump_song_paths = jukebox.find_songs(song_paths_format, searchForSong)
+            song_played = jukebox.play_found_songs(dump_song_paths, autoDownload, speechRecogOn, pathToDirectory, command, mic=mic, r=r, iTunesInstalled=iTunesInstalled)
+
         else:
             iTunesInstalled = True
-            song_played = iTunes.check_iTunes_for_song(iTunesPaths, autoDownload, speechRecogOn, pathToDirectory, command, mic=mic, r=r)
+            song_played = jukebox.play_found_songs(iTunesPaths["searchedSongResult"], autoDownload, speechRecogOn, pathToDirectory, command, mic=mic, r=r, iTunesInstalled=iTunesInstalled)
 
         if song_played == GlobalVariables.quit_string: # return to home
             return
@@ -338,7 +347,7 @@ def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
 # pass argv to youtubeSongDownload
 """
 Main function that runs to launch the music player program
-args: command line args, speech recognizer object, microphone object, iTunes paths to auto add folder and songs dict,
+params: command line params, speech recognizer object, microphone object, iTunes paths to auto add folder and songs dict,
       speech recognizer mode on or not, debug mode on or not
 Returns: None
 """
@@ -510,7 +519,11 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
                               file_to_play=os.path.join(sys.path[0],'speechPrompts','noCommandReturnIdle.m4a'))
                 continueGettingSongs = 'yes'
             elif continueGettingSongs[0] == 'no':
-                break # quit
+                break # quit 
+            elif continueGettingSongs[0] == 'yes':
+                print("Returning to idle.")
+                continueGettingSongs = 'yes'
+            
 
     # editor functionality goes here (from iTunesManipulator.Editor)
     print("\n================================")

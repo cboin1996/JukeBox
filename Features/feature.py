@@ -22,6 +22,13 @@ def editSettings(pathToSettings='', settingSelections=''):
     while settingSelections != 'quit':
         i = 0
         print("Here are your settings.")
+        print("=--------Descriptions--------=:")
+        print("gDriveFolderPath: a folder on your computer that google drive is connected to for storing MP3's.")
+        print("folder_id: a key from google drive for your folder that stores MP3's")
+        print("userWantsiTunes (do not edit): indicates whether the program will prompt the user to setup iTunes. Default is yes, after setup is no.")
+        print("iTunesAutoPath: The path to your automatically add to iTunes folder. If empty will attempt to find itself.")
+        print("iTunesSongsPath (do not edit): The path template used to recursively search for iTunes songs. Do not edit if it exists.")
+        print("iTunesBasePath: The path to your iTunes Media folder.")
         for key, val in settings_data.items():
             print("(Genre) - ", key)
             for k, v in val.items():

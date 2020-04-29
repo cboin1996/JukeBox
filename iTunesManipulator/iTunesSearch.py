@@ -7,6 +7,7 @@ import eyed3
 from Features import tools
 from iTunesManipulator import iTunes
 import GlobalVariables
+from Player import jukebox
 # prints list from top down so its more user friendly, items are pretty big
 def prettyPrinter(listOfDicts):
     i = len(listOfDicts) - 1
@@ -148,38 +149,13 @@ def remove_songs_selected(song_properties_list, requiredJsonKeys):
 
     return [song for i, song in enumerate(song_properties_list) if i not in user_input]
 
-def choose_items(props_lyst, input_string):
-    user_input = ''
-    user_input = tools.format_input_to_list(input_string=input_string, list_to_compare_to=props_lyst, mode='choose')
-    if user_input == None:
-        return None
-    elif user_input == GlobalVariables.quit_string:
-        return user_input
-    elif user_input == GlobalVariables.perf_search_string:
-        return user_input
-    elif user_input == 'sh':
-        return user_input
-    elif user_input == 'pl':
-        return user_input
-    elif user_input == 'ag':
-        return user_input
-
-    for index in user_input:
-        print(props_lyst)
-        list_for_printing = props_lyst[index].split(os.sep)
-        print("Song Added: %s -- %s - %s: %s" % (index, list_for_printing[len(list_for_printing)-3],
-                                                  list_for_printing[len(list_for_printing)-2],
-                                                  list_for_printing[len(list_for_printing)-1]))
-
-    return [props_lyst[i] for i in user_input]
-
 def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJsonAlbumKeys={}, autoDownload=False, prog_vers=''):
     songs_in_album_props = None # will hold the songs in album properties in the new album feature
     album_props = None # will hold the album properties in the new album feature
     iTunesPaths = iTunes.setItunesPaths(operatingSystem=sys.platform, searchFor=artist_album_string)
     
     if iTunesPaths != None:
-        song_played = iTunes.check_iTunes_for_song(iTunesPaths, autoDownload=False, speechRecogOn=False,
+        song_played = jukebox.check_for_song(iTunesPaths['searchedSongResult'], autoDownload=False, speechRecogOn=False,
                                                 pathToDirectory=sys.path[0])
         if song_played == GlobalVariables.quit_string or song_played == True:
             return (GlobalVariables.quit_string, None, None)
