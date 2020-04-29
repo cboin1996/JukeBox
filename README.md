@@ -20,8 +20,8 @@ Navigate the directory and run setup:
 ```bash
 python -m venv venv
 venv\Scripts\activate
-pip3 install --upgrade pip
-pip3 install --upgrade setuptools
+pip install --upgrade pip
+pip install --upgrade setuptools
 pip install requests
 pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
 python setup.py install
@@ -50,8 +50,8 @@ python3 -m venv venv
 source\venv\activate
 pip3 install --upgrade pip
 pip3 install --upgrade setuptools
-pip install requests
-pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
+pip3 install requests
+pip3 install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
 python3 setup.py install
 ```
 ### RUN
