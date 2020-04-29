@@ -36,6 +36,10 @@ If above does not work — try:
 ```bash
 pip install python-magic-bin==0.4.14
 ```
+Run your cmd as administrator for the first time you run the program! Otherwise your path will not be updated.
+```bash
+python musicPlayer.py
+```
 ### MACOS INSTALLATION INSTRUCTIONS:
 
 First Install **pyAudio**:
