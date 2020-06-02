@@ -260,6 +260,9 @@ def run_download(microPhone,
     if youtubeResponseObject['error'] == 'youMP3fail':
         print("YoutubeMp3 failed too many times. quitting to last menu.")
         return
+    elif youtubeResponseObject['error'] == 'had_to_update':
+        print("youtube-dl was updated. Please restart the program.")
+        sys.exit()
 
 def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
                 pathToDirectory=None, speechRecogOn=None, debugMode=None, command=None,
