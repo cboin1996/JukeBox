@@ -196,6 +196,12 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
     except:
         print("!!-----Error------!!")
         print("Something went wrong with youtube-dl: ")
+        print("Attempting to update.. ")
+        # try to update the users youtube-dl installation.
+        if sys.platform == 'win32':
+            os.system('pip install --upgrade youtube-dl')
+        elif sys.platform == 'darwin':
+            os.system('pip3 install --upgrade youtube-dl')
         print("Contact Christian for this one.")
         print("Returning to song search.. Please Try again")
         success_downloading = False
