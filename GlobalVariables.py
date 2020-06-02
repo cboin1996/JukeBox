@@ -1,5 +1,5 @@
 PLAYING_STRING_DEFAULT = "Playing: %s - %s: %s."
-PLAYING_STRING_COMMANDS_DEFAULT = "\nCommands:\n - q (stop),\n - space (pause/resume), \n - d (next),\n - a (restart),\n - z (previous)"
+PLAYING_STRING_COMMANDS_DEFAULT = "\nCommands:\n - q (stop),\n - space (pause/resume), \n - d (next),\n - a (restart),\n - z (previous),\n - 0-9 (set volume)"
 PLAYING_STRING_COMMANDS_SPECIAL = PLAYING_STRING_COMMANDS_DEFAULT + "\n - d (next)"
 player_actions = ['resume', 'next', 'pause', 'restart', 'previous', 'stop', 'volume']
 player_stop = 'stop'

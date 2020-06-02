@@ -24,7 +24,7 @@ def play_file(prompt, file_path, startup_time=1.5, song_index=0, index_diff=0, m
     player.play()
     finished_playing = wait_until_end(player, prompt, song_index, index_diff, mic=mic, r=r, speechRecogOn=speechRecogOn, command_string=command_string)
     return finished_playing
-""" VLC STATES """
+# VLC STATES 
 # {0: 'NothingSpecial',
 #  1: 'Opening',
 #  2: 'Buffering',
@@ -143,6 +143,18 @@ def check_for_user_input(player, OS=sys.platform, state=3, file_index=0,
         print("Restarting Song.")
         player.stop()
         return 'restart'
+
+    if char == '0' or char == '1' or char == '2' or char == '3' or char == '4' or \
+       char == '5' or char == '6' or char == '7' or char == '8' or char == '9':
+        if char == '0':
+            volume_from_user = 100
+            
+        else:
+            volume_from_user = int(char) * 10
+    
+        print("Setting volume to %s" % (volume_from_user))
+        player.audio_set_volume(volume_from_user)
+
     if (char == 'z' or command == 'previous') and file_index==0 :
         print("Can't go backwards. This is the first song.")
         if speechRecogOn == True:
