@@ -15,7 +15,7 @@ import speech_recognition as sr
 import SpeechAnalysis
 import time
 import youtube_dl
-from youtube_dl.utils import DownloadError, UnavailableVideoError
+from youtube_dl.utils import DownloadError, UnavailableVideoError, ExtractorError
 from Features import tools
 import GlobalVariables
 
@@ -193,7 +193,7 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
 
         success_downloading = True
 
-    except UnavailableVideoError:
+    except DownloadError:
         print("Attempting to update.. ")
         # try to update the users youtube-dl installation.
         if sys.platform == 'win32':
@@ -203,10 +203,9 @@ def youtubeSongDownload(youtubePageResponse, autoDownload=False, pathToDumpFolde
         
         responseObject['success'] = False
         responseObject['error'] = 'had_to_update'
-        print("Re run the program now that youtube-dl has updated.")
         return responseObject
         
-    except:
+    except Exception:
         print("!!-----Error------!!")
         print("Something went wrong with youtube-dl: ")
         print("Contact Christian for this one.")
