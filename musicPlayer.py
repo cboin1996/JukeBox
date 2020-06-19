@@ -157,7 +157,8 @@ def run_download(microPhone,
                                                     iTunesPaths=iTunesPaths,
                                                     speechRecogOn=speechRecogOn,
                                                     debugMode=debugMode,
-                                                    trackProperties=trackProperties)
+                                                    trackProperties=trackProperties,
+                                                    musicPlayerSettings=musicPlayerSettings)
 
         # parseItunesSearchApi() throws None return type if the user selects no properties
         if trackProperties != None:
@@ -206,7 +207,7 @@ def run_download(microPhone,
                     userInput = ''
                     computer.speak(sys.platform, 'Saving Locally', os.path.join(pathToDirectory, 'speechPrompts', 'savingLocal.m4a'))
 
-            else:
+            else: # autodownload check for save
                 print("Saving to iTunes.. whether you like it or not.")
                 userInput = 's'
                 p.stop()
@@ -257,6 +258,7 @@ def run_download(microPhone,
             p.stop()
             formattedSongName = formatFileName(pathToFile=youtubeResponseObject['songPath'], sliceKey=".mp3", stringToAdd="_complt")
             return
+            
     if youtubeResponseObject['error'] == 'youMP3fail':
         print("YoutubeMp3 failed too many times. quitting to last menu.")
         return
