@@ -155,7 +155,7 @@ def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJ
     iTunesPaths = iTunes.setItunesPaths(operatingSystem=sys.platform, searchFor=artist_album_string)
     
     if iTunesPaths != None:
-        song_played = jukebox.check_for_song(iTunesPaths['searchedSongResult'], autoDownload=False, speechRecogOn=False,
+        song_played = jukebox.play_found_songs(iTunesPaths['searchedSongResult'], autoDownload=False, speechRecogOn=False,
                                                 pathToDirectory=sys.path[0])
         if song_played == GlobalVariables.quit_string or song_played == True:
             return (GlobalVariables.quit_string, None, None)
