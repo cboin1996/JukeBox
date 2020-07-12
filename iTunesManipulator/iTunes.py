@@ -10,7 +10,7 @@ from iTunesManipulator import iTunesSearch
 from Features import tools
 import GlobalVariables
 import json
-def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResult':[]}, searchFor=''):
+def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResult':[]}, searchFor='', album_properties=None):
     """
     Determines whether iTunes is installed on the computer, and generates path to
     the automatically add to iTunes folder
@@ -83,23 +83,33 @@ def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResu
         # /*/* gets through artist, then album or itunes folder structure
         # iTUNES LIBRARY SEARCH ALGORITHM -- returns lists of matches
     path = glob.glob(pathToSong, recursive=True)
-    iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor)
+    iTunesPaths = iTunesLibSearch(songPaths=path, iTunesPaths=iTunesPaths, searchParameters=searchFor, album_properties=album_properties)
     return iTunesPaths
 
 
-def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters=''):
+def iTunesLibSearch(songPaths, iTunesPaths={}, searchParameters='', album_properties=None):
     """
     Performs a search on users iTunes library by album, artist and genre
-    params: paths to all iTunes songs, iTunes dictionary object, search term
+    params: 
+    songPaths: paths to all iTunes songs
+    iTunesPaths: iTunes dictionary object
+    searchParameters: search term
+    album_properties: determines whether to do a smarter search based on given album properties
     Returns: iTunesPaths dict with songs matching the search added 
     """
     for songPath in songPaths:
         songNameSplit = songPath.split(os.sep)
-        formattedName = songNameSplit[len(songNameSplit)-1].lower() + " " + songNameSplit[len(songNameSplit)-2].lower() + " " + songNameSplit[len(songNameSplit)-3].lower()
-        formattedName = Youtube.removeIllegalCharacters(formattedName)
-        searchParameters = Youtube.removeIllegalCharacters(searchParameters)
-        # songNameSplit is list of itunes file path.. artist is -3 from length, song is -1
-        if searchParameters.lower() in formattedName.lower():
-            iTunesPaths['searchedSongResult'].append(songPath)
+        song_name = Youtube.removeIllegalCharacters(songNameSplit[len(songNameSplit)-1].lower())
+        album_name = Youtube.removeIllegalCharacters(songNameSplit[len(songNameSplit)-2].lower())
+        artist_name = Youtube.removeIllegalCharacters(songNameSplit[len(songNameSplit)-3].lower())
+        searchParameters = Youtube.removeIllegalCharacters(searchParameters.lower())
+        if album_properties == None: 
+            formattedName = song_name + " " + album_name + " " + artist_name
+            # songNameSplit is list of itunes file path.. artist is -3 from length, song is -1
+            if searchParameters in formattedName:
+                iTunesPaths['searchedSongResult'].append(songPath)
+        else:
+            if album_properties[GlobalVariables.artist_name].lower() in artist_name and searchParameters in song_name:
+                iTunesPaths['searchedSongResult'].append(songPath)
     iTunesPaths['searchedSongResult'] = sorted(iTunesPaths['searchedSongResult']) # sort tracks alphabetically
     return iTunesPaths

@@ -151,7 +151,14 @@ def remove_songs_selected(song_properties_list, requiredJsonKeys):
 
     return [song for i, song in enumerate(song_properties_list) if i not in user_input]
 
-def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJsonAlbumKeys={}, autoDownload=False, prog_vers=''):
+def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJsonAlbumKeys={}, autoDownload=False, prog_vers='', root_folder=None):
+    """
+    Returns:
+        searchList: The list of songs to search youtube for
+        album_props: the album metadata from iTunes Search API
+        songs_in_album_props: the songs in an album with properties from iTunes Search API
+    """
+    
     songs_in_album_props = None # will hold the songs in album properties in the new album feature
     album_props = None # will hold the album properties in the new album feature
     iTunesPaths = iTunes.setItunesPaths(operatingSystem=sys.platform, searchFor=artist_album_string)
@@ -161,8 +168,8 @@ def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJ
         songs_to_play = iTunesPaths['searchedSongResult']
     else:
         iTunesInstalled = False
-        song_paths_format = os.path.join(os.path.join(pathToDirectory, "dump"), "*.*")
-        songs_to_play = jukebox.find_songs(song_paths_format, searchForSong)
+        song_paths_format = os.path.join(root_folder, "dump", "*.*")
+        songs_to_play = jukebox.find_songs(song_paths_format, artist_album_string)
         
     song_played = jukebox.play_found_songs(songs_to_play, autoDownload=False, speechRecogOn=False,
                                             pathToDirectory=sys.path[0], iTunesInstalled=iTunesInstalled)
@@ -191,12 +198,11 @@ def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJ
                 continue
 
 
-    searchList = get_song_info(song_properties=songs_in_album_props, # get list of just songs to search from the album # 1 is artist key
-                               key=requiredJsonSongKeys[0]) # 0 is song key
-    album_artist_list = get_song_info(song_properties=songs_in_album_props, # get list of just songs to search from the album # 1 is artist key
-                                      key=requiredJsonSongKeys[1]) # 1 is artist key
+    searchList = get_song_info(song_properties=songs_in_album_props,
+                               key=GlobalVariables.track_name) # track_name is the song name from iTunes search API
+
     print("Conducting search for songs: %s" %(searchList))
-    return (searchList, album_artist_list, songs_in_album_props)
+    return (searchList, album_props, songs_in_album_props)
 
 def get_songs_in_album(searchVariable='',
                          limit=40, entity='', requiredJsonKeys={},
