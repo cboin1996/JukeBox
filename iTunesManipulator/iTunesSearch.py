@@ -70,10 +70,11 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
     audiofile.tag.genre = dictionaryOfTags[GlobalVariables.primary_genre_name]
     audiofile.tag.track_num = (dictionaryOfTags[GlobalVariables.track_num], dictionaryOfTags[GlobalVariables.track_count])
     audiofile.tag.disc_num = (dictionaryOfTags[GlobalVariables.disc_num], dictionaryOfTags[GlobalVariables.disc_count])
+    audiofile.tag.recording_date = dictionaryOfTags[GlobalVariables.release_date]
+
     if GlobalVariables.collection_artist_name in dictionaryOfTags.keys(): # check if collection_artist_name exists before adding to tags
         audiofile.tag.album_artist = dictionaryOfTags[GlobalVariables.collection_artist_name]
-    if GlobalVariables.release_date in dictionaryOfTags.keys(): # make sure that the release date was added
-        audiofile.tag.recording_date = dictionaryOfTags[GlobalVariables.release_date]
+
 
     if response.status_code == 200:
         audiofile.tag.images.set(type_=3, img_data=response.content, mime_type='image/png', description=u"Art", img_url=None)
@@ -245,19 +246,19 @@ def query_api(searchVariable, limit, entity, requiredJsonKeys, search, optional_
     if itunesResponse.status_code == 200:
         itunesJSONDict = json.loads(itunesResponse.content)
         for searchResult in itunesJSONDict['results']:
-            #print(searchResult)
             resultDictionary = {}
             if all(key in searchResult for key in requiredJsonKeys):
                 for key in requiredJsonKeys:
-                    resultDictionary[key] = searchResult[key]
+                    if key == GlobalVariables.release_date:
+                        year = searchResult[key].split('-')[0] # will grab the year from date formatted 2016-06-01
+                        resultDictionary[key] = year
+                    else:
+                        resultDictionary[key] = searchResult[key]
+
                 if optional_keys is not None:
                     for optional_key in optional_keys:
                         if optional_key in searchResult.keys():
                             resultDictionary[optional_key] = searchResult[optional_key]
-                if date_key is not None:
-                    if date_key in searchResult.keys():
-                        year = searchResult[date_key].split('-')[0] # grabs the year from date formatted "2015-05-20" for ex.
-                        resultDictionary[date_key] = year
                 parsedResultsList.append(resultDictionary)
             else:
                 print("Skipping song data as result lacked either a name, artist, album, artwork or genre in the API")
