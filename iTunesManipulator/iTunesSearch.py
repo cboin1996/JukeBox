@@ -69,9 +69,10 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
     audiofile.tag.title = dictionaryOfTags[GlobalVariables.track_name]
     audiofile.tag.genre = dictionaryOfTags[GlobalVariables.primary_genre_name]
     audiofile.tag.track_num = (dictionaryOfTags[GlobalVariables.track_num], dictionaryOfTags[GlobalVariables.track_count])
+    audiofile.tag.disc_num = (dictionaryOfTags[GlobalVariables.disc_num], dictionaryOfTags[GlobalVariables.disc_count])
     if GlobalVariables.collection_artist_name in dictionaryOfTags.keys(): # check if collection_artist_name exists before adding to tags
         audiofile.tag.album_artist = dictionaryOfTags[GlobalVariables.collection_artist_name]
-
+    audiofile.tag.recording_date = dictionaryOfTags[GlobalVariables.release_date]
 
     if response.status_code == 200:
         audiofile.tag.images.set(type_=3, img_data=response.content, mime_type='image/png', description=u"Art", img_url=None)
@@ -84,7 +85,9 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
 
 # entity is usually song for searching songs
 def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=False, requiredJsonKeys=[], search=True, mode=''):
-    parsedResultsList = query_api(searchVariable, limit, entity, requiredJsonKeys, search)
+    parsedResultsList = query_api(searchVariable, limit, entity, requiredJsonKeys, 
+                                  search, optional_keys=[GlobalVariables.collection_artist_name], 
+                                  date_key=GlobalVariables.release_date)
 
     print('Searched for: %s' % (searchVariable))
     print('Select the number for the properties you want.. [%d to %d]'% (0, len(parsedResultsList)-1))
@@ -212,11 +215,12 @@ def get_songs_in_album(searchVariable='',
                                         limit=limit, entity='song',
                                         requiredJsonKeys=requiredJsonKeys,
                                         search=search,
-                                        optional_keys=[GlobalVariables.collection_artist_name])
+                                        optional_keys=[GlobalVariables.collection_artist_name],
+                                        date_key=GlobalVariables.release_date)
 
     return trackProperties
 
-def query_api(searchVariable, limit, entity, requiredJsonKeys, search, optional_keys=None):
+def query_api(searchVariable, limit, entity, requiredJsonKeys, search, optional_keys=None, date_key=None):
     """
     params:
         searchVariable:
@@ -249,7 +253,10 @@ def query_api(searchVariable, limit, entity, requiredJsonKeys, search, optional_
                     for optional_key in optional_keys:
                         if optional_key in searchResult.keys():
                             resultDictionary[optional_key] = searchResult[optional_key]
-
+                if date_key is not None:
+                    if date_key in searchResult.keys():
+                        year = searchResult[date_key].split('-')[0] # grabs the year from date formatted "2015-05-20" for ex.
+                        resultDictionary[date_key] = year
                 parsedResultsList.append(resultDictionary)
             else:
                 print("Skipping song data as result lacked either a name, artist, album, artwork or genre in the API")

@@ -383,7 +383,9 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
                           GlobalVariables.artworkUrl100,
                           GlobalVariables.primary_genre_name,
                           GlobalVariables.track_num,
-                          GlobalVariables.track_count]
+                          GlobalVariables.track_count,
+                          GlobalVariables.disc_num,
+                          GlobalVariables.disc_count]
     requiredJsonAlbumKeys = [GlobalVariables.artist_name, GlobalVariables.collection_name, GlobalVariables.track_count, GlobalVariables.collection_id]
     songs_in_album_props=[]
 
