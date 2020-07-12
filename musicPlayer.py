@@ -23,6 +23,9 @@ import GlobalVariables
 
 """
 Change log
+Cboin v 2.2 -- Added sep branches for new versions
+            -- Modified program to use mp3 tagged song name for file name
+            -- Modified program to keep track of whether there is an album artist
 Cboin v 2.1 -- Added saving to google drive option
 Cboin v 2.0 -- Added album downloading, speech regonition, keybinding audio playing,
                    shuffle mode and more.
@@ -69,7 +72,7 @@ def namePlates(argument, argument2, debugMode, OS):
     if OS == 'win32':
         print("=---------For Windows----------=")
 
-    print("=-------------V2.1-------------=")
+    print(f"=-------------V{GlobalVariables.VERSION_NUMBER}-------------=")
     print("================================")
 
     return OS
@@ -164,6 +167,8 @@ def run_download(microPhone,
         if trackProperties != None:
             properSongName = iTunesSearch.mp3ID3Tagger(mp3Path=youtubeResponseObject['songPath'],
                                                         dictionaryOfTags=trackProperties)
+            proper_song_path = os.path.join(localDumpFolder, properSongName + '.mp3') # renames the song's filename to match the mp3 tag
+            os.rename(youtubeResponseObject['songPath'], proper_song_path)
 
         else:
             print('Skipping tagging process (No itunes properties selected)')
@@ -213,18 +218,18 @@ def run_download(microPhone,
                 p.stop()
 
             if userInput == 's':
-                formattedSongName = formatFileName(pathToFile=youtubeResponseObject['songPath'], sliceKey=".mp3", stringToAdd="_complt")
+                formattedSongName = formatFileName(pathToFile=proper_song_path, sliceKey=".mp3", stringToAdd="_complt")
                 shutil.move(formattedSongName, iTunesPaths['autoAdd'])
                 print("Moved your file to iTunes.")
-            
+
             elif userInput == 'g' and musicPlayerSettings['gDrive']['folder_id'] != "":
                 p.stop()
-                gDrive.save_song(musicPlayerSettings['gDrive'], youtubeResponseObject['songPath'].split(os.sep)[-1], youtubeResponseObject['songPath'])
+                gDrive.save_song(musicPlayerSettings['gDrive'], proper_song_path.split(os.sep)[-1], proper_song_path)
 
             else:
                 print("Saved your file locally.")
                 p.stop()
-                formattedSongName = formatFileName(pathToFile=youtubeResponseObject['songPath'], sliceKey=".mp3", stringToAdd="_complt")
+                formattedSongName = formatFileName(pathToFile=proper_song_path, sliceKey=".mp3", stringToAdd="_complt")
 
             return
 
@@ -237,7 +242,7 @@ def run_download(microPhone,
                     if user_input == 'g':
                         p.stop()
 
-                        gDrive.save_song(musicPlayerSettings['gDrive'], youtubeResponseObject['songPath'].split(os.sep)[-1], youtubeResponseObject['songPath'])
+                        gDrive.save_song(musicPlayerSettings['gDrive'], proper_song_path.split(os.sep)[-1], proper_song_path)
                         return
                 else:
                     input("Type anything to save locally.")
@@ -256,9 +261,9 @@ def run_download(microPhone,
             else:
                 print("Saving locally. Whether you like it or not.")
             p.stop()
-            formattedSongName = formatFileName(pathToFile=youtubeResponseObject['songPath'], sliceKey=".mp3", stringToAdd="_complt")
+            formattedSongName = formatFileName(pathToFile=proper_song_path, sliceKey=".mp3", stringToAdd="_complt")
             return
-            
+
     if youtubeResponseObject['error'] == 'youMP3fail':
         print("YoutubeMp3 failed too many times. quitting to last menu.")
         return
@@ -280,19 +285,20 @@ def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
     Returns: None
     """
     for i, searchForSong in enumerate(searchList):
-        print(" - Running program for: ", searchForSong)
+        print(f" - Running program for song {i + 1} of {len(searchList)}: {searchForSong}")
         iTunesPaths = iTunes.setItunesPaths(operatingSystem, searchFor=searchForSong)
         # '*.*' means anyfilename, anyfiletype
         # /*/* gets through artist, then album or itunes folder structure
         if iTunesPaths == None:
             iTunesInstalled = False
             song_paths_format = os.path.join(os.path.join(pathToDirectory, "dump"), "*.*")
-            dump_song_paths = jukebox.find_songs(song_paths_format, searchForSong)
-            song_played = jukebox.play_found_songs(dump_song_paths, autoDownload, speechRecogOn, pathToDirectory, command, mic=mic, r=r, iTunesInstalled=iTunesInstalled)
+            songs_to_play = jukebox.find_songs(song_paths_format, searchForSong)
 
         else:
             iTunesInstalled = True
-            song_played = jukebox.play_found_songs(iTunesPaths["searchedSongResult"], autoDownload, speechRecogOn, pathToDirectory, command, mic=mic, r=r, iTunesInstalled=iTunesInstalled)
+            songs_to_play = iTunesPaths["searchedSongResult"]
+
+        song_played = jukebox.play_found_songs(songs_to_play, autoDownload, speechRecogOn, pathToDirectory, command, mic=mic, r=r, iTunesInstalled=iTunesInstalled)
 
         if song_played == GlobalVariables.quit_string: # return to home
             return
@@ -326,7 +332,7 @@ def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
                                                                 limit=10, entity='song',
                                                                 autoDownload=autoDownload,
                                                                 requiredJsonKeys=requiredJsonSongKeys,
-                                                                searchOrLookup=True
+                                                                search=True
                                                                 )
             if trackProperties == GlobalVariables.quit_string: # return to home entry
                 return
@@ -359,14 +365,14 @@ Returns: None
 def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False, debugMode = False):
     autoDownload = False
     searchList = []
-    requiredJsonSongKeys = ['trackName',
-                          'artistName',
-                          'collectionName',
-                          'artworkUrl100',
-                          'primaryGenreName',
-                          'trackNumber',
-                          'trackCount']
-    requiredJsonAlbumKeys = ['artistName', 'collectionName', 'trackCount', 'collectionId']
+    requiredJsonSongKeys = [GlobalVariables.track_name,
+                          GlobalVariables.artist_name,
+                          GlobalVariables.collection_name,
+                          GlobalVariables.artworkUrl100,
+                          GlobalVariables.primary_genre_name,
+                          GlobalVariables.track_num,
+                          GlobalVariables.track_count]
+    requiredJsonAlbumKeys = [GlobalVariables.artist_name, GlobalVariables.collection_name, GlobalVariables.track_count, GlobalVariables.collection_id]
     album_artist_list=[]
     songs_in_album_props=[]
 
@@ -388,7 +394,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
     if not os.path.exists(pathToSettings):
         with open(pathToSettings, 'w') as f:
             initialized_settings = {
-                                    "gDrive" : {"gDriveFolderPath": "", "folder_id" : ""}, 
+                                    "gDrive" : {"gDriveFolderPath": "", "folder_id" : ""},
                                     "iTunes" : {"userWantsiTunes" : "y",
                                                 "iTunesAutoPath"  : "",
                                                 "iTunesSongsPath" : "",
@@ -405,7 +411,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
         os.makedirs(localDumpFolder)
 
     restart_required = False
-    chrome_needed_instlld = False 
+    chrome_needed_instlld = False
     ffm_needed_instlld = False
     chromedriver_folder = ""
     ffmpeg_folder = ""
@@ -414,13 +420,13 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
         print("You don't have chromedriver installed. Let me take care of that for you :)")
         chromedriver_folder = updates.chromeDriver(GlobalVariables.chromedriver_update_url, modify_path=True)
         chrome_needed_instlld = True
-    
+
     # initialize ffmpeg
     if not updates.ffmpeg_installed():
         print("You don't have ffmpeg installed. Let me take care of that as well I guess..")
         ffmpeg_folder = updates.ffmpeg("https://ffmpeg.zeranoe.com/builds/", modify_path=True)
-        ffm_needed_instlld = True 
-    
+        ffm_needed_instlld = True
+
     if chrome_needed_instlld or ffm_needed_instlld:
         if sys.platform == 'win32':
             updates.modify_path(chrome_needed_instlld, chromedriver_folder, ffm_needed_instlld, ffmpeg_folder)
@@ -524,11 +530,11 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
                               file_to_play=os.path.join(sys.path[0],'speechPrompts','noCommandReturnIdle.m4a'))
                 continueGettingSongs = 'yes'
             elif continueGettingSongs[0] == 'no':
-                break # quit 
+                break # quit
             elif continueGettingSongs[0] == 'yes':
                 print("Returning to idle.")
                 continueGettingSongs = 'yes'
-            
+
 
     # editor functionality goes here (from iTunesManipulator.Editor)
     print("\n================================")

@@ -1,4 +1,4 @@
-# youtubeMP3 V 2.1 Official Release
+# youtubeMP3 V 2.2 Official Release
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/cboin1996/WebTools)
 
@@ -48,7 +48,7 @@ brew install portaudio
 pip3 install pyaudio
 ```
 
-Navigate the directory and run setup: 
+Navigate the directory and run setup:
 ```bash
 python3 -m venv venv
 source\venv\activate
@@ -66,9 +66,3 @@ python musicPlayer.py
 
 pyaudio often doesn't install on windows -- need c++ library.
 Maybe try this link? : http://go.microsoft.com/fwlink/?LinkId=691126&fixForIE=.exe
-
-
-
-
-
-

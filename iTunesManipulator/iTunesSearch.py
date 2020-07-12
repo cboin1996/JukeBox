@@ -8,6 +8,9 @@ from Features import tools
 from iTunesManipulator import iTunes
 import GlobalVariables
 from Player import jukebox
+
+
+
 # prints list from top down so its more user friendly, items are pretty big
 def prettyPrinter(listOfDicts):
     i = len(listOfDicts) - 1
@@ -16,10 +19,10 @@ def prettyPrinter(listOfDicts):
         print(i, end='')
         for k,v in element.items():
             print('\t%s - %s' % (k, v))
-            # print(artistName + " - " + tag[artistName])
-            # print(collectionName + " - " + tag[collectionName])
-            # print(artworkUrl100 + " - " + tag[artworkUrl100])
-            # print(primaryGenreName + " - " + tag[primaryGenreName])
+            # print(GlobalVariables.artist_name + " - " + tag[GlobalVariables.artist_name])
+            # print(GlobalVariables.collection_name + " - " + tag[GlobalVariables.collection_name])
+            # print(GlobalVariables.artworkUrl100 + " - " + tag[GlobalVariables.artworkUrl100])
+            # print(GlobalVariables.primary_genre_name + " - " + tag[GlobalVariables.primary_genre_name])
         i -=1
         print("------------------------")
 
@@ -45,13 +48,10 @@ def artworkSearcher(artworkUrl):
 
 
 def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
-    trackName='trackName'
-    artistName='artistName'
-    collectionName='collectionName'
-    artworkUrl100='artworkUrl100'
-    primaryGenreName='primaryGenreName'
-    track_num='trackNumber'
-    track_count='trackCount'
+    """
+    Tags an mp3 file at mp3Path given a dictionary of tags
+
+    """
     # Create MP3File instance.
     print("Adding your tags.")
     print("Your file temperarily located at: ", mp3Path)
@@ -60,15 +60,17 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
     # Get the image to show for a song .. but get high res
     # get album artwork from the list of sizes
 
-    response = artworkSearcher(artworkUrl=dictionaryOfTags[artworkUrl100])
+    response = artworkSearcher(artworkUrl=dictionaryOfTags[GlobalVariables.artworkUrl100])
 
     # Set all the tags for the mp3
     audiofile = eyed3.load(mp3Path)
-    audiofile.tag.artist = dictionaryOfTags[artistName]
-    audiofile.tag.album = dictionaryOfTags[collectionName]
-    audiofile.tag.title = dictionaryOfTags[trackName]
-    audiofile.tag.genre = dictionaryOfTags[primaryGenreName]
-    audiofile.tag.track_num = (dictionaryOfTags[track_num], dictionaryOfTags[track_count])
+    audiofile.tag.artist = dictionaryOfTags[GlobalVariables.artist_name]
+    audiofile.tag.album = dictionaryOfTags[GlobalVariables.collection_name]
+    audiofile.tag.title = dictionaryOfTags[GlobalVariables.track_name]
+    audiofile.tag.genre = dictionaryOfTags[GlobalVariables.primary_genre_name]
+    audiofile.tag.track_num = (dictionaryOfTags[GlobalVariables.track_num], dictionaryOfTags[GlobalVariables.track_count])
+    if GlobalVariables.collection_artist_name in dictionaryOfTags.keys(): # check if collection_artist_name exists before adding to tags
+        audiofile.tag.album_artist = dictionaryOfTags[GlobalVariables.collection_artist_name]
 
 
     if response.status_code == 200:
@@ -78,11 +80,11 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
 
     audiofile.tag.save()
 
-    return dictionaryOfTags[trackName]
+    return dictionaryOfTags[GlobalVariables.track_name]
 
 # entity is usually song for searching songs
-def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=False, requiredJsonKeys=[], searchOrLookup=True, mode=''):
-    parsedResultsList = query_and_display(searchVariable, limit, entity, requiredJsonKeys, searchOrLookup)
+def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=False, requiredJsonKeys=[], search=True, mode=''):
+    parsedResultsList = query_api(searchVariable, limit, entity, requiredJsonKeys, search)
 
     print('Searched for: %s' % (searchVariable))
     print('Select the number for the properties you want.. [%d to %d]'% (0, len(parsedResultsList)-1))
@@ -117,7 +119,7 @@ def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=Fa
     # call the function again to give any amount of tries to the user
     if trackPropertySelectionNumber == 404:
         newSearch = input('Type in a more specific title: ')
-        return parseItunesSearchApi(searchVariable=newSearch, limit=limit, entity=entity, requiredJsonKeys=requiredJsonKeys, searchOrLookup=searchOrLookup, mode=mode)
+        return parseItunesSearchApi(searchVariable=newSearch, limit=limit, entity=entity, requiredJsonKeys=requiredJsonKeys, search=search, mode=mode)
 
     trackProperties = parsedResultsList[trackPropertySelectionNumber]
 
@@ -153,26 +155,33 @@ def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJ
     songs_in_album_props = None # will hold the songs in album properties in the new album feature
     album_props = None # will hold the album properties in the new album feature
     iTunesPaths = iTunes.setItunesPaths(operatingSystem=sys.platform, searchFor=artist_album_string)
-    
+
     if iTunesPaths != None:
-        song_played = jukebox.play_found_songs(iTunesPaths['searchedSongResult'], autoDownload=False, speechRecogOn=False,
-                                                pathToDirectory=sys.path[0])
-        if song_played == GlobalVariables.quit_string or song_played == True:
-            return (GlobalVariables.quit_string, None, None)
+        iTunesInstalled = True
+        songs_to_play = iTunesPaths['searchedSongResult']
+    else:
+        iTunesInstalled = False
+        song_paths_format = os.path.join(os.path.join(pathToDirectory, "dump"), "*.*")
+        songs_to_play = jukebox.find_songs(song_paths_format, searchForSong)
+        
+    song_played = jukebox.play_found_songs(songs_to_play, autoDownload=False, speechRecogOn=False,
+                                            pathToDirectory=sys.path[0], iTunesInstalled=iTunesInstalled)
+    if song_played == GlobalVariables.quit_string or song_played == True:
+        return (GlobalVariables.quit_string, None, None)
 
     while songs_in_album_props == None or album_props == None or songs_in_album_props == 'ag': # ensure user has selected album they like.
         album_props = parseItunesSearchApi(searchVariable=artist_album_string, # get list of album properties for search
                                            entity='album', autoDownload=autoDownload, # pass in false for now. Users want to select album before letting her run
                                            requiredJsonKeys=requiredJsonAlbumKeys,
-                                           searchOrLookup=True,
+                                           search=True,
                                            mode=prog_vers)
         if album_props == GlobalVariables.quit_string: # error code for the func.
             return (GlobalVariables.quit_string, None, None)
         if album_props != None:
-            songs_in_album_props = get_songs_in_album(searchVariable=album_props['collectionId'], # get list of songs for chosen album
-                                                      limit=100, entity='song',
+            songs_in_album_props = get_songs_in_album(searchVariable=album_props[GlobalVariables.collection_id], # get list of songs for chosen album
+                                                      limit=album_props[GlobalVariables.track_count], entity='song',
                                                       requiredJsonKeys=requiredJsonSongKeys,
-                                                      searchOrLookup=False)
+                                                      search=False)
         if songs_in_album_props != None:
             songs_in_album_props = remove_songs_selected(song_properties_list=songs_in_album_props, requiredJsonKeys=requiredJsonSongKeys)
             if songs_in_album_props == GlobalVariables.quit_string:
@@ -191,19 +200,29 @@ def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJ
 
 def get_songs_in_album(searchVariable='',
                          limit=40, entity='', requiredJsonKeys={},
-                         searchOrLookup=True):
+                         search=True):
 
-    trackProperties = query_and_display(searchVariable=searchVariable,
-                                        limit=40, entity='song',
+    trackProperties = query_api(searchVariable=searchVariable,
+                                        limit=limit, entity='song',
                                         requiredJsonKeys=requiredJsonKeys,
-                                        searchOrLookup=searchOrLookup)
+                                        search=search,
+                                        optional_keys=[GlobalVariables.collection_artist_name])
 
     return trackProperties
 
-def query_and_display(searchVariable, limit, entity, requiredJsonKeys, searchOrLookup):
+def query_api(searchVariable, limit, entity, requiredJsonKeys, search, optional_keys=None):
+    """
+    params:
+        searchVariable:
+        limit: limit of the search in the api
+        entity: either album, or song for now
+        requiredJsonKeys: keys that must exist to grab
+        search: whether to perform a search or a lookup
+        optional_key (default None): keys to optionally grab if they exist (ex. CollectionGlobalVariables.artist_name is used for cases where multiple artists are given credit across an album)
+    """
     parsedResultsList = []
     resultDictionary = {}
-    if searchOrLookup == True: # perform general search
+    if search == True: # perform general search
         searchParameters = {'term':searchVariable, 'entity':entity, 'limit':limit}
         itunesResponse = requests.get('https://itunes.apple.com/search', params=searchParameters)
     else: # perform lookup query by itunes id
@@ -220,6 +239,11 @@ def query_and_display(searchVariable, limit, entity, requiredJsonKeys, searchOrL
             if all(key in searchResult for key in requiredJsonKeys):
                 for key in requiredJsonKeys:
                     resultDictionary[key] = searchResult[key]
+                if optional_keys is not None:
+                    for optional_key in optional_keys:
+                        if optional_key in searchResult.keys():
+                            resultDictionary[optional_key] = searchResult[optional_key]
+
                 parsedResultsList.append(resultDictionary)
             else:
                 print("Skipping song data as result lacked either a name, artist, album, artwork or genre in the API")
