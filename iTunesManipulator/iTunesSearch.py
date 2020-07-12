@@ -62,7 +62,7 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
 
     response = artworkSearcher(artworkUrl=dictionaryOfTags[GlobalVariables.artworkUrl100])
 
-    # Set all the tags for the mp3
+    # Set all the tags for the mp3, all without if statement were checked for existence.
     audiofile = eyed3.load(mp3Path)
     audiofile.tag.artist = dictionaryOfTags[GlobalVariables.artist_name]
     audiofile.tag.album = dictionaryOfTags[GlobalVariables.collection_name]
@@ -72,7 +72,8 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
     audiofile.tag.disc_num = (dictionaryOfTags[GlobalVariables.disc_num], dictionaryOfTags[GlobalVariables.disc_count])
     if GlobalVariables.collection_artist_name in dictionaryOfTags.keys(): # check if collection_artist_name exists before adding to tags
         audiofile.tag.album_artist = dictionaryOfTags[GlobalVariables.collection_artist_name]
-    audiofile.tag.recording_date = dictionaryOfTags[GlobalVariables.release_date]
+    if GlobalVariables.release_date in dictionaryOfTags.keys(): # make sure that the release date was added
+        audiofile.tag.recording_date = dictionaryOfTags[GlobalVariables.release_date]
 
     if response.status_code == 200:
         audiofile.tag.images.set(type_=3, img_data=response.content, mime_type='image/png', description=u"Art", img_url=None)
