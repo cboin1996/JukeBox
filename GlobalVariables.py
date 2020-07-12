@@ -27,3 +27,10 @@ track_num='trackNumber'
 track_count='trackCount'
 collection_id = 'collectionId'
 collection_artist_name = 'collectionArtistName'
+disc_num = 'discNumber'
+disc_count = 'discCount'
+release_date = 'releaseDate'
+
+special_print_dict = {track_num : track_count, disc_num : disc_count}
+dont_print_keys = [disc_count, track_count]
+special_prompt = "\t%s - %s of %s"

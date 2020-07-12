@@ -274,19 +274,31 @@ def run_download(microPhone,
 def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
                 pathToDirectory=None, speechRecogOn=None, debugMode=None, command=None,
                 musicPlayerSettings=None, prog_vers='', operatingSystem=None, searchFor=None,
-                requiredJsonSongKeys=None, album_artist_list=None, songs_in_album_props=None):
+                requiredJsonSongKeys=None, album_properties=None, songs_in_album_props=None):
     """
     Runs through a song search process in iTunes then youtube depending on user interaction
-    params: microphone object, speech recognizer object, list of songs to search for, auto download mode on or off
-        path to root script directory, speech recognition mode on or off, debug mode on or off,
-        speech recognition command, program settings from json file, program version album or song download mode,
-        computer operating system, song to search for, required json song keys to tag mp3's with,
-        list of album artist metadata, song meta data for songs in an album
+    params: 
+        mic: microphone object
+        r: speech recognizer object,
+        searchList: list of songs to search for
+        autoDownload: auto download mode on or off
+        pathToDirectory: path to root script directory
+        speechRecogOn: speech recognition mode on or off
+        debugMode: debug mode on or off
+        command: speech recognition command
+        musicPlayerSettings: program settings from json file
+        prog_vers: program version album or song download mode
+        operatingSystem: string for computer operating system
+        searchFor: song to search for
+        requiredJsonSongKeys: required json song keys to tag mp3's with
+        album_properties: the album metadata from iTunes Search API
+        songs_in_album_props: song meta data for songs in an album from iTunes Search API
     Returns: None
     """
     for i, searchForSong in enumerate(searchList):
+        
         print(f" - Running program for song {i + 1} of {len(searchList)}: {searchForSong}")
-        iTunesPaths = iTunes.setItunesPaths(operatingSystem, searchFor=searchForSong)
+        iTunesPaths = iTunes.setItunesPaths(operatingSystem, searchFor=searchForSong, album_properties=album_properties)
         # '*.*' means anyfilename, anyfiletype
         # /*/* gets through artist, then album or itunes folder structure
         if iTunesPaths == None:
@@ -305,7 +317,7 @@ def run_for_songs(mic=None, r=None, searchList=[], autoDownload=None,
 
         if prog_vers == GlobalVariables.alb_mode_string:
             trackProperties = songs_in_album_props[i]
-            searchForSong = album_artist_list[i] + ' ' + searchForSong
+            searchForSong = trackProperties[GlobalVariables.artist_name] + ' ' + searchForSong
         # secret command for syncing with gDrive files.  Special feature!
         elif searchFor == '1=1':
             Editor.syncWithGDrive(gDriveFolderPath=musicPlayerSettings["gDrive"]["gDriveFolderPath"],
@@ -371,9 +383,11 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
                           GlobalVariables.artworkUrl100,
                           GlobalVariables.primary_genre_name,
                           GlobalVariables.track_num,
-                          GlobalVariables.track_count]
+                          GlobalVariables.track_count,
+                          GlobalVariables.disc_num,
+                          GlobalVariables.disc_count,
+                          GlobalVariables.release_date]
     requiredJsonAlbumKeys = [GlobalVariables.artist_name, GlobalVariables.collection_name, GlobalVariables.track_count, GlobalVariables.collection_id]
-    album_artist_list=[]
     songs_in_album_props=[]
 
     song_played = False # determines if song has been played by itunes.
@@ -382,6 +396,7 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
     autoDownload = False
     speechRecogOn = False
     debugMode = False
+    album_name = None # the name of an album to download
     listOfModes = ['auto','voice','debug', 'select', 'voice debug', 'auto debug']
 
 
@@ -451,6 +466,8 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
     while continueGettingSongs != 'no' :
         # initialize searchList to empty each iteration
         searchList = []
+        album_properties=None # album properties list default None
+
 
         if speechRecogOn == False:
             searchFor = input("Enter song(s) [song1; song2], 'instr' for instructions, 'set' for settings, 'alb' for albums: ")
@@ -463,15 +480,16 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
             elif searchFor == 'instr':
                 prog_vers = 'instr'
                 feature.view_instructions(os.path.join(pathToDirectory, 'Instructions.txt'))
+
             elif searchFor == GlobalVariables.alb_mode_string:
                 prog_vers = GlobalVariables.alb_mode_string
                 album_user_input = input("Enter artist and album name you wish to download. Type 406 to cancel: ")
                 if album_user_input == GlobalVariables.quit_string:
                     searchList = album_user_input # will quit out.
                 else:
-                    searchList, album_artist_list, songs_in_album_props = iTunesSearch.launch_album_mode(artist_album_string=album_user_input,
+                    searchList, album_properties, songs_in_album_props = iTunesSearch.launch_album_mode(artist_album_string=album_user_input,
                                                                             requiredJsonSongKeys=requiredJsonSongKeys,requiredJsonAlbumKeys=requiredJsonAlbumKeys,
-                                                                            autoDownload=False, prog_vers=prog_vers)
+                                                                            autoDownload=False, prog_vers=prog_vers, root_folder=pathToDirectory)
 
             else:
                 searchList = searchFor.split('; ')
@@ -503,11 +521,10 @@ def main(argv='', r=None, mic=None, pathToItunesAutoAdd={}, speechRecogOn=False,
 
         if searchList != GlobalVariables.quit_string: # if it is, skip whole song playing/searching process
             # Iterate the list of songs
-            print(command, searchList)
             run_for_songs(mic=mic, r=r, searchList=searchList, autoDownload=autoDownload,
                             pathToDirectory=pathToDirectory, speechRecogOn=speechRecogOn, debugMode=debugMode,command=command,
                             musicPlayerSettings=musicPlayerSettings, prog_vers=prog_vers, operatingSystem=operatingSystem, searchFor=searchFor,
-                            requiredJsonSongKeys=requiredJsonSongKeys, album_artist_list=album_artist_list,
+                            requiredJsonSongKeys=requiredJsonSongKeys, album_properties=album_properties,
                             songs_in_album_props=songs_in_album_props)
 
         if speechRecogOn == False:

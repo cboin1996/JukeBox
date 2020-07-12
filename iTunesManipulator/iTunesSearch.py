@@ -11,18 +11,30 @@ from Player import jukebox
 
 
 
-# prints list from top down so its more user friendly, items are pretty big
-def prettyPrinter(listOfDicts):
+def prettyPrinter(listOfDicts, ignore_keys=None, special_dict=None, special_prompt=None):
+    """
+    prints list from top down so its more user friendly, items are pretty big
+    params:
+        listOfDicts: list of dictionaries to print
+        ignore_keys: any keys not to print
+        special_dict: dict containing keys with a specific prompt with three formattable options
+        special_prompt: prompt to output for the special dict
+    """
     i = len(listOfDicts) - 1
     print("------------------------")
     for element in reversed(listOfDicts):
         print(i, end='')
         for k,v in element.items():
-            print('\t%s - %s' % (k, v))
-            # print(GlobalVariables.artist_name + " - " + tag[GlobalVariables.artist_name])
-            # print(GlobalVariables.collection_name + " - " + tag[GlobalVariables.collection_name])
-            # print(GlobalVariables.artworkUrl100 + " - " + tag[GlobalVariables.artworkUrl100])
-            # print(GlobalVariables.primary_genre_name + " - " + tag[GlobalVariables.primary_genre_name])
+            if special_dict is not None and ignore_keys is not None:
+                if k in special_dict.keys():
+                    print(special_prompt % (k, v, element[special_dict[k]]))
+                
+                elif k not in ignore_keys: # print the key and value if not in ignore_keys or special_dict
+                    print('\t%s - %s' % (k, v))
+                
+            else: # (default case) print the key and value
+                print('\t%s - %s' % (k, v))
+
         i -=1
         print("------------------------")
 
@@ -62,13 +74,16 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
 
     response = artworkSearcher(artworkUrl=dictionaryOfTags[GlobalVariables.artworkUrl100])
 
-    # Set all the tags for the mp3
+    # Set all the tags for the mp3, all without if statement were checked for existence.
     audiofile = eyed3.load(mp3Path)
     audiofile.tag.artist = dictionaryOfTags[GlobalVariables.artist_name]
     audiofile.tag.album = dictionaryOfTags[GlobalVariables.collection_name]
     audiofile.tag.title = dictionaryOfTags[GlobalVariables.track_name]
     audiofile.tag.genre = dictionaryOfTags[GlobalVariables.primary_genre_name]
     audiofile.tag.track_num = (dictionaryOfTags[GlobalVariables.track_num], dictionaryOfTags[GlobalVariables.track_count])
+    audiofile.tag.disc_num = (dictionaryOfTags[GlobalVariables.disc_num], dictionaryOfTags[GlobalVariables.disc_count])
+    audiofile.tag.recording_date = dictionaryOfTags[GlobalVariables.release_date]
+
     if GlobalVariables.collection_artist_name in dictionaryOfTags.keys(): # check if collection_artist_name exists before adding to tags
         audiofile.tag.album_artist = dictionaryOfTags[GlobalVariables.collection_artist_name]
 
@@ -84,7 +99,9 @@ def mp3ID3Tagger(mp3Path='', dictionaryOfTags={}):
 
 # entity is usually song for searching songs
 def parseItunesSearchApi(searchVariable='', limit=20, entity='', autoDownload=False, requiredJsonKeys=[], search=True, mode=''):
-    parsedResultsList = query_api(searchVariable, limit, entity, requiredJsonKeys, search)
+    parsedResultsList = query_api(searchVariable, limit, entity, requiredJsonKeys, 
+                                  search, optional_keys=[GlobalVariables.collection_artist_name], 
+                                  date_key=GlobalVariables.release_date)
 
     print('Searched for: %s' % (searchVariable))
     print('Select the number for the properties you want.. [%d to %d]'% (0, len(parsedResultsList)-1))
@@ -151,7 +168,14 @@ def remove_songs_selected(song_properties_list, requiredJsonKeys):
 
     return [song for i, song in enumerate(song_properties_list) if i not in user_input]
 
-def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJsonAlbumKeys={}, autoDownload=False, prog_vers=''):
+def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJsonAlbumKeys={}, autoDownload=False, prog_vers='', root_folder=None):
+    """
+    Returns:
+        searchList: The list of songs to search youtube for
+        album_props: the album metadata from iTunes Search API
+        songs_in_album_props: the songs in an album with properties from iTunes Search API
+    """
+    
     songs_in_album_props = None # will hold the songs in album properties in the new album feature
     album_props = None # will hold the album properties in the new album feature
     iTunesPaths = iTunes.setItunesPaths(operatingSystem=sys.platform, searchFor=artist_album_string)
@@ -161,8 +185,8 @@ def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJ
         songs_to_play = iTunesPaths['searchedSongResult']
     else:
         iTunesInstalled = False
-        song_paths_format = os.path.join(os.path.join(pathToDirectory, "dump"), "*.*")
-        songs_to_play = jukebox.find_songs(song_paths_format, searchForSong)
+        song_paths_format = os.path.join(root_folder, "dump", "*.*")
+        songs_to_play = jukebox.find_songs(song_paths_format, artist_album_string)
         
     song_played = jukebox.play_found_songs(songs_to_play, autoDownload=False, speechRecogOn=False,
                                             pathToDirectory=sys.path[0], iTunesInstalled=iTunesInstalled)
@@ -191,12 +215,11 @@ def launch_album_mode(artist_album_string='', requiredJsonSongKeys={}, requiredJ
                 continue
 
 
-    searchList = get_song_info(song_properties=songs_in_album_props, # get list of just songs to search from the album # 1 is artist key
-                               key=requiredJsonSongKeys[0]) # 0 is song key
-    album_artist_list = get_song_info(song_properties=songs_in_album_props, # get list of just songs to search from the album # 1 is artist key
-                                      key=requiredJsonSongKeys[1]) # 1 is artist key
+    searchList = get_song_info(song_properties=songs_in_album_props,
+                               key=GlobalVariables.track_name) # track_name is the song name from iTunes search API
+
     print("Conducting search for songs: %s" %(searchList))
-    return (searchList, album_artist_list, songs_in_album_props)
+    return (searchList, album_props, songs_in_album_props)
 
 def get_songs_in_album(searchVariable='',
                          limit=40, entity='', requiredJsonKeys={},
@@ -206,11 +229,12 @@ def get_songs_in_album(searchVariable='',
                                         limit=limit, entity='song',
                                         requiredJsonKeys=requiredJsonKeys,
                                         search=search,
-                                        optional_keys=[GlobalVariables.collection_artist_name])
+                                        optional_keys=[GlobalVariables.collection_artist_name],
+                                        date_key=GlobalVariables.release_date)
 
     return trackProperties
 
-def query_api(searchVariable, limit, entity, requiredJsonKeys, search, optional_keys=None):
+def query_api(searchVariable, limit, entity, requiredJsonKeys, search, optional_keys=None, date_key=None):
     """
     params:
         searchVariable:
@@ -234,21 +258,26 @@ def query_api(searchVariable, limit, entity, requiredJsonKeys, search, optional_
     if itunesResponse.status_code == 200:
         itunesJSONDict = json.loads(itunesResponse.content)
         for searchResult in itunesJSONDict['results']:
-            #print(searchResult)
             resultDictionary = {}
             if all(key in searchResult for key in requiredJsonKeys):
                 for key in requiredJsonKeys:
-                    resultDictionary[key] = searchResult[key]
+                    if key == date_key:
+                        year = searchResult[key].split('-')[0] # will grab the year from date formatted 2016-06-01
+                        resultDictionary[key] = year
+                    else:
+                        resultDictionary[key] = searchResult[key]
+
                 if optional_keys is not None:
                     for optional_key in optional_keys:
                         if optional_key in searchResult.keys():
                             resultDictionary[optional_key] = searchResult[optional_key]
-
                 parsedResultsList.append(resultDictionary)
             else:
                 print("Skipping song data as result lacked either a name, artist, album, artwork or genre in the API")
 
-        prettyPrinter(parsedResultsList)
+        prettyPrinter(parsedResultsList, ignore_keys=GlobalVariables.dont_print_keys,
+                                        special_dict=GlobalVariables.special_print_dict,
+                                        special_prompt=GlobalVariables.special_prompt)
     return parsedResultsList
 
 
