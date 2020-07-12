@@ -11,18 +11,30 @@ from Player import jukebox
 
 
 
-# prints list from top down so its more user friendly, items are pretty big
-def prettyPrinter(listOfDicts):
+def prettyPrinter(listOfDicts, ignore_keys=None, special_dict=None, special_prompt=None):
+    """
+    prints list from top down so its more user friendly, items are pretty big
+    params:
+        listOfDicts: list of dictionaries to print
+        ignore_keys: any keys not to print
+        special_dict: dict containing keys with a specific prompt with three formattable options
+        special_prompt: prompt to output for the special dict
+    """
     i = len(listOfDicts) - 1
     print("------------------------")
     for element in reversed(listOfDicts):
         print(i, end='')
         for k,v in element.items():
-            print('\t%s - %s' % (k, v))
-            # print(GlobalVariables.artist_name + " - " + tag[GlobalVariables.artist_name])
-            # print(GlobalVariables.collection_name + " - " + tag[GlobalVariables.collection_name])
-            # print(GlobalVariables.artworkUrl100 + " - " + tag[GlobalVariables.artworkUrl100])
-            # print(GlobalVariables.primary_genre_name + " - " + tag[GlobalVariables.primary_genre_name])
+            if special_dict is not None and ignore_keys is not None:
+                if k in special_dict.keys():
+                    print(special_prompt % (k, v, element[special_dict[k]]))
+                
+                elif k not in ignore_keys: # print the key and value if not in ignore_keys or special_dict
+                    print('\t%s - %s' % (k, v))
+                
+            else: # (default case) print the key and value
+                print('\t%s - %s' % (k, v))
+
         i -=1
         print("------------------------")
 
@@ -249,7 +261,7 @@ def query_api(searchVariable, limit, entity, requiredJsonKeys, search, optional_
             resultDictionary = {}
             if all(key in searchResult for key in requiredJsonKeys):
                 for key in requiredJsonKeys:
-                    if key == GlobalVariables.release_date:
+                    if key == date_key:
                         year = searchResult[key].split('-')[0] # will grab the year from date formatted 2016-06-01
                         resultDictionary[key] = year
                     else:
@@ -263,7 +275,9 @@ def query_api(searchVariable, limit, entity, requiredJsonKeys, search, optional_
             else:
                 print("Skipping song data as result lacked either a name, artist, album, artwork or genre in the API")
 
-        prettyPrinter(parsedResultsList)
+        prettyPrinter(parsedResultsList, ignore_keys=GlobalVariables.dont_print_keys,
+                                        special_dict=GlobalVariables.special_print_dict,
+                                        special_prompt=GlobalVariables.special_prompt)
     return parsedResultsList
 
 
