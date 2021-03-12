@@ -9,7 +9,7 @@ import tarfile
 def getUrlForOS(urlList, OS):
     chromeDriverStorageLink = 'https://chromedriver.storage.googleapis.com'
     if OS == 'darwin':
-        stringToQueryFor = 'mac'
+        stringToQueryFor = 'mac64.zip'
         OSName = 'MacOS'
     elif OS == "win32":
         stringToQueryFor = 'win'
