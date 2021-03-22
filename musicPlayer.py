@@ -167,11 +167,12 @@ def run_download(microPhone,
         if trackProperties != None:
             properSongName = iTunesSearch.mp3ID3Tagger(mp3Path=youtubeResponseObject['songPath'],
                                                         dictionaryOfTags=trackProperties)
-            proper_song_path = os.path.join(localDumpFolder, properSongName + '.mp3') # renames the song's filename to match the mp3 tag
-            os.rename(youtubeResponseObject['songPath'], proper_song_path)
+            formatted_song_path = os.path.join(localDumpFolder, properSongName + '.mp3') # renames the song's filename to match the mp3 tag
+            os.rename(youtubeResponseObject['songPath'], formatted_song_path)
 
         else:
             print('Skipping tagging process (No itunes properties selected)')
+            formatted_song_path = youtubeResponseObject['songPath']
 
         if iTunesInstalled == True:
 
@@ -218,18 +219,18 @@ def run_download(microPhone,
                 p.stop()
 
             if userInput == 's':
-                formattedSongName = formatFileName(pathToFile=proper_song_path, sliceKey=".mp3", stringToAdd="_complt")
+                formattedSongName = formatFileName(pathToFile=formatted_song_path, sliceKey=".mp3", stringToAdd="_complt")
                 shutil.move(formattedSongName, iTunesPaths['autoAdd'])
                 print("Moved your file to iTunes.")
 
             elif userInput == 'g' and musicPlayerSettings['gDrive']['folder_id'] != "":
                 p.stop()
-                gDrive.save_song(musicPlayerSettings['gDrive'], proper_song_path.split(os.sep)[-1], proper_song_path)
+                gDrive.save_song(musicPlayerSettings['gDrive'], formatted_song_path.split(os.sep)[-1], formatted_song_path)
 
             else:
                 print("Saved your file locally.")
                 p.stop()
-                formattedSongName = formatFileName(pathToFile=proper_song_path, sliceKey=".mp3", stringToAdd="_complt")
+                formattedSongName = formatFileName(pathToFile=formatted_song_path, sliceKey=".mp3", stringToAdd="_complt")
 
             return
 
@@ -242,7 +243,7 @@ def run_download(microPhone,
                     if user_input == 'g':
                         p.stop()
 
-                        gDrive.save_song(musicPlayerSettings['gDrive'], proper_song_path.split(os.sep)[-1], proper_song_path)
+                        gDrive.save_song(musicPlayerSettings['gDrive'], formatted_song_path.split(os.sep)[-1], formatted_song_path)
                         return
                 else:
                     input("Type anything to save locally.")
@@ -261,7 +262,7 @@ def run_download(microPhone,
             else:
                 print("Saving locally. Whether you like it or not.")
             p.stop()
-            formattedSongName = formatFileName(pathToFile=proper_song_path, sliceKey=".mp3", stringToAdd="_complt")
+            formattedSongName = formatFileName(pathToFile=formatted_song_path, sliceKey=".mp3", stringToAdd="_complt")
             return
 
     if youtubeResponseObject['error'] == 'youMP3fail':

@@ -5,9 +5,11 @@ youtubetomp3.egg-info
 dist
 build
 venv
+.vscode
 # Do not track with file extension:
 .pyc
 # Do not track these files:
+__init__.py
 .DS_Store
 test.py
 settings.json
