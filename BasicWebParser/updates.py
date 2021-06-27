@@ -89,12 +89,13 @@ def chromedr_installed():
 def chromeDriver(url, modify_path=False):
     retryCount = 0
     session = HTMLSession()
-    response = requests.get(url)
+    response = session.get(url)
+    response.html.render(timeout=0, sleep=2)
     soup = BeautifulSoup(response.text, 'html.parser')
 
     # latest stable release found with stable in span tag.  Get the hyperlink nextTime
     # and then open up that link to perform download.
-    tag = soup.find('span', string=re.compile('stable'))
+    tag = soup.find(text=lambda t: "stable" in t)
     download_link = tag.findNext('a').get('href')
     print("Gathered the latest download version at the link: ", download_link)
     response = session.get(download_link)
