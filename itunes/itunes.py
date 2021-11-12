@@ -3,12 +3,12 @@ import vlc
 import time
 import random
 import glob
-from Youtube import Youtube
-from speechPrompts import computer
-from Player import jukebox
-from iTunesManipulator import iTunesSearch
-from Features import tools
-import GlobalVariables
+from youtube import youtube
+from speechprompts import computer
+from player import jukebox
+from itunes import search
+from features import tools
+import globalvariables
 import json
 def setItunesPaths(operatingSystem, iTunesPaths={'autoAdd':'', 'searchedSongResult':[]}, searchFor='', album_properties=None):
     """

@@ -1,7 +1,7 @@
 import json
 import requests
 from bs4 import BeautifulSoup
-from BasicWebParser import DataPrinter
+from webparse import printer
 #websites are stored in JSON file.
 #'loginURL' is the key to access URLs
 class WebLoginandParse:
@@ -14,20 +14,20 @@ class WebLoginandParse:
     # headers are the headers used for requests
     # vault are the websites along with all the data for each
 
-    def __init__(self, webData, website):
+    def __init__(self, web_data, website):
 
-        self.webData = webData
+        self.web_data = web_data
         self.website = website
         self.credentials = {}
-        self.formInputs = {}
+        self.form_inputs = {}
         self.urls = {}
         self.headers = {}
         self.vault = {}
-        self.currentUrl = ""
+        self.current_url = ""
 
         #split json tree into websites dictionary and headers dictionary
-        self.vault = self.webData['websites'].copy()
-        self.headers = self.webData['headers'].copy()
+        self.vault = self.web_data['websites'].copy()
+        self.headers = self.web_data['headers'].copy()
 
         #parseing the json into somewhat useful stuff
         for k, v in self.vault[self.website].items():
@@ -43,121 +43,121 @@ class WebLoginandParse:
 
 
         print("Here are the details for " + self.website)
-        DataPrinter.PrintDictionaryKeysAndValues(self.credentials)
-        DataPrinter.PrintDictionaryKeysAndValues(self.urls)
+        printer.print_dict_key_vals(self.credentials)
+        printer.print_dict_key_vals(self.urls)
 
         #initialize a session for this class.. to be used for all requests
         self.s = requests.session()
 
     #func: get the tags off of websites
     #input: web session that keeps the cookies from a login, url name from user selection or JSON dictionary
-    def getParseTagsAndAttributes(self, urlIdentifier):
-        tagList = []
-        pageResponse = self.s.get(urlIdentifier)
-        page = BeautifulSoup(pageResponse.text, 'html.parser')
+    def get_parse_tags_and_attributes(self, url_identifer):
+        tag_list = []
+        page_response = self.s.get(url_identifer)
+        page = BeautifulSoup(page_response.text, 'html.parser')
 
-        print("Here are the tags on this website..", pageResponse.url, pageResponse)
+        print("Here are the tags on this website..", page_response.url, page_response)
 
         for tag in page.find_all(True):
-            if tag.name not in tagList:
+            if tag.name not in tag_list:
                 print("  -  ", tag.name)
             #tagList needs not in the condition so all tags are Grabbed
             #the print is in the if for pretty printing only.
-            tagList.append(tag.name)
+            tag_list.append(tag.name)
 
-        userSelection = input('Enter which tags would you like to see.. separated by a comma: ')
-        listOfTags = userSelection.replace(' ', '').split(',')
+        user_selection = input('Enter which tags would you like to see.. separated by a comma: ')
+        list_of_tags = user_selection.replace(' ', '').split(',')
 
         try:
-            for tag in listOfTags:
-                assert(tag in tagList), "tag selected not in list.. try again"
+            for tag in list_of_tags:
+                assert(tag in tag_list), "tag selected not in list.. try again"
 
         except AssertionError as error:
             print(error)
-            self.getParseTagsAndAttributes(session)
+            self.get_parse_tags_and_attributes(session)
 
-        return listOfTags
+        return list_of_tags
 
 
-    def displayTags(self, tags, pageUrl):
-        allTags = []
-        pageResponse = self.s.get(pageUrl)
-        pageContent = BeautifulSoup(pageResponse.text, 'html.parser')
+    def display_tags(self, tags, pageUrl):
+        all_tags = []
+        page_response = self.s.get(pageUrl)
+        page_content = BeautifulSoup(page_response.text, 'html.parser')
         print("You wanted to view these tags: ")
-        DataPrinter.PrintList(tags)
+        printer.print_list(tags)
 
         for tag in tags:
             #find_all returns list of tags
-            allTags.append(pageContent.find_all(tag))
+            all_tags.append(page_content.find_all(tag))
 
-        for listOfTags in allTags:
+        for listOfTags in all_tags:
             i = 0
             print("Heres what I found for: ", tags[0])
-            DataPrinter.PrintList(listOfTags)
+            printer.print_list(listOfTags)
 
-            ++i
+            i +=1
             #print(page)
 
     # By default, have user input on for this function.  In automated scripts turn it off, and pass in payload
-    def getFormInputs(self, formUrl, userInputOn=True, payload={}):
+    def get_form_inputs(self, form_url, user_input_on=True, payload={}):
         # initialize formInputs to be empty each request
-        self.formInputs = {}
+        self.form_inputs = {}
 
-        formResponse = self.s.get(formUrl, headers=self.headers)
-        print("Grabbed form page: ", formResponse.url, formResponse)
+        form_response = self.s.get(form_url, headers=self.headers)
+        print("Grabbed form page: ", form_response.url, form_response)
         # incase you want to parse through the login page.. see below comment
-        formPageText = BeautifulSoup(formResponse.text, 'html.parser')
+        form_page_text = BeautifulSoup(form_response.text, 'html.parser')
 
         # <input> are the needed fields in the login form.. csrf token updates per each request
-        inputs = formPageText.find_all('input')
+        inputs = form_page_text.find_all('input')
         # adds the csrf middleware tokens to login details.. usually stored
         # in <name> and <value> html tags
         for inputfield in inputs:
             key = inputfield.get('name')
             value = inputfield.get('value')
-            self.formInputs.update({key : value})
+            self.form_inputs.update({key : value})
 
         # remove None type attributes
         try:
-            self.formInputs.pop(None)
+            self.form_inputs.pop(None)
         except KeyError:
             print("No nonetype attributes to be removed.")
 
         print("Here are the values for inputs I found")
-        DataPrinter.PrintDictionaryKeysAndValues(self.formInputs)
+        printer.print_dict_key_vals(self.form_inputs)
 
-        if userInputOn == True:
+        if user_input_on == True:
             userInput = input("Do you wish to update any of these inputs further? (y/n): ")
             if userInput == "y":
                 forminputSelection = str(input("Enter the input and its value like (input:value): "))
 
                 forminputSelection = forminputSelection.split(':')
-                self.formInputs.update({forminputSelection[0]:forminputSelection[1]})
+                self.form_inputs.update({forminputSelection[0]:forminputSelection[1]})
                 print("Value updated.")
-                DataPrinter.PrintDictionaryKeysAndValues(self.formInputs)
+                printer.print_dict_key_vals(self.form_inputs)
 
         # this statement is for the programmer who wants to skip user input but modify
         # a name attribute
         else:
             print("Updated to your liking sir: ")
-            self.formInputs.update(payload)
-            DataPrinter.PrintDictionaryKeysAndValues(self.formInputs)
+            self.form_inputs.update(payload)
+            printer.print_dict_key_vals(self.form_inputs)
     # func: perform a post onto a website form (serviceUrl)
     #      by inputting data to the (formUrl)
     # formType sets the type of form post.. default is post
     # formType search performs a get request in a search bar on a site
 
-    def performLogin(self, formUrl, serviceUrl):
+    def perform_login(self, formUrl, serviceUrl):
 
-        self.getFormInputs(formUrl)
+        self.get_form_inputs(formUrl)
         ## DEBUG: get this exception to work without wifi -- expand these exceptions
         try:
             # updates the formInputs to contain the credentials of the user
-            self.formInputs.update(self.credentials)
+            self.form_inputs.update(self.credentials)
             print("Here are the inputs with your credentials... ")
-            DataPrinter.PrintDictionaryKeysAndValues(self.formInputs)
+            printer.print_dict_key_vals(self.form_inputs)
             print("Entering " + serviceUrl + "... ")
-            response = self.s.post(serviceUrl, data=self.formInputs, headers=self.headers)
+            response = self.s.post(serviceUrl, data=self.form_inputs, headers=self.headers)
 
             # # DEBUG: for uploading files
             # if formType == 'FileUpload':
@@ -172,32 +172,32 @@ class WebLoginandParse:
             print("Form entry failed.. ", e)
             return
 
-    def performPost(self, formUrl, serviceUrl, payload, userInputOn=False):
+    def perform_post(self, form_url, service_url, payload, user_input_on=False):
 
-        self.getFormInputs(formUrl, userInputOn, payload)
-        print("Entering " + serviceUrl + "... ")
-        response = self.s.post(serviceUrl, data=self.formInputs, headers=self.headers)
+        self.get_form_inputs(form_url, user_input_on, payload)
+        print("Entering " + service_url + "... ")
+        response = self.s.post(service_url, data=self.form_inputs, headers=self.headers)
 
         return response
 
     # Enter into a search form for a website, passing in formInputs gathered by formUrl
-    def enterSearchForm(self, formUrl, searchUrl, payload, userInputOn=False):
+    def enter_search_form(self, form_url, search_url, payload, user_input_on=False):
 
-        self.getFormInputs(formUrl, userInputOn, payload)
+        self.get_form_inputs(form_url, user_input_on, payload)
 
-        response = self.s.get(searchUrl, params=self.formInputs, headers=self.headers)
+        response = self.s.get(search_url, params=self.form_inputs, headers=self.headers)
         print("Opened: " + response.url)
 
         return response
 
-    def getUrls(self, pageResponse):
+    def get_urls(self, page_response):
 
-        pageText = BeautifulSoup(pageResponse.text, 'html.parser')
+        page_text = BeautifulSoup(page_response.text, 'html.parser')
 
-        for link in pageText.find_all('a'):
+        for link in page_text.find_all('a'):
             print(link)
 
-        print("Got all links from: ", pageResponse.url)
+        print("Got all links from: ", page_response.url)
 
 
 

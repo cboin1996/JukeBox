@@ -1,7 +1,7 @@
 import vlc
 import os
 import time
-import GlobalVariables
+import globalvariables
 
 """
 Outputs audio prompt to user based on the computer OS
@@ -24,7 +24,7 @@ args: speech text from text to speech, boolean option to alter return, key word 
 Returns: Tuple with command and transcribed speech from text
 """
 def interpret_command(speech_text, only_command=False, key_word=' '):
-    list_of_commands = GlobalVariables.list_of_speech_commands
+    list_of_commands = globalvariables.list_of_speech_commands
 
     if key_word != ' ':
         if key_word == speech_text[0].lower() and only_command==True: #shortcut -- skip the hello
@@ -50,7 +50,7 @@ Returns: a tuple with an action and the commmand
 def interpret_action(speech_text):
 
 
-    for action in GlobalVariables.player_actions:
+    for action in globalvariables.player_actions:
         if action == 'volume':
             if '%' in speech_text[0]: # if no percent given return no volume
                 volume = int(speech_text[0].split(' ')[1].replace('%', ''))
@@ -60,5 +60,5 @@ def interpret_action(speech_text):
             return action,volume
         elif action == speech_text[0].split(' ')[0]: #shortcut -- skip the hello
             return speech_text[0].split(' ')[0], None
-    if speech_text[0] not in GlobalVariables.player_actions:
+    if speech_text[0] not in globalvariables.player_actions:
         return speech_text[0].split(' ')[0], None

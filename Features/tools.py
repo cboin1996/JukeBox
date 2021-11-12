@@ -1,5 +1,5 @@
 import os, sys
-import GlobalVariables
+import globalvariables
 if sys.platform != 'win32':
     import termios, tty, select, atexit
     from select import select
@@ -17,10 +17,10 @@ def format_input_to_list(input_string='', list_to_compare_to=[], mode=''):
             continue
         elif user_input == 'ag':
             return 'ag'
-        elif user_input == GlobalVariables.quit_string:
-            return GlobalVariables.quit_string
-        elif user_input == GlobalVariables.perf_search_string:
-            return GlobalVariables.perf_search_string
+        elif user_input == globalvariables.quit_string:
+            return globalvariables.quit_string
+        elif user_input == globalvariables.perf_search_string:
+            return globalvariables.perf_search_string
         elif user_input == 'sh':
             return 'sh'
         elif user_input == 'pl':
@@ -54,7 +54,7 @@ def format_input_to_int(input_prompt, mask, low_bound, high_bound):
         string = input(input_prompt)
 
         try:
-            if string == GlobalVariables.quit_string:
+            if string == globalvariables.quit_string:
                 return 406
             if string == '405' and mask == 'save_no_prop':
                 return 405
@@ -74,9 +74,9 @@ def choose_items(props_lyst, input_string):
     user_input = format_input_to_list(input_string=input_string, list_to_compare_to=props_lyst, mode='choose')
     if user_input == None:
         return None
-    elif user_input == GlobalVariables.quit_string:
+    elif user_input == globalvariables.quit_string:
         return user_input
-    elif user_input == GlobalVariables.perf_search_string:
+    elif user_input == globalvariables.perf_search_string:
         return user_input
     elif user_input == 'sh':
         return user_input
@@ -189,5 +189,5 @@ def check_for_speech_keyboard_hit(player, OS=sys.platform, state=3, file_index=0
     else:
         return None # user made no valid choice
 
-def stripFileForSpeech(file_name):
+def strip_file_for_speech(file_name):
     return file_name.replace('.mp3','').replace('&', 'and').replace('(', '').replace(')', '').replace("'", '').replace('[', '').replace(']', '')
