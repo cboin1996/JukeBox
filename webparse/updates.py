@@ -6,7 +6,7 @@ import tqdm
 import os, shutil, stat, sys
 import zipfile
 import tarfile 
-
+import globalvariables
 
 def check_for_updates() -> bool:
     """Check for updates. 
@@ -21,7 +21,7 @@ def check_for_updates() -> bool:
     # initialize chromedriver
     if not chromedr_installed():
         print("You don't have chromedriver installed. Let me take care of that for you :)")
-        chromedriver_folder = updates.chrome_driver(GlobalVariables.chromedriver_update_url, modify_path=True)
+        chromedriver_folder = chrome_driver(globalvariables.chromedriver_update_url, modify_path=True)
         chrome_needed_instlld = True
 
     # initialize ffmpeg

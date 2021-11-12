@@ -85,16 +85,8 @@ def format_filename(path_to_file, slice_key, string_to_add):
     os.rename(path_to_file, formatted_song_name)
     return formatted_song_name
 
-def save_song_with_itunes_opts(auto_download_enabled, 
-                            music_player_settings, 
-                            speech_recog_enabled, 
-                            microphone, 
-                            recognizer, 
-                            base_path, 
-                            itunes_paths, 
-                            song_path, 
-                            formatted_song_path,
-                            vlc_player):
+def get_user_input_for_saving(auto_download_enabled, music_player_settings, speech_recog_enabled, 
+                              vlc_player, microphone, recognizer, base_path):
     # autoDownload check
     if auto_download_enabled == False:
         if music_player_settings['gDrive']['folder_id'] != "":
@@ -133,6 +125,21 @@ def save_song_with_itunes_opts(auto_download_enabled,
         print("Saving to iTunes.. whether you like it or not.")
         user_input = 's'
 
+    return user_input
+
+def save_song_with_itunes_opts(auto_download_enabled, 
+                            music_player_settings, 
+                            speech_recog_enabled, 
+                            microphone, 
+                            recognizer, 
+                            base_path, 
+                            itunes_paths, 
+                            song_path, 
+                            formatted_song_path,
+                            vlc_player):
+
+    user_input = get_user_input_for_saving(auto_download_enabled, music_player_settings, speech_recog_enabled, 
+                              vlc_player, microphone, recognizer, base_path)
     vlc_player.stop()
     # wait till player stops before renaming song to proper formatted name
     os.rename(song_path, formatted_song_path)
@@ -371,15 +378,62 @@ def run_for_songs(microphone=None, recognizer=None, searchlist=[], auto_download
 
         print('=----------Done Cycle--------=')
 
-# 'auto' argv will get first video.  Manual will allow user to select video.. default behaviour
-# pass argv to youtubeSongDownload
-"""
-Main function that runs to launch the music player program
-params: command line params, speech recognizer object, microphone object, iTunes paths to auto add folder and songs dict,
-      speech recognizer mode on or not, debug mode on or not
-Returns: None
-"""
+def main_menu(speech_recog_enabled, list_of_modes, path_to_settings, base_path, required_json_song_keys, required_json_album_keys, continue_getting_songs, microphone, recognizer):
+    command = ''
+    if not speech_recog_enabled:
+        search_for = input("Enter song(s) [song1; song2], 'instr' for instructions, 'set' for settings, 'alb' for albums: ")
+        if search_for in list_of_modes: # will be used to determine if mode chaneg has been selected
+            command = search_for
+
+        if search_for == 'set':
+            prog_vers = 'set'
+            feature.editSettings(pathToSettings=path_to_settings)
+        elif search_for == 'instr':
+            prog_vers = 'instr'
+            feature.view_instructions(os.path.join(base_path, 'Instructions.txt'))
+
+        elif search_for == globalvariables.alb_mode_string:
+            prog_vers = globalvariables.alb_mode_string
+            album_user_input = input("Enter artist and album name you wish to download. Type 406 to cancel: ")
+            if album_user_input == globalvariables.quit_string:
+                search_list = album_user_input # will quit out.
+            else:
+                search_list, album_properties, songs_in_album_props = search.launch_album_mode(artist_album_string=album_user_input,
+                                                                        required_json_song_keys=required_json_song_keys,required_json_album_keys=required_json_album_keys,
+                                                                        auto_download_enabled=False, prog_vers=prog_vers, root_folder=base_path)
+
+        else:
+            search_list = search_for.split('; ')
+            prog_vers = ''
+
+    else: # Speech recognition edition
+        if continue_getting_songs == "yes": # idly listen if user say's yes otherwise use searchList from end of loop
+            while True:
+                raw_speech_response = speechanalysis.main(microphone, recognizer, talking=False, phrase_time_limit=4)
+                command, search_list = computer.interpret_command(raw_speech_response, only_command=False)
+
+                if command == 'quit':
+                    return
+                if command != None: # break loop if successful transcription occurs
+                    break
+
+
+        else: # get the next songs from previous iteration of speech
+            search_list = list(continue_getting_songs)
+    
+    return command, search_list, search_for
+
 def main(argv='', recognizer=None, microphone=None, path_to_itunes_auto_add_folder={}, speech_recog_enabled=False, debug_mode = False):
+    """Main function for launch.
+
+    Args:
+        argv (str, optional): command line arguments. Defaults to ''.
+        recognizer ([type], optional): the recognizer object for speech recognition. Defaults to None.
+        microphone ([type], optional): the microphone object. Defaults to None.
+        path_to_itunes_auto_add_folder (dict, optional): the path to itunes auto add folder. Defaults to {}.
+        speech_recog_enabled (bool, optional): whether to use speech recognition or not. Defaults to False.
+        debug_mode (bool, optional): whether to enter in debug mode. Defaults to False.
+    """
     auto_download_enabled = False
     search_list = []
     required_json_song_keys = [globalvariables.track_name,
@@ -433,7 +487,7 @@ def main(argv='', recognizer=None, microphone=None, path_to_itunes_auto_add_fold
         argv.pop(0)
         auto_download_enabled, speech_recog_enabled, debug_mode = feature.determine_mode(argv)
     # initialize for speechRecogOn
-    if speech_recog_enabled == True: # TODO CHANGE BACK
+    if speech_recog_enabled: 
         microphone = sr.Microphone()
         recognizer = sr.Recognizer()
 
@@ -442,53 +496,19 @@ def main(argv='', recognizer=None, microphone=None, path_to_itunes_auto_add_fold
 
     continue_getting_songs = 'yes' # initialize to yes in order to trigger idle listening
     search_for = ''
-
     while continue_getting_songs != 'no' :
         # initialize searchList to empty each iteration
         search_list = []
         album_properties=None # album properties list default None
 
-
-        if speech_recog_enabled == False:
-            search_for = input("Enter song(s) [song1; song2], 'instr' for instructions, 'set' for settings, 'alb' for albums: ")
-            if search_for in list_of_modes: # will be used to determine if mode chaneg has been selected
-                command = search_for
-
-            if search_for == 'set':
-                prog_vers = 'set'
-                feature.editSettings(pathToSettings=path_to_settings)
-            elif search_for == 'instr':
-                prog_vers = 'instr'
-                feature.view_instructions(os.path.join(base_path, 'Instructions.txt'))
-
-            elif search_for == globalvariables.alb_mode_string:
-                prog_vers = globalvariables.alb_mode_string
-                album_user_input = input("Enter artist and album name you wish to download. Type 406 to cancel: ")
-                if album_user_input == globalvariables.quit_string:
-                    search_list = album_user_input # will quit out.
-                else:
-                    search_list, album_properties, songs_in_album_props = search.launch_album_mode(artist_album_string=album_user_input,
-                                                                            required_json_song_keys=required_json_song_keys,required_json_album_keys=required_json_album_keys,
-                                                                            auto_download_enabled=False, prog_vers=prog_vers, root_folder=base_path)
-
-            else:
-                search_list = search_for.split('; ')
-                prog_vers = ''
-
-        else: # Speech recognition edition
-            if continue_getting_songs == "yes": # idly listen if user say's yes otherwise use searchList from end of loop
-                while True:
-                    raw_speech_response = speechanalysis.main(microphone, recognizer, talking=False, phrase_time_limit=4)
-                    command, search_list = computer.interpret_command(raw_speech_response, only_command=False)
-
-                    if command == 'quit':
-                        return
-                    if command != None: # break loop if successful transcription occurs
-                        break
-
-
-            else: # get the next songs from previous iteration of speech
-                search_list = list(continue_getting_songs)
+        command, search_list, search_for = main_menu(speech_recog_enabled,
+                                            list_of_modes,
+                                            path_to_settings,
+                                            base_path,
+                                            required_json_song_keys,
+                                            required_json_album_keys,
+                                            continue_getting_songs,
+                                            microphone, recognizer)
 
         if command in list_of_modes: # determine which version to be in.
             command = command.split(' ')
