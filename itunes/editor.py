@@ -1,4 +1,4 @@
-from iTunesManipulator import iTunesSearch
+from itunes import search
 import os
 import shutil
 import glob
@@ -18,28 +18,28 @@ import glob
         #             print('Im sorry this is for machines with iTunes only')
         #
         #     continueEditing = input('Want to go again? (yes/no): ')
-def syncWithGDrive(gDriveFolderPath, iTunesAutoAddFolderPath):
+def sync_with_gdrive(gdrive_folder_path, itunes_auto_add_folder_path):
     print("--GDRIVE SECRET COMMAND--")
-    if os.path.isdir(gDriveFolderPath):
-        music_files = [file for file in os.listdir(gDriveFolderPath) if ".DS" not in file]
+    if os.path.isdir(gdrive_folder_path):
+        music_files = [file for file in os.listdir(gdrive_folder_path) if ".DS" not in file]
         if len(music_files) == 0:
             return print("No Files in folder.")
         print("Files to move are: %s" % (music_files))
         for file in music_files:
-            fileAbsPath = os.path.join(gDriveFolderPath, file)
-            fileDest = os.path.join(iTunesAutoAddFolderPath, file)
-            shutil.move(fileAbsPath, fileDest)
+            file_absolute_path = os.path.join(gdrive_folder_path, file)
+            file_destination = os.path.join(itunes_auto_add_folder_path, file)
+            shutil.move(file_absolute_path, file_destination)
             print("Moved to iTunes: %s" % (file))
         return
     else:
         return print("No google drive installed! Check your settings.json file for correct path to gDrive folder.")
 
-def songPropertyEdit(iTunesPaths, searchForSong='', autoDownload=False):
+def song_property_edit(itunes_paths, search_for_song='', auto_download_enabled=False):
     artists = [] # will hold list of artists
-    songNames = [] # will hold list of songNames
+    song_names = [] # will hold list of songNames
 
 
-    if len(iTunesPaths['searchedSongResult']) == 0:
+    if len(itunes_paths['searchedSongResult']) == 0:
         print("File not found in iTunes Library")
 
     else:
@@ -48,29 +48,29 @@ def songPropertyEdit(iTunesPaths, searchForSong='', autoDownload=False):
         # plays song immediatly, so return after this executes
         print("Here are song(s) in your library matching your search: ")
         i = 0
-        for songPath in iTunesPaths['searchedSongResult']:
-            songName = songPath.split(os.sep)
-            artists.append(songName[len(songName)-3])
-            songNames.append(songName[len(songName)-1])
-            print('  %d \t- %s: %s' % (i, artists[i], songNames[i]))
+        for song_path in itunes_paths['searchedSongResult']:
+            song_name = song_path.split(os.sep)
+            artists.append(song_name[len(song_name)-3])
+            song_names.append(song_name[len(song_name)-1])
+            print('  %d \t- %s: %s' % (i, artists[i], song_names[i]))
             i += 1
 
-        songSelection = int(input('Please enter the song you wish to reformat: '))
-        while songSelection not in range(0, len(iTunesPaths['searchedSongResult'])):
-            songSelection = int(input('Invalid Input. Try Again'))
+        song_selection = int(input('Please enter the song you wish to reformat: '))
+        while song_selection not in range(0, len(itunes_paths['searchedSongResult'])):
+            song_selection = int(input('Invalid Input. Try Again'))
 
-        print('You chose: ', songSelection)
+        print('You chose: ', song_selection)
 
-        trackProperties = iTunesSearch.parseItunesSearchApi(searchVariable=searchForSong,
+        track_properties = search.parse_itunes_search_api(search_variable=search_for_song,
                                                             limit=10, entity='song',
-                                                            autoDownload=autoDownload)
+                                                            auto_download_enabled=auto_download_enabled)
 
         # parseItunesSearchApi() throws None return type if the user selects no properties
-        if trackProperties != None:
-            properSongName = iTunesSearch.mp3ID3Tagger(mp3Path=iTunesPaths['searchedSongResult'][songSelection],
-                                                        dictionaryOfTags=trackProperties)
+        if track_properties != None:
+            proper_song_name = search.mp3ID3Tagger(mp3_path=itunes_paths['searchedSongResult'][song_selection],
+                                                        dictionary_of_tags=track_properties)
 
-            shutil.move(iTunesPaths['searchedSongResult'][songSelection], iTunesPaths['autoAdd'])
+            shutil.move(itunes_paths['searchedSongResult'][song_selection], itunes_paths['autoAdd'])
 
 
 
@@ -78,4 +78,3 @@ def songPropertyEdit(iTunesPaths, searchForSong='', autoDownload=False):
         else:
             print('Skipping tagging process (No itunes properties selected)')
 
-    return

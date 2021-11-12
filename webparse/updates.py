@@ -6,69 +6,101 @@ import tqdm
 import os, shutil, stat, sys
 import zipfile
 import tarfile 
-def getUrlForOS(urlList, OS):
-    chromeDriverStorageLink = 'https://chromedriver.storage.googleapis.com'
-    if OS == 'darwin':
-        stringToQueryFor = 'mac64.zip'
-        OSName = 'MacOS'
-    elif OS == "win32":
-        stringToQueryFor = 'win'
-        OSName = 'Windows'
-    else:
-        stringToQueryFor = 'lin'
-        OSName = 'Linux'
-    for url in urlList:
-        if stringToQueryFor in url:
-            downloadLink = chromeDriverStorageLink+url
-            print('Built your download link at: %s for %s' % (downloadLink, OSName))
-    return downloadLink
+import globalvariables
 
-def download(downloadResponse, chunk_size, filePath, pBarDescription):
-    file_size = downloadResponse.headers.get('Content-Length')
-    with open(filePath, 'wb') as fp:
+def check_for_updates() -> bool:
+    """Check for updates. 
+
+    Returns:
+        bool: true if a restart is required
+    """
+    chrome_needed_instlld = False
+    ffm_needed_instlld = False
+    chromedriver_folder = ""
+    ffmpeg_folder = ""
+    # initialize chromedriver
+    if not chromedr_installed():
+        print("You don't have chromedriver installed. Let me take care of that for you :)")
+        chromedriver_folder = chrome_driver(globalvariables.chromedriver_update_url, modify_path=True)
+        chrome_needed_instlld = True
+
+    # initialize ffmpeg
+    if not ffmpeg_installed():
+        print("You don't have ffmpeg installed. Let me take care of that as well I guess..")
+        ffmpeg_folder = ffmpeg("https://ffmpeg.zeranoe.com/builds/", modify_path=True)
+        ffm_needed_instlld = True
+
+    if chrome_needed_instlld or ffm_needed_instlld:
+        if sys.platform == 'win32':
+            modify_path(chrome_needed_instlld, chromedriver_folder, ffm_needed_instlld, ffmpeg_folder)
+            print("Please restart cmd now for the software changes to take effect.")
+            return True
+    
+    return False
+
+def get_url_for_os(url_list, operating_system):
+    chrome_driver_storage_url = 'https://chromedriver.storage.googleapis.com'
+    if operating_system == 'darwin':
+        query_string = 'mac64.zip'
+        operating_system_str = 'MacOS'
+    elif operating_system == "win32":
+        query_string = 'win'
+        operating_system_str = 'Windows'
+    else:
+        query_string = 'lin'
+        operating_system_str = 'Linux'
+    for url in url_list:
+        if query_string in url:
+            chrome_driver_download_url = chrome_driver_storage_url+url
+            print('Built your download link at: %s for %s' % (chrome_driver_download_url, operating_system_str))
+    return chrome_driver_download_url
+
+def download(download_response, chunk_size, file_path, progress_bar_description):
+    file_size = download_response.headers.get('Content-Length')
+    with open(file_path, 'wb') as fp:
         if file_size == 0:
             print("No file size, header downloading without progress bar.")
-            for chunk in downloadResponse.iter_content(chunk_size=chunk_size):
+            for chunk in download_response.iter_content(chunk_size=chunk_size):
                 fp.write(chunk)
 
         else:
             file_size = int(file_size)
             chunk = 1
             num_bars = int(file_size / chunk_size)
-            iterable = downloadResponse.iter_content(chunk_size=chunk_size)
-            progressBar = tqdm.tqdm(
+            iterable = download_response.iter_content(chunk_size=chunk_size)
+            progress_bar = tqdm.tqdm(
                             iterable,
                             total= num_bars,
                             unit = 'KB',
-                            desc = pBarDescription,
+                            desc = progress_bar_description,
                             leave = True,
                             dynamic_ncols=True
                             )
-            for chunk in  progressBar:
+            for chunk in  progress_bar:
                 fp.write(chunk)
 
-def update(response, driverPath, operatingSys, driver_folder=None, vers=None, modify_path=False):
+def update(response, driver_path, operating_system, driver_folder=None, vers=None, modify_path=False):
     """""
     Unzips packages downloaded into desired folder and updates path if on windows 
     params: reponse: 
     """
     
     # check if the driver exists and remove old version
-    if os.path.exists(driverPath):
-        os.remove(driverPath)
+    if os.path.exists(driver_path):
+        os.remove(driver_path)
 
     # download new version
-    downloadPath = driverPath+'.zip'
-    download(response, 10, downloadPath, f'{vers} - {operatingSys}')
-    with zipfile.ZipFile(downloadPath, 'r') as zip_ref:
+    download_path = driver_path+'.zip'
+    download(response, 10, download_path, f'{vers} - {operating_system}')
+    with zipfile.ZipFile(download_path, 'r') as zip_ref:
         zip_ref.extractall(driver_folder)
 
-        if operatingSys == 'darwin' and vers=='ffmpeg':
-            shutil.move(os.path.join(driverPath, 'bin', 'ffmpeg'), driver_folder) # move ffmpeg into the usr/local/bin/ folder
-            shutil.rmtree(driverPath) # remove the big ffmpeg folder downloaded
-            driverPath = driver_folder + "ffmpeg" # update driver path so that chmod may be ran
+        if operating_system == 'darwin' and vers=='ffmpeg':
+            shutil.move(os.path.join(driver_path, 'bin', 'ffmpeg'), driver_folder) # move ffmpeg into the usr/local/bin/ folder
+            shutil.rmtree(driver_path) # remove the big ffmpeg folder downloaded
+            driver_path = driver_folder + "ffmpeg" # update driver path so that chmod may be ran
             
-    os.remove(downloadPath)
+    os.remove(download_path)
 
     if sys.platform != 'win32':
         os.chmod(driverPath, stat.S_IXUSR)
@@ -86,8 +118,8 @@ def chromedr_installed():
     return chromedr_exists
         
 
-def chromeDriver(url, modify_path=False):
-    retryCount = 0
+def chrome_driver(url, modify_path=False):
+    retry_count = 0
     session = HTMLSession()
     response = session.get(url)
     response.html.render(timeout=0, sleep=2)
@@ -101,16 +133,16 @@ def chromeDriver(url, modify_path=False):
     response = session.get(download_link)
     response.html.render(timeout=0, sleep=2)
 
-    while len(response.html.links) == 0 and retryCount <= 3:
+    while len(response.html.links) == 0 and retry_count <= 3:
         print("Could not find link.. Retrying")
         response = session.get(download_link)
         response.html.render(timeout=0, sleep=2)
-        retryCount += 1
+        retry_count += 1
 
     if len(response.html.links) != 0:
-        urlList = response.html.links
-        downloadLink = getUrlForOS(urlList, sys.platform)
-        response = requests.get(downloadLink)
+        url_list = response.html.links
+        download_link = get_url_for_os(url_list, sys.platform)
+        response = requests.get(download_link)
         if sys.platform == 'darwin':
             driverPath = '/usr/local/bin/chromedriver'
             driver_folder = '/usr/local/bin/'

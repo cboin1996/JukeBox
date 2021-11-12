@@ -3,10 +3,10 @@ import musicPlayer
 import speech_recognition as sr
 import random
 import time
-from speechPrompts import computer
+from speechprompts import computer
 import os, sys
-from Player import jukebox
-from Features import tools
+from player import jukebox
+from features import tools
 
 def recognize_speech_from_mic(recognizer,
                               microphone,
@@ -90,21 +90,21 @@ def recognize_speech_from_mic(recognizer,
 
     return response
 
-def main(mic,
-         r,
-         OS='',
+def main(microphone,
+         recognizer,
+         operating_system='',
          string_to_say='',
          talking=False,
          file_to_play=None,
-         searchList=[],
-         pathToDirectory='',
+         search_list=[],
+         base_path='',
          timeout=None,
          phrase_time_limit=None,
          expected=None
          ):
-    response = recognize_speech_from_mic(r,
-                                         mic,
-                                         OS,
+    response = recognize_speech_from_mic(recognizer,
+                                         microphone,
+                                         operating_system,
                                          string_to_say=string_to_say,
                                          talking=talking,
                                          file_to_play=file_to_play,
@@ -119,13 +119,13 @@ def main(mic,
 
     while response['success'] == False or response['error'] != None or mask:
         if expected != None:
-            error_prompt = 'Error. You said: %s. Expecting commands: %s. Try again now.' % (response['transcription'],tools.stripFileForSpeech("%s"%(expected)))
+            error_prompt = 'Error. You said: %s. Expecting commands: %s. Try again now.' % (response['transcription'],tools.strip_file_for_speech("%s"%(expected)))
             print(error_prompt)
         else:
             error_prompt = 'Error. Try Again.'
 
-        response = recognize_speech_from_mic(r,mic,OS,string_to_say=error_prompt,talking=talking,
-                                             file_to_play=os.path.join(pathToDirectory,'speechPrompts', 'tryAgain.m4a'),
+        response = recognize_speech_from_mic(recognizer,microphone,operating_system,string_to_say=error_prompt,talking=talking,
+                                             file_to_play=os.path.join(base_path,'speechPrompts', 'tryAgain.m4a'),
                                              timeout=timeout,phrase_time_limit=phrase_time_limit,
                                              )
         if expected == None and response['error'] == None: # rengerate mask each loop
@@ -138,11 +138,11 @@ def main(mic,
     if response['success'] == True:
         sys.stdout.write('\rYou said: ' + response['transcription'] + '                  ')
         sys.stdout.flush()
-        searchList = response["transcription"].lower().replace("'",'').split(' + ')
+        search_list = response["transcription"].lower().replace("'",'').split(' + ')
 
-    return searchList
+    return search_list
 
 if __name__=="__main__":
-    mic = sr.Microphone()
-    r = sr.Recognizer()
-    text = main(mic, r)
+    microphone = sr.Microphone()
+    recognizer = sr.Recognizer()
+    text = main(microphone, recognizer)

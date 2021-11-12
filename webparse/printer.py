@@ -1,10 +1,8 @@
-def PrintDictionaryKeysAndValues(dictionary):
+def print_dict_key_vals(dictionary):
     for k, v in dictionary.items():
         print("  -  ", k, v)
-    return
 
 
-def PrintList(list):
+def print_list(list):
     for item in list:
         print("  -  ", item)
-    return

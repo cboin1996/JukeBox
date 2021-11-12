@@ -1,12 +1,12 @@
 import vlc
 import os, sys
 import time
-import SpeechAnalysis
-from speechPrompts import computer
-from Features import tools
-import GlobalVariables
+import speechanalysis
+from speechprompts import computer
+from features import tools
+import globalvariables
 import glob
-from iTunesManipulator import iTunes, iTunesSearch
+from itunes import itunes, search
 import random
 
 if sys.platform != 'win32':
@@ -15,14 +15,14 @@ if sys.platform != 'win32':
 else:
     import msvcrt
 
-def play_file(prompt, file_path, startup_time=1.5, song_index=0, index_diff=0, mic=None, r=None, speechRecogOn=False, command_string=''):
+def play_file(prompt, file_path, startup_time=1.5, song_index=0, index_diff=0, microphone=None, recognizer=None, speech_recog_enabled=False, command_string=''):
     vlc_instance = vlc.Instance()
     player = vlc_instance.media_player_new()
     media = vlc_instance.media_new(file_path)
     media.get_mrl()
     player.set_media(media)
     player.play()
-    finished_playing = wait_until_end(player, prompt, song_index, index_diff, mic=mic, r=r, speechRecogOn=speechRecogOn, command_string=command_string)
+    finished_playing = wait_until_end(player, prompt, song_index, index_diff, microphone=microphone, recognizer=recognizer, speech_recog_enabled=speech_recog_enabled, command_string=command_string)
     return finished_playing
 # VLC STATES 
 # {0: 'NothingSpecial',
@@ -34,7 +34,7 @@ def play_file(prompt, file_path, startup_time=1.5, song_index=0, index_diff=0, m
 #  6: 'Ended',
 #  7: 'Error'}
 
-def wait_until_end(player, prompt, file_index, index_diff, mic, r, speechRecogOn=False, command_string=GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT):
+def wait_until_end(player, prompt, file_index, index_diff, microphone, recognizer, speech_recog_enabled=False, command_string=globalvariables.PLAYING_STRING_COMMANDS_DEFAULT):
     paused = False
     Ended = 6 # code for ended in vlc
     Paused = 4
@@ -46,19 +46,19 @@ def wait_until_end(player, prompt, file_index, index_diff, mic, r, speechRecogOn
     current_state = player.get_state()
     while current_state != Ended and current_state != Stopped: # return the action if there is one
         setting = None
-        if speechRecogOn == True:
-            command, setting = speech_listen_for_keyword(mic, r, key_word='hello jukebox', player=player, phrase_time_limit=4.5)
+        if speech_recog_enabled == True:
+            command, setting = speech_listen_for_keyword(microphone, recognizer, key_word='hello jukebox', player=player, phrase_time_limit=4.5)
             if command == 'Aborted':
-                speechRecogOn = False
+                speech_recog_enabled = False
                 print(command_string) # output commands to user
 
         current_state = player.get_state() # get the state before checking user input
         time.sleep(0.5) # so the cpu isnt destroyed
 
         action = check_for_user_input(player, state=current_state, file_index=file_index, index_diff=index_diff,
-                                      kb=kb, command=command, speechRecogOn=speechRecogOn, mic=mic, r=r, volume=setting)
+                                      kb=kb, command=command, speech_recog_enabled=speech_recog_enabled, microphone=microphone, recognizer=recognizer, volume=setting)
         if action != None and command == 'Aborted': # once user has put action in, renable the speech recog.
-            speechRecogOn = True
+            speech_recog_enabled = True
         current_state = player.get_state() # get the state before beginning next iteration
 
     kb.set_normal_term() # this must be outside the loop
@@ -68,35 +68,35 @@ def wait_until_end(player, prompt, file_index, index_diff, mic, r, speechRecogOn
     else:
         return action # do the necessary action
 
-def speech_listen_for_keyword(mic, r, key_word, pathToDirectory=sys.path[0], player=None, timeout=None, phrase_time_limit=None):
+def speech_listen_for_keyword(microphone, recognizer, key_word, base_path=sys.path[0], player=None, timeout=None, phrase_time_limit=None):
 
-    speechResponse = SpeechAnalysis.recognize_speech_from_mic(r,
-                                                               mic,
+    speech_response_dict = speechanalysis.recognize_speech_from_mic(recognizer,
+                                                               microphone,
                                                                talking=False,
                                                                phrase_time_limit=phrase_time_limit)
-    if speechResponse['success'] == True and speechResponse['error'] == None:
+    if speech_response_dict['success'] == True and speech_response_dict['error'] == None:
 
-        print('You said: ', speechResponse['transcription'])
-        response = speechResponse["transcription"].lower().replace("'",'').split(' + ')
+        print('You said: ', speech_response_dict['transcription'])
+        response = speech_response_dict["transcription"].lower().replace("'",'').split(' + ')
 
         if computer.interpret_command(response, True, key_word=key_word) == key_word:
             player.set_pause(1) # pause song for speech
-            speechResponse = SpeechAnalysis.main(mic, r,
-                                                  talking=True, OS=sys.platform,
+            speech_response_dict = speechanalysis.main(microphone, recognizer,
+                                                  talking=True, operating_system=sys.platform,
                                                   string_to_say="I am listening",
-                                                  file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'listening.m4a'),
-                                                  pathToDirectory=pathToDirectory,
+                                                  file_to_play=os.path.join(base_path, 'speechPrompts', 'listening.m4a'),
+                                                  base_path=base_path,
                                                   phrase_time_limit=phrase_time_limit,
                                                   expected = ['resume', 'next', 'pause', 'restart', 'previous', 'stop', 'volume'])
-            return computer.interpret_action(speechResponse)
-    if speechResponse['error'] == 'KeyboardInterrupt':
+            return computer.interpret_action(speech_response_dict)
+    if speech_response_dict['error'] == 'KeyboardInterrupt':
         return 'Aborted', None
     return None, None
 
 # index_diff is 1 upon end of the playlist.
-def check_for_user_input(player, OS=sys.platform, state=3, file_index=0,
-                        index_diff=0, kb=None, command='', speechRecogOn=False,
-                        mic=None, r=None, pathToDirectory=sys.path[0], volume=None): # default state to playing
+def check_for_user_input(player, operating_system=sys.platform, state=3, file_index=0,
+                        index_diff=0, kb=None, command='', speech_recog_enabled=False,
+                        microphone=None, recognizer=None, base_path=sys.path[0], volume=None): # default state to playing
     # char = getch(OS)
     char = ''
     if kb.kbhit():
@@ -114,17 +114,17 @@ def check_for_user_input(player, OS=sys.platform, state=3, file_index=0,
         return 'unpause'
     if (char == 'd'  or command == 'next') and index_diff == 1:
         print("No more songs in playlist. Type 'q' to quit")
-        if speechRecogOn == True:
-            speechResponse = SpeechAnalysis.main(mic, r,
-                                                  talking=True, OS=sys.platform,
+        if speech_recog_enabled == True:
+            speech_response = speechanalysis.main(microphone, recognizer,
+                                                  talking=True, operating_system=sys.platform,
                                                   string_to_say="No more songs in playlist. Do you want to quit?",
-                                                  file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'noMoreDoYouQuit.m4a'),
-                                                  pathToDirectory=pathToDirectory,
+                                                  file_to_play=os.path.join(base_path, 'speechPrompts', 'noMoreDoYouQuit.m4a'),
+                                                  base_path=base_path,
                                                   phrase_time_limit=4,
                                                   expected=['yes', 'no'])
-            if 'yes' in computer.interpret_command(speechResponse, only_command=True):
+            if 'yes' in computer.interpret_command(speech_response, only_command=True):
                 player.stop()
-                return GlobalVariables.player_stop
+                return globalvariables.player_stop
             else:
                 player.set_pause(0)
                 return None
@@ -134,10 +134,10 @@ def check_for_user_input(player, OS=sys.platform, state=3, file_index=0,
         player.stop()
         return 'next'
 
-    if char == 'q' or command == GlobalVariables.player_stop:
+    if char == 'q' or command == globalvariables.player_stop:
         print("Quitting playlist.")
         player.stop()
-        return GlobalVariables.player_stop
+        return globalvariables.player_stop
 
     if char == 'a' or command == 'restart':
         print("Restarting Song.")
@@ -157,15 +157,16 @@ def check_for_user_input(player, OS=sys.platform, state=3, file_index=0,
 
     if (char == 'z' or command == 'previous') and file_index==0 :
         print("Can't go backwards. This is the first song.")
-        if speechRecogOn == True:
-            speechResponse = SpeechAnalysis.main(mic, r,
-                                                  talking=True, OS=sys.platform,
+        if speech_recog_enabled == True:
+            speech_response = speechanalysis.main(microphone, recognizer,
+                                                  operating_system=sys.platform,
+                                                  talking=True,
                                                   string_to_say="Cannot go backwards. Do you want to restart the song?",
-                                                  file_to_play=os.path.join(pathToDirectory, 'speechPrompts', 'cantBackDoRestart.m4a'),
-                                                  pathToDirectory=pathToDirectory,
+                                                  file_to_play=os.path.join(base_path, 'speechPrompts', 'cantBackDoRestart.m4a'),
+                                                  base_path=base_path,
                                                   phrase_time_limit=4,
                                                   expected=['yes', 'no'])
-            if 'yes' in computer.interpret_command(speechResponse, only_command=True):
+            if 'yes' in computer.interpret_command(speech_response, only_command=True):
                 player.stop()
                 return 'restart'
             else:
@@ -189,7 +190,7 @@ def check_for_user_input(player, OS=sys.platform, state=3, file_index=0,
 
     return None # user made no choice
 
-def play_in_order(songPaths, speechRecogOn, pathToDirectory, speech_string='', speech_path='', mic=None, r=None):
+def play_in_order(song_paths, speech_recog_enabled, path_to_directory, speech_string='', speech_path='', mic=None, r=None):
     """
     Begins playing through a list of songs in order
     params: iTunes song paths dict, speech recognition command, path to root script folder,
@@ -198,44 +199,44 @@ def play_in_order(songPaths, speechRecogOn, pathToDirectory, speech_string='', s
     Returns: None
     """
     wait_until_end = ''
-    if speechRecogOn == True:
+    if speech_recog_enabled == True:
         computer.speak(sys.platform,
                        speech_string,
-                       os.path.join(pathToDirectory, 'speechPrompts', speech_path)
+                       os.path.join(path_to_directory, 'speechPrompts', speech_path)
                        )
-    print(GlobalVariables.PLAYING_STRING_COMMANDS_DEFAULT) # provide commands
+    print(globalvariables.PLAYING_STRING_COMMANDS_DEFAULT) # provide commands
     i = 0
-    while i < len(songPaths):
-        song = songPaths[i].split(os.sep)
-        if speechRecogOn == True:
+    while i < len(song_paths):
+        song = song_paths[i].split(os.sep)
+        if speech_recog_enabled == True:
             computer.speak(sys.platform,
-                           "Playing: %s." % (tools.stripFileForSpeech(song[len(song)-1])),
-                           os.path.join(pathToDirectory, 'speechPrompts', 'playingSong.m4a')
+                           "Playing: %s." % (tools.strip_file_for_speech(song[len(song)-1])),
+                           os.path.join(path_to_directory, 'speechPrompts', 'playingSong.m4a')
                            )
-        wait_until_end = play_file(GlobalVariables.PLAYING_STRING_DEFAULT % (song[len(song)-3], #3 is album
+        wait_until_end = play_file(globalvariables.PLAYING_STRING_DEFAULT % (song[len(song)-3], #3 is album
                                                                                      song[len(song)-2], #2 is artist
                                                                                      song[len(song)-1]), #1 is song
-                                                                                     songPaths[i],
+                                                                                     song_paths[i],
                                                                                      song_index=i,
-                                                                                     index_diff=len(songPaths)-i,
-                                                                                     mic=mic, r=r, speechRecogOn=speechRecogOn,
-                                                                                     command_string=GlobalVariables.PLAYING_STRING_COMMANDS_SPECIAL)
+                                                                                     index_diff=len(song_paths)-i,
+                                                                                     microphone=mic, recognizer=r, speech_recog_enabled=speech_recog_enabled,
+                                                                                     command_string=globalvariables.PLAYING_STRING_COMMANDS_SPECIAL)
         if wait_until_end == 'rewind' and i != 0: # break loop if user desires it to be.
             i = i-1 # play previous
 
         if wait_until_end == 'next':
             i = i+1 # play next song
-        if wait_until_end == GlobalVariables.player_stop: # break loop if user desires it to be.
+        if wait_until_end == globalvariables.player_stop: # break loop if user desires it to be.
             break # quit
 
-def play_found_songs(songPaths,
-                    autoDownload,
-                    speechRecogOn=None,
-                    pathToDirectory='',
+def play_found_songs(song_paths,
+                    auto_download_enabled,
+                    speech_recog_on=None,
+                    base_path='',
                     command='',
-                    mic=None,
-                    r=None,
-                    iTunesInstalled=False):
+                    microphone=None,
+                    recognizer=None,
+                    is_itunes_installed=False):
     """
     Asks user if they want to play a song if there are any.
     params: iTunes song paths dict, autodownload mode enabled, speech recognition mode enabled,
@@ -244,10 +245,10 @@ def play_found_songs(songPaths,
     Return: True is song is found/research/skip, else false
     """
     artists = [] # will hold list of artists
-    songNames = [] # need to be zeroed out here DO NOT MOVE into parameter.
+    song_names = [] # need to be zeroed out here DO NOT MOVE into parameter.
     albums = []
-    songSelection = ''
-    if len(songPaths) == 0:
+    song_choice = ''
+    if len(song_paths) == 0:
         print("File not found on computron.. Searching iTunes API")
         return False
     else:
@@ -255,66 +256,66 @@ def play_found_songs(songPaths,
         # plays song immediatly, so return after this executes
         
         i = 0
-        output_folder = "iTunes" if iTunesInstalled else "dump"
+        output_folder = "iTunes" if is_itunes_installed else "dump"
         print(f"Found these songs in your {output_folder} folder")
-        for songPath in songPaths:
-            songName = songPath.split(os.sep)
-            songNames.append(songName[len(songName)-1])
+        for song_path in song_paths:
+            song_name = song_path.split(os.sep)
+            song_names.append(song_name[len(song_name)-1])
 
-            if iTunesInstalled:
-                artists.append(songName[len(songName)-3])
-                albums.append(songName[len(songName)-2])
-                print('  %d \t- %s - %s: %s' % (i, albums[i], artists[i], songNames[i]))
+            if is_itunes_installed:
+                artists.append(song_name[len(song_name)-3])
+                albums.append(song_name[len(song_name)-2])
+                print('  %d \t- %s - %s: %s' % (i, albums[i], artists[i], song_names[i]))
             else:
-                print(f" {i} \t- {songNames[i]}")
+                print(f" {i} \t- {song_names[i]}")
             i += 1
         
         # autoDownload condition
-        if autoDownload == True:
+        if auto_download_enabled == True:
             print("Song name too similar to one or more of above! Skipping.")
             return True
 
-        if speechRecogOn == False:
+        if speech_recog_on == False:
 
             print('Which one(s) do you want to hear (e.g. 0 1 3)?')
             user_input_string = "OR type 'se' (perform search), 'ag' (search again/skip), 'sh' (shuffle), 'pl' (play in order), '406' (return home): "
-            songSelection = tools.choose_items(input_string=user_input_string, props_lyst=songPaths)
+            song_choice = tools.choose_items(input_string=user_input_string, props_lyst=song_paths)
 
-        if speechRecogOn == True and command == 'shuffle':
-            songSelection = 'sh'
+        if speech_recog_on == True and command == 'shuffle':
+            song_choice = 'sh'
 
-        elif speechRecogOn == True and command == 'play':
-            songSelection = 'pl'
+        elif speech_recog_on == True and command == 'play':
+            song_choice = 'pl'
 
-        elif speechRecogOn == True and command == 'single':
-            songPaths = [songPaths[0]] # select first song, data requires list
-            play_in_order(songPaths, speechRecogOn, pathToDirectory, "Single Mode Activated", 'singleModeOn.m4a', mic=mic, r=r)
+        elif speech_recog_on == True and command == 'single':
+            song_paths = [song_paths[0]] # select first song, data requires list
+            play_in_order(song_paths, speech_recog_on, base_path, "Single Mode Activated", 'singleModeOn.m4a', mic=microphone, r=recognizer)
             return True
-        if songSelection == 'ag':
+        if song_choice == 'ag':
             print('Returning to beginning.')
             return True
-        if songSelection == GlobalVariables.quit_string:
+        if song_choice == globalvariables.quit_string:
             print("Exiting to home.")
-            return GlobalVariables.quit_string
+            return globalvariables.quit_string
 
         # shuffle algorithm TODO: move to a function
-        if songSelection == 'sh':
-            random.shuffle(songPaths)
-            play_in_order(songPaths, speechRecogOn, pathToDirectory, "Shuffle Mode Activated", 'shuffleModeOn.m4a', mic=mic, r=r)
+        if song_choice == 'sh':
+            random.shuffle(song_paths)
+            play_in_order(song_paths, speech_recog_on, base_path, "Shuffle Mode Activated", 'shuffleModeOn.m4a', mic=microphone, r=recognizer)
             return True
 
-        elif songSelection == 'se':
+        elif song_choice == 'se':
             return False
 
-        elif songSelection == 'pl':
-            play_in_order(songPaths, speechRecogOn, pathToDirectory, "Ordered Mode Activated", 'orderModeOn.m4a', mic=mic, r=r)
+        elif song_choice == 'pl':
+            play_in_order(song_paths, speech_recog_on, base_path, "Ordered Mode Activated", 'orderModeOn.m4a', mic=microphone, r=recognizer)
             return True
 
         # play the song(s) only if they want, otherwise continute with program.
         else:
-            if speechRecogOn == False:
-                songPaths = songSelection
-                play_in_order(songPaths, speechRecogOn, pathToDirectory, mic=mic, r=r)
+            if speech_recog_on == False:
+                song_paths = song_choice
+                play_in_order(song_paths, speech_recog_on, base_path, mic=microphone, r=recognizer)
 
             return True
 
