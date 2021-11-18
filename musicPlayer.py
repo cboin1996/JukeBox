@@ -198,7 +198,7 @@ def save_song_without_itunes_opts(auto_download_enabled, music_player_settings, 
         print('Skipping tagging process (No itunes properties selected)')
         formatted_song_path = song_path
     
-    
+    user_input = ""
     # autoDownload check
     if auto_download_enabled == False:
         if music_player_settings['gDrive']['folder_id'] != "": # check if gDrive folder exists for saving
