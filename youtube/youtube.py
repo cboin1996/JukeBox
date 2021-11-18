@@ -81,12 +81,18 @@ def my_hook(d):
 
 # integerVideoId defaults to 0, but can be used in autodownload recusively to remove the bad link to song.
 
-def download_song_from_youtube(youtube_page_response, auto_download_enabled=False, path_to_dump_folder="", path_to_settings="", debug_mode=False, counter=0, integer_video_id=None):
+def download_song_from_youtube(youtube_page_response, auto_download_enabled=False, path_to_dump_folder="", path_to_settings="", debug_mode=False, counter=0, integer_video_id=None,
+                                file_format=""):
     """
     Walks user through song selection and downloading process
-    args: Youtube web page response, autodownload on or off, path to the dump folder for songs
-          path to settings folder, debug mode on or off, counter for download retries,
-          integer representing a youtube video to try converting to mp3
+    args: 
+        youtube_page_response: Youtube web page response
+        auto_download_enabled: autodownload on or off
+        path_to_dump_folder: path to the dump folder for songs
+        path_to_settings: path to settings folder debug mode on or off
+        counter: counter for download retries
+        integer_video_id: integer representing a youtube video to try converting
+        file_format: the format of file to use.
     Returns: response object with error status, success boolean and song path
     """
     # options for youtube_dl program
@@ -95,7 +101,7 @@ def download_song_from_youtube(youtube_page_response, auto_download_enabled=Fals
         'cachedir': False,
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
+            'preferredcodec': file_format,
             'preferredquality': '192',
         }],
         'nocheckcertificate': True,
@@ -119,7 +125,7 @@ def download_song_from_youtube(youtube_page_response, auto_download_enabled=Fals
         print('Removing any illegal characters in filename.')
         video_selection = remove_illegal_characters(video_selection)
         print("Converting: %s from link %s" % (video_selection, video_urls[integer_video_id][1]))
-        local_save_file_path = os.path.join(path_to_dump_folder, video_selection + ".mp3")
+        local_save_file_path = os.path.join(path_to_dump_folder, video_selection + "." + file_format)
         songname_for_yt_dl = os.path.join(path_to_dump_folder, video_selection)
         ydl_opts['outtmpl'] = songname_for_yt_dl + ".%(ext)s"
 
@@ -159,7 +165,7 @@ def download_song_from_youtube(youtube_page_response, auto_download_enabled=Fals
     browser.close()
 
     if success_downloading == True:
-        print("Done. Playing.. " + video_selection + ".mp3" + " Now. Enjoy")
+        print("Done. Playing.. " + video_selection + "." + file_format + " Now. Enjoy")
         print("Located currently at: ", os.path.join(local_save_file_path))
 
         response_object['error'] = None
@@ -198,7 +204,7 @@ def select_song_from_youtube_response(youtube_page_response, integer_video_id, a
         browser = webdriver.Chrome(options=options)
     except:
         print("ERROR>>>New version of ChromeDriver Required. Downloading")
-        updates.chrome_driver(GlobalVariables.chromedriver_update_url, modify_path=False)
+        updates.chrome_driver(globalvariables.chromedriver_update_url, modify_path=False)
         browser = webdriver.Chrome(options=options)
 
     browser.get(youtube_page_response.url)

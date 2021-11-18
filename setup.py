@@ -18,7 +18,10 @@ setup(name='youtubetomp3',
      'youtube_dl',
      'google-api-python-client',
      'google-auth-httplib2',
-     'google-auth-oauthlib'
+     'google-auth-oauthlib',
+     'pydub',
+     'ffprobe-python',
+     'mutagen'
      ],
      packages=find_packages()
 )
