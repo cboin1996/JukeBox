@@ -9,6 +9,8 @@ from itunes import itunes
 import globalvariables
 from player import jukebox
 
+from mutagen.mp4 import MP4, MP4Cover
+
 def pretty_printer(listOfDicts, ignore_keys=None, special_dict=None, special_prompt=None):
     """
     prints list from top down so its more user friendly, items are pretty big
@@ -56,6 +58,52 @@ def artwork_searcher(artworkUrl):
 
     return response
 
+def m4a_tagger(file_path, dictionary_of_tags={}):
+    """Tag an m4a file using iTunes recognized tags.
+    Legend taken from mutagen website.
+    Text values
+    ‘\xa9nam’ – track title
+    ‘\xa9alb’ – album
+    ‘\xa9ART’ – artist
+    ‘aART’ – album artist
+    ‘\xa9day’ – year
+    ‘purd’ – purchase date
+    ‘\xa9gen’ – genre
+
+    Tuples of ints (multiple values per key are supported):
+    ‘trkn’ – track number, total tracks
+    ‘disk’ – disc number, total discs
+
+
+    ‘covr’ – cover artwork, list of MP4Cover objects (which are tagged strs)
+
+    Args:
+        file_path ([type]): [description]
+        dictionary_of_tags (dict, optional): [description]. Defaults to {}.
+    """
+    print(f"Adding tags to m4a file : {file_path}")
+
+    response = artwork_searcher(artworkUrl=dictionary_of_tags[globalvariables.artworkUrl100])
+    audiofile = MP4(file_path)
+
+    # Set all the tags for the mp3, all without if statement were checked for existence.
+    audiofile["\xa9ART"] = dictionary_of_tags[globalvariables.artist_name]
+    audiofile["\xa9alb"] = dictionary_of_tags[globalvariables.collection_name]
+    audiofile["\xa9nam"]= dictionary_of_tags[globalvariables.track_name]
+    audiofile["\xa9gen"] = dictionary_of_tags[globalvariables.primary_genre_name]
+    audiofile["trkn"] = [(dictionary_of_tags[globalvariables.track_num], dictionary_of_tags[globalvariables.track_count])]
+    audiofile["disk"] = [(dictionary_of_tags[globalvariables.disc_num], dictionary_of_tags[globalvariables.disc_count])]
+    audiofile["\xa9day"] = dictionary_of_tags[globalvariables.release_date]
+
+    if globalvariables.collection_artist_name in dictionary_of_tags.keys(): # check if collection_artist_name exists before adding to tags
+        audiofile["aART"] = dictionary_of_tags[globalvariables.collection_artist_name]
+
+
+    if response.status_code == 200:
+        audiofile["covr"] = [MP4Cover(response.content, imageformat=MP4Cover.FORMAT_PNG)]
+    
+    audiofile.save()
+    return dictionary_of_tags[globalvariables.track_name]
 
 def mp3ID3Tagger(mp3_path='', dictionary_of_tags={}):
     """
@@ -176,7 +224,7 @@ def launch_album_mode(artist_album_string='', required_json_song_keys={}, requir
     
     songs_in_album_props = None # will hold the songs in album properties in the new album feature
     album_props = None # will hold the album properties in the new album feature
-    itunes_paths_dict = itunes.setItunesPaths(operatingSystem=sys.platform, searchFor=artist_album_string)
+    itunes_paths_dict = itunes.set_itunes_path(operating_system=sys.platform, search_for=artist_album_string)
 
     if itunes_paths_dict != None:
         is_itunes_installed = True

@@ -5,6 +5,7 @@ import shutil, os, sys
 import speech_recognition as sr
 import time
 
+from pydub import AudioSegment
 
 from itunes import (itunes, editor, search)
 from features import feature, tools, gdrive
@@ -134,18 +135,46 @@ def save_song_with_itunes_opts(auto_download_enabled,
                             recognizer, 
                             base_path, 
                             itunes_paths, 
-                            song_path, 
-                            formatted_song_path,
-                            vlc_player):
+                            song_path,
+                            vlc_player,
+                            local_dump_folder,
+                            track_properties,
+                            file_fmt):
+    """Save a song to itunes.
 
+    Args:
+        auto_download_enabled ([type]): [description]
+        music_player_settings ([type]): [description]
+        speech_recog_enabled ([type]): [description]
+        microphone ([type]): [description]
+        recognizer ([type]): [description]
+        base_path ([type]): [description]
+        itunes_paths ([type]): [description]
+        song_path ([type]): [description]
+        vlc_player ([type]): [description]
+        local_dump_folder ([type]): [description]
+        track_properties ([type]): [description]
+        file_fmt (str): the file format (m4a) expected for itunes.
+    """
+    file_fmt = "." + file_fmt
     user_input = get_user_input_for_saving(auto_download_enabled, music_player_settings, speech_recog_enabled, 
                               vlc_player, microphone, recognizer, base_path)
     vlc_player.stop()
+    if (file_fmt not in song_path):
+        formatted_song_name = itunes.convert_mp3_to_itunes_format(song_path) 
+
+    if track_properties != None:
+        proper_song_name = search.m4a_tagger(file_path=song_path,
+                                                    dictionary_of_tags=track_properties)
+        formatted_song_path = os.path.join(local_dump_folder, proper_song_name + file_fmt) # renames the song's filename to match the mp3 tag
+    else:
+        print('Skipping tagging process (No itunes properties selected)')
+        formatted_song_path = song_path
     # wait till player stops before renaming song to proper formatted name
     os.rename(song_path, formatted_song_path)
 
     if user_input == 's':
-        formatted_song_name = format_filename(path_to_file=formatted_song_path, slice_key=".mp3", string_to_add="_complt")
+        formatted_song_name = format_filename(path_to_file=formatted_song_path, slice_key=file_fmt, string_to_add="_complt")
         shutil.move(formatted_song_name, itunes_paths['autoAdd'])
         print("Moved your file to iTunes.")
 
@@ -154,10 +183,22 @@ def save_song_with_itunes_opts(auto_download_enabled,
 
     else:
         print("Saved your file locally.")
-        format_filename(path_to_file=formatted_song_path, slice_key=".mp3", string_to_add="_complt")
+        format_filename(path_to_file=formatted_song_path, slice_key=file_fmt, string_to_add="_complt")
 
 
-def save_song_without_itunes_opts(auto_download_enabled, music_player_settings, song_path, formatted_song_path, speech_recog_enabled, microphone, recognizer, base_path, vlc_player):
+def save_song_without_itunes_opts(auto_download_enabled, music_player_settings, song_path, speech_recog_enabled, microphone, recognizer, base_path, vlc_player,
+                                  local_dump_folder, track_properties, file_fmt):
+    file_fmt = "." + file_fmt
+    # parsesearchApi() throws None return type if the user selects no properties
+    if track_properties != None:
+        proper_song_name = search.mp3ID3Tagger(mp3_path=song_path,
+                                                    dictionary_of_tags=track_properties)
+        formatted_song_path = os.path.join(local_dump_folder, proper_song_name + file_fmt) # renames the song's filename to match the mp3 tag
+    else:
+        print('Skipping tagging process (No itunes properties selected)')
+        formatted_song_path = song_path
+    
+    
     # autoDownload check
     if auto_download_enabled == False:
         if music_player_settings['gDrive']['folder_id'] != "": # check if gDrive folder exists for saving
@@ -184,7 +225,7 @@ def save_song_without_itunes_opts(auto_download_enabled, music_player_settings, 
     if user_input == 'g':
         gdrive.save_song(music_player_settings['gDrive'], formatted_song_path.split(os.sep)[-1], formatted_song_path)
         return
-    format_filename(path_to_file=formatted_song_path, slice_key=".mp3", string_to_add="_complt")
+    format_filename(path_to_file=formatted_song_path, slice_key=file_fmt, string_to_add="_complt")
 
 # this function allows the module to be ran with or without itunes installed.
 # if iTunes is not installed, the files are tagged and stored in dump folder.
@@ -208,6 +249,11 @@ def run_download(microphone,
         recognition on or not, debug mode on or not, track properties on or not
     Returns: None
     """
+    if is_itunes_installed:
+        file_format = "m4a"
+    else:
+        file_format = "mp3"
+
     local_dump_folder = os.path.join(base_path, "dump")
     path_to_settings = os.path.join(base_path, 'settings.json')
 
@@ -216,7 +262,8 @@ def run_download(microphone,
                                                         auto_download_enabled=auto_download_enabled,
                                                         path_to_dump_folder=local_dump_folder,
                                                         path_to_settings=path_to_settings,
-                                                        debug_mode=debug_mode)
+                                                        debug_mode=debug_mode, 
+                                                        file_format=file_format)
 
     # youtubeSongDownload returns none if there is no songPath or if user wants a more specific search
     while youtube_download_response_object['error'] == '404':
@@ -258,24 +305,15 @@ def run_download(microphone,
                                     track_properties=track_properties,
                                     music_player_settings=music_player_settings)
 
-        # parsesearchApi() throws None return type if the user selects no properties
-        if track_properties != None:
-            proper_song_name = search.mp3ID3Tagger(mp3_path=youtube_download_response_object['songPath'],
-                                                        dictionary_of_tags=track_properties)
-            formatted_song_path = os.path.join(local_dump_folder, proper_song_name + '.mp3') # renames the song's filename to match the mp3 tag
-        else:
-            print('Skipping tagging process (No itunes properties selected)')
-            formatted_song_path = youtube_download_response_object['songPath']
 
         if is_itunes_installed == True:
             save_song_with_itunes_opts(auto_download_enabled, music_player_settings, speech_recog_enabled,
-                                        microphone, recognizer, base_path, itunes_paths, youtube_download_response_object['songPath'], formatted_song_path,
-                                        vlc_player)
+                                        microphone, recognizer, base_path, itunes_paths, youtube_download_response_object['songPath'], 
+                                        vlc_player, local_dump_folder, track_properties, file_format)
         else:
             save_song_without_itunes_opts(auto_download_enabled, music_player_settings,
-                                        youtube_download_response_object['songPath'],
-                                        formatted_song_path, speech_recog_enabled, microphone, recognizer,
-                                        base_path, vlc_player)
+                                        youtube_download_response_object['songPath'], speech_recog_enabled, microphone, recognizer,
+                                        base_path, vlc_player, local_dump_folder, track_properties, file_format)
 
     if youtube_download_response_object['error'] == 'youMP3fail':
         print("YoutubeMp3 failed too many times. quitting to last menu.")
@@ -311,7 +349,7 @@ def run_for_songs(microphone=None, recognizer=None, searchlist=[], auto_download
     for i, song_to_search_for in enumerate(searchlist):
         
         print(f" - Running program for song {i + 1} of {len(searchlist)}: {song_to_search_for}")
-        itunes_paths_dict = itunes.setItunesPaths(operating_system, searchFor=song_to_search_for, album_properties=album_properties)
+        itunes_paths_dict = itunes.set_itunes_path(operating_system, search_for=song_to_search_for, album_properties=album_properties)
         # '*.*' means anyfilename, anyfiletype
         # /*/* gets through artist, then album or itunes folder structure
         if itunes_paths_dict == None:
