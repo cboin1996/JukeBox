@@ -1,4 +1,4 @@
-# youtubeMP3 V 2.2 Official Release
+# youtubeMP3 V 2.3 Official Release
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/cboin1996/WebTools)
 
@@ -12,7 +12,7 @@ This application is a youtube scraper, audio player, iTunes integrated applicati
 
 [iTunes](https://www.apple.com/ca/itunes/) (Note: you can use without iTunes. Local storage is supported as well as google drive with gdrive API)
 
-This program uses chromedriver and ffmpeg.  These programs should be automatically installed on mac or windows upon the first run of the program.  Chromedriver will be automatically updated when needed by the program.
+This program uses chromedriver and ffmpeg.  These programs should be automatically installed on mac or windows upon the first run of the program.  Chromedriver will be automatically updated when needed by the program. FFMMPEG is no longer auto installed. Maybe one day Ill re-add it.
 
 ### WINDOWS INSTALLATION INSTRUCTIONS:
 Navigate the directory and run setup:  
@@ -63,6 +63,6 @@ pip3 install -e .
 python musicPlayer.py
 ```
 ### KNOWN ISSUES:
-
+ffmmpeg is no longer auto installed. youre on your own there.
 pyaudio often doesn't install on windows -- need c++ library.
 Maybe try this link? : http://go.microsoft.com/fwlink/?LinkId=691126&fixForIE=.exe

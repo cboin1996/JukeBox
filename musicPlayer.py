@@ -198,7 +198,7 @@ def save_song_without_itunes_opts(auto_download_enabled, music_player_settings, 
         print('Skipping tagging process (No itunes properties selected)')
         formatted_song_path = song_path
     
-    
+    user_input = ""
     # autoDownload check
     if auto_download_enabled == False:
         if music_player_settings['gDrive']['folder_id'] != "": # check if gDrive folder exists for saving
@@ -418,6 +418,11 @@ def run_for_songs(microphone=None, recognizer=None, searchlist=[], auto_download
 
 def main_menu(speech_recog_enabled, list_of_modes, path_to_settings, base_path, required_json_song_keys, required_json_album_keys, continue_getting_songs, microphone, recognizer):
     command = ''
+    search_for = ''
+    songs_in_album_props=[]
+    album_properties=None # album properties list default None
+    prog_vers = ''
+
     if not speech_recog_enabled:
         search_for = input("Enter song(s) [song1; song2], 'instr' for instructions, 'set' for settings, 'alb' for albums: ")
         if search_for in list_of_modes: # will be used to determine if mode chaneg has been selected
@@ -459,7 +464,7 @@ def main_menu(speech_recog_enabled, list_of_modes, path_to_settings, base_path, 
         else: # get the next songs from previous iteration of speech
             search_list = list(continue_getting_songs)
     
-    return command, search_list, search_for
+    return command, search_list, search_for, album_properties, songs_in_album_props, prog_vers
 
 def main(argv='', recognizer=None, microphone=None, path_to_itunes_auto_add_folder={}, speech_recog_enabled=False, debug_mode = False):
     """Main function for launch.
@@ -485,9 +490,7 @@ def main(argv='', recognizer=None, microphone=None, path_to_itunes_auto_add_fold
                           globalvariables.disc_count,
                           globalvariables.release_date]
     required_json_album_keys = [globalvariables.artist_name, globalvariables.collection_name, globalvariables.track_count, globalvariables.collection_id]
-    songs_in_album_props=[]
 
-    prog_vers = ''
     command=''
     auto_download_enabled = False
     list_of_modes = ['auto','voice','debug', 'select', 'voice debug', 'auto debug']
@@ -533,20 +536,18 @@ def main(argv='', recognizer=None, microphone=None, path_to_itunes_auto_add_fold
     operating_system = name_plates(auto_download_enabled, speech_recog_enabled, debug_mode, sys.platform)
 
     continue_getting_songs = 'yes' # initialize to yes in order to trigger idle listening
-    search_for = ''
     while continue_getting_songs != 'no' :
         # initialize searchList to empty each iteration
         search_list = []
-        album_properties=None # album properties list default None
 
-        command, search_list, search_for = main_menu(speech_recog_enabled,
-                                            list_of_modes,
-                                            path_to_settings,
-                                            base_path,
-                                            required_json_song_keys,
-                                            required_json_album_keys,
-                                            continue_getting_songs,
-                                            microphone, recognizer)
+        command, search_list, search_for, album_properties, songs_in_album_props, prog_vers = main_menu(speech_recog_enabled,
+                                                                                            list_of_modes,
+                                                                                            path_to_settings,
+                                                                                            base_path,
+                                                                                            required_json_song_keys,
+                                                                                            required_json_album_keys,
+                                                                                            continue_getting_songs,
+                                                                                            microphone, recognizer)
 
         if command in list_of_modes: # determine which version to be in.
             command = command.split(' ')
