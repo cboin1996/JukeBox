@@ -141,6 +141,8 @@ def download_song_from_youtube(youtube_page_response, auto_download_enabled=Fals
             os.system('pip install --upgrade youtube-dl')
         elif sys.platform == 'darwin':
             os.system('pip3 install --upgrade youtube-dl')
+        elif sys.platform == 'linux':
+            os.system('pip install --upgrade youtube-dl')
         
         response_object['success'] = False
         response_object['error'] = 'had_to_update'
@@ -199,6 +201,10 @@ def select_song_from_youtube_response(youtube_page_response, integer_video_id, a
     options.add_argument('--disable-gpu')
     options.add_argument("--log-level=3")
     options.add_argument('--enable-blink-features=HTMLImports')
+    
+    if sys.platform == 'linux':
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
 
     try:
         browser = webdriver.Chrome(options=options)

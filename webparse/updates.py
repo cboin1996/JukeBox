@@ -112,8 +112,8 @@ def chromedr_installed():
     elif sys.platform == 'darwin':
         chromedr_exists = True if os.path.exists('/usr/local/bin/chromedriver') else False
     
-    else:
-        chromedr_exists = True if os.path.exists('/usr/bin/chromedriver') else False
+    elif sys.platform == 'linux':
+        chromedr_exists = True if os.path.exists(get_path_to_binaries() + 'chromedriver') else False
     
     return chromedr_exists
         
@@ -155,8 +155,8 @@ def chrome_driver(url, modify_path=False):
                 os.mkdir(driver_folder)
 
             update(response, driverPath, sys.platform, driver_folder, vers='chromedriver', modify_path=modify_path)
-        else:
-            driverPath = '/usr/bin/chromedriver'
+        elif sys.platform == 'linux':
+            driverPath = get_path_to_binaries() + 'chromedriver'
             update(response, driverPath, sys.platform, vers='chromedriver')
         
         return driver_folder
@@ -200,12 +200,17 @@ def ffmpeg(url, modify_path=False):
 def get_path_to_binaries():
     if sys.platform == 'win32':
         return os.path.join('C:', os.sep)
-    if sys.platform == 'darwin':
+    elif sys.platform == 'darwin':
         return '/usr/local/bin/'
+    elif sys.platform == "linux":
+        return '/usr/local/bin/'
+
 def get_path_to_ffmpeg():
     if sys.platform == 'win32':
         return os.path.join("C:", os.sep, 'ffmpeg')
-    if sys.platform == 'darwin':
+    elif sys.platform == 'darwin':
+        return get_path_to_binaries() + "ffmpeg"
+    elif sys.platform == 'linux':
         return get_path_to_binaries() + "ffmpeg"
 
 def modify_path(chrome_instlld, chromedriver_folder, ffm_instlld, ffmpeg_folder):

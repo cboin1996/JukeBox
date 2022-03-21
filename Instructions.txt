@@ -8,7 +8,7 @@
     - debug runs the debug mode which shows the browser automation
 - Upon the initial search when asked to enter songs you may type voice, debug,
   select, auto, voice or even try voice debug, auto debug to switch modes.
-
+- To manually specify a file format, add "format_override"="m4a" to the settings.json file.
 -- Speech Recognition --
 
 - When asked to hear another song, say 'yes' to return to idle listener, say a

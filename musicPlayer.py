@@ -191,8 +191,15 @@ def save_song_without_itunes_opts(auto_download_enabled, music_player_settings, 
     file_fmt = "." + file_fmt
     # parsesearchApi() throws None return type if the user selects no properties
     if track_properties != None:
-        proper_song_name = search.mp3ID3Tagger(mp3_path=song_path,
+        if file_fmt == ".m4a":
+            proper_song_name = search.m4a_tagger(file_path=song_path,
                                                     dictionary_of_tags=track_properties)
+        elif file_fmt == ".mp3":
+            proper_song_name = search.mp3ID3Tagger(mp3_path=song_path,
+                                                        dictionary_of_tags=track_properties)
+        else:
+            print(f"Illegal file format recieved: {file_fmt}. Aborting song save.")
+            return
         formatted_song_path = os.path.join(local_dump_folder, proper_song_name + file_fmt) # renames the song's filename to match the mp3 tag
     else:
         print('Skipping tagging process (No itunes properties selected)')
@@ -251,6 +258,9 @@ def run_download(microphone,
     """
     if is_itunes_installed:
         file_format = "m4a"
+    elif "format_override" in music_player_settings:
+        if music_player_settings["format_override"] == "m4a":
+            file_format = "m4a"
     else:
         file_format = "mp3"
 
