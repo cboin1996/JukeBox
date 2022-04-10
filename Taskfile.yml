@@ -1,0 +1,39 @@
+version: '3'
+
+silent: true
+output: prefixed
+
+vars:
+  PY_PATH: ./venv/bin/python3
+
+tasks:
+  install:
+    prefix: install
+    desc: installs globally
+    cmds:
+      - "pip3 install --upgrade pip"
+      - "pip3 install --upgrade setuptools"
+      - "python3 install -r requirements.txt"
+
+  install:venv:
+    prefix: install > venv
+    desc: installs the program in a python-venv
+    cmds:
+      - task: venv:create
+      - echo '1. run source venv/bin/activate (linux/mac) or /venv/Scripts/Activate.bst (windows)'
+      - echo '2. use task venv:deps to complete installation' 
+  
+  venv:create:
+    prefix: venv > create
+    desc: sets up a python venv
+    cmds:
+      - python3 -m venv venv
+    status:
+      - test -f /venv/bin/python3
+  
+  venv:deps:
+    prefix: venv > deps
+    desc: install dependencies using a venv
+    cmds:
+      - "{{.PY_PATH}} -m pip install --upgrade pip"
+      - "{{.PY_PATH}} -m pip install -r requirements.txt" 
