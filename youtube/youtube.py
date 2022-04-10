@@ -18,8 +18,8 @@ from features import tools
 import globalvariables
 
 import time
-import youtube_dl
-from youtube_dl.utils import DownloadError, UnavailableVideoError, ExtractorError
+import yt_dlp as youtube_dl
+from yt_dlp.utils import DownloadError, UnavailableVideoError, ExtractorError
 
 
 
@@ -138,11 +138,11 @@ def download_song_from_youtube(youtube_page_response, auto_download_enabled=Fals
         print("Attempting to update.. ")
         # try to update the users youtube-dl installation.
         if sys.platform == 'win32':
-            os.system('pip install --upgrade youtube-dl')
+            os.system('pip install --upgrade yt-dlp')
         elif sys.platform == 'darwin':
-            os.system('pip3 install --upgrade youtube-dl')
+            os.system('pip3 install --upgrade yt-dlp')
         elif sys.platform == 'linux':
-            os.system('pip install --upgrade youtube-dl')
+            os.system('pip install --upgrade yt-dlp')
         
         response_object['success'] = False
         response_object['error'] = 'had_to_update'
