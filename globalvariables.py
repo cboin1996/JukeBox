@@ -1,4 +1,4 @@
-VERSION_NUMBER = '2.2'
+VERSION_NUMBER = '2.3.1'
 
 
 PLAYING_STRING_DEFAULT = "Playing: %s - %s: %s."
