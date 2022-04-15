@@ -21,6 +21,14 @@ This program uses chromedriver and ffmpeg.  These programs should be automatical
 You will need ffmpeg from [here](https://www.ffmpeg.org/download.html#build-windows).
 Make sure you add the binary to your path.
 
+### Install PyAudio Dependencies
+- c++ tools: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+  - Launch `Visual Studio Installer` from start menu.
+  - Install options, and click 'modify' and install `Desktop Development with C++`
+- Install paudio wheel if the below steps dont work from here: 
+  - pip install pipwin
+  - pipwin install pyaudio
+
 ### If Using venv
 ```bash
 task install:venv
@@ -72,5 +80,3 @@ python3 musicPlayer.py
 ```
 ### KNOWN ISSUES:
 - ffmmpeg is no longer auto installed. youre on your own there.
-- pyaudio often doesn't install on windows -- need c++ library.
-Maybe try this link? : http://go.microsoft.com/fwlink/?LinkId=691126&fixForIE=.exe
