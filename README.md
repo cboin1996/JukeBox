@@ -2,6 +2,7 @@
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/cboin1996/WebTools)
 
+Note: This repository is no longer maintained, and has been replaced by [songbird](https://github.com/cboin1996/songbird).
 
 This application is a youtube scraper, audio player, iTunes integrated application. It can connect with itunes to download any album using youtube that you want, in an itunes formatted way. As of right now it's a CLI application.
 
